@@ -304,7 +304,7 @@ You get a final report with a severity-graded finding list and overall status.
 
 ## See it in action
 
-This repo was built using HVE on itself. The artifacts below are real output from running:
+This repo was initially built with vanilla Claude Code, then HVE was installed into itself and used to improve its own README. The artifacts below are real output from that first dogfood run:
 
 ```
 /hve Update the README and make sure it's comprehensive: describe the project, goal, what everything does, all agents and subagents, the workflow, the methodology, how to use the tool, quick setup, and benefits.
