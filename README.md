@@ -25,22 +25,24 @@ The result: higher-quality output, leaner context windows, lower cost (Haiku for
 
 ## Quick start
 
-```bash
-# 1. Clone and run the installer, pointing at your project
-git clone https://github.com/kevrcress/hve-claude
-./hve-claude/install.sh /path/to/your/project
+Works for new or existing projects — never touches your source code.
 
-# 2. Add your project context to CLAUDE.md (the installer creates ## Your Project for you)
-# 3. Open Claude Code in your project and run your first task
+1. Paste this into Claude Code in your project directory to install HVE:
 ```
-
+Please install HVE into this project: clone https://github.com/kevrcress/hve-claude to a temporary directory, run install.sh targeting the current directory, then clean up the temp clone.
+```
+2. Paste this to add your project context:
+```
+Please add context about this project under ## Your Project in CLAUDE.md.
+```
+3. Run your first task _(replace the OAuth2 example with your own)_:
 ```
 /hve add OAuth2 authentication to the API
 ```
 
-_(Replace the OAuth2 example with your actual task — that's just an example of how you'd phrase a prompt.)_
-
 That's it. Claude researches, plans, implements, and reviews — pausing for your approval between phases.
+
+> **Prefer the terminal?** Clone the repo anywhere outside your project and run `./hve-claude/install.sh /path/to/your/project` manually.
 
 ---
 
@@ -110,8 +112,8 @@ Before starting, HVE classifies the task and adjusts how many subagents to dispa
 |---|---|---|
 | **Simple** | < 50 lines, single file, zero ambiguity | Implement directly — no subagents |
 | **Medium** | 2–5 files, known patterns | 1–2 researcher subagents |
-| **Medium-Hard** | Cross-cutting changes, multiple modules | Parallel research + plan validation |
-| **Challenging** | New patterns, high risk, unclear requirements | Full parallel dispatch across all phases |
+| **Medium-Hard** | Cross-cutting changes, multiple modules | Multiple researchers run in parallel, plan is validated before implementation begins |
+| **Challenging** | New patterns, high risk, unclear requirements | Multiple researchers run in parallel, plan is validated, implementors run per-phase in parallel, and two validators run in parallel during review |
 
 ### User checkpoints
 
@@ -146,11 +148,13 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 
 ### Prompt engineering commands
 
+These commands are for extending HVE itself — building new slash commands, agent definitions, and instruction files that follow HVE conventions.
+
 | Command | Purpose |
 |---|---|
-| `/hve-prompt-builder` | Iterative sandbox for authoring new agents and prompts: test → evaluate → update loop with specialized subagents |
-| `/hve-prompt-analyze <file>` | Evaluates an existing agent or prompt file against quality criteria, returns severity-graded findings |
-| `/hve-prompt-refactor <file>` | Cleans up and removes anti-patterns from existing prompt artifacts |
+| `/hve-prompt-builder` | Iterative sandbox for authoring new HVE agents, slash commands, and instruction files — uses a test → evaluate → update loop with specialized subagents |
+| `/hve-prompt-analyze <file>` | Evaluates an existing HVE agent or prompt file against HVE quality criteria, returns severity-graded findings |
+| `/hve-prompt-refactor <file>` | Cleans up and removes anti-patterns (including Copilot-specific syntax) from existing HVE prompt artifacts |
 
 ### Git workflow commands
 
@@ -237,7 +241,9 @@ research/     plans/     details/     changes/     reviews/
 challenges/   memory/    doc-ops/
 ```
 
-Only the regenerable noise is gitignored:
+**Note:** Your initial task prompt is captured at the top of the research and plan artifacts as the task description. Only the initial prompt is stored — not subsequent conversation. If you'd prefer not to commit these artifacts (for privacy or any other reason), see the gitignore options below.
+
+Only the regenerable noise is gitignored by default:
 
 ```
 .claude-hve-tracking/**/subagents/
@@ -374,7 +380,9 @@ Not hand-crafted examples — browse them to see what each phase actually produc
 
 ## Language instruction files
 
-The `hve-phase-implementor` subagent reads the relevant file in `instructions/` before writing any code for that language or tool.
+HVE works with any language or tech stack — these instruction files are optional style guides, not a requirement. The `hve-phase-implementor` reads the relevant file in `instructions/` before writing code if one exists for that language. If your language isn't listed, HVE still implements — it just won't have a pre-loaded convention guide. You can add your own instruction files for any language and reference them in `CLAUDE.md`.
+
+The files below are included out of the box (ported from the MS repo):
 
 | File | Covers |
 |---|---|
@@ -452,6 +460,45 @@ Just run the next phase command. It finds the most recent artifact for its phase
 **Can I use HVE for small tasks?**
 
 Yes. HVE classifies difficulty before starting. Simple tasks (< 50 lines, single file, zero ambiguity) skip subagents entirely and implement directly — no overhead. You can also just ask: `/hve fix the typo in the error message` and it will handle it appropriately without spinning up a research team.
+
+---
+
+**Can I use HVE for non-code tasks?**
+
+Yes — HVE is a research and structured output framework, not a coding tool. It works for any task where you want to investigate before acting, plan before writing, and validate the result. Examples:
+
+- **Writing and research** — drafting guides, blog posts, reports, documentation
+- **Architecture decisions** — researching trade-offs, drafting an ADR, reviewing it against requirements
+- **Requirements analysis** — researching stakeholder needs, drafting a PRD or BRD, validating coverage
+- **Configuration and audits** — researching current state, planning changes, reviewing for correctness
+- **Content strategy** — researching a topic, outlining, drafting, reviewing for clarity
+
+**Example 1 — writing a beginner's vegetable garden guide (non-technical):**
+
+```
+/hve Research and write a guide to starting a home vegetable garden — cover soil prep, what to plant by season, watering, and common beginner mistakes.
+```
+
+- **Research:** Two subagents run in parallel — one researches soil preparation and planting schedules by season, one surveys common beginner mistakes and watering best practices. Sources are drawn from the model's training knowledge; you can also specify URLs to fetch (e.g. `reference almanac.com for planting schedules`) and the researcher will pull from those directly.
+- **Plan:** A structured outline is proposed — intro, soil prep, seasonal planting guide, watering, common mistakes, quick-start checklist. You review and approve: *"Does this plan look right? Proceed to writing?"*
+- **Implement:** Each section is written against the outline, grounded in the research findings.
+- **Review:** Checked for accuracy against the research, completeness against the outline, and clarity for a beginner audience.
+
+**Example 2 — writing a technical blog post (tech-adjacent, no code):**
+
+```
+/hve Research and write a blog post explaining how React Server Components work and when to use them — aimed at developers who know React but haven't used RSCs yet.
+```
+
+This uses the same four phases, but research looks different: subagents fetch the official React docs, scan the codebase for any existing RSC usage to ground examples in reality, and survey common misconceptions. The plan produces a narrative outline rather than implementation phases. Review checks technical accuracy against the docs, not code correctness.
+
+The difficulty classification still applies — a one-paragraph edit is Simple and skips subagents; a full multi-section guide warrants parallel researchers and a review pass.
+
+---
+
+**Does HVE only work with the languages listed in the instruction files?**
+
+No — HVE works with any language or tech stack. The `instructions/` files are optional style guides that give the implementor subagent pre-loaded conventions (naming, formatting, test patterns) for specific languages. If your language isn't listed, HVE will still research, plan, implement, and review — it just won't have a dedicated convention file to reference. You can add your own by creating a file in `instructions/` and referencing it in `CLAUDE.md`.
 
 ---
 
