@@ -302,6 +302,28 @@ You get a final report with a severity-graded finding list and overall status.
 
 ---
 
+## See it in action
+
+This repo was built using HVE on itself. The artifacts below are real output from running:
+
+```
+/hve Update the README and make sure it's comprehensive: describe the project, goal, what everything does, all agents and subagents, the workflow, the methodology, how to use the tool, quick setup, and benefits.
+```
+
+Not hand-crafted examples — browse them to see what each phase actually produces:
+
+| Artifact | What it shows |
+|---|---|
+| [Consolidated research](/.claude-hve-tracking/research/2026-05-29/update-readme.md) | Findings from 3 parallel researcher subagents, consolidated |
+| [Research: agents](/.claude-hve-tracking/research/2026-05-29/update-readme-agents.md) | Subagent findings on the agent inventory |
+| [Research: commands](/.claude-hve-tracking/research/2026-05-29/update-readme-commands.md) | Subagent findings on the command reference |
+| [Research: methodology](/.claude-hve-tracking/research/2026-05-29/update-readme-methodology.md) | Subagent findings on the RPI methodology |
+| [Changes log](/.claude-hve-tracking/changes/2026-05-29/update-readme-changes.md) | What the implementor did, phase by phase |
+| [RPI validation](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-rpi.md) | Did the implementation match the plan? |
+| [Quality review](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-quality.md) | 10-dimension quality check output |
+
+---
+
 ## Tracking folder structure
 
 ```
