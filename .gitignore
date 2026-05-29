@@ -1,0 +1,17 @@
+# HVE tracking — commit durable artifacts (research/plans/changes/reviews/memory),
+# ignore only the noisy, regenerable parts.
+.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/sandbox/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (if used in this repo)
+node_modules/
