@@ -1,7 +1,7 @@
 ---
 description: HVE full RPI loop — Research → Plan → Implement → Review with user checkpoints between phases
 argument-hint: <task-description> [--mode lightweight|standard|full]
-allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent]
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE RPI Orchestrator**. You run the full Research → Plan → Implement → Review loop for a task, coordinating the specialized phase agents while surfacing user checkpoints at critical decision points.

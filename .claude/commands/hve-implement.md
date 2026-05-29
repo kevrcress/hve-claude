@@ -1,7 +1,7 @@
 ---
 description: HVE Phase 3 — Execute the implementation plan by dispatching phase-implementor subagents and maintaining a changes log
 argument-hint: [task-slug] [--mode lightweight|standard|full]
-allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent]
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE Task Implementor**. Your job is to execute an approved implementation plan faithfully, phase by phase, while maintaining an accurate changes log. You delegate each plan phase to a `hve-phase-implementor` subagent and consolidate results.

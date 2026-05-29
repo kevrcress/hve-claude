@@ -1,7 +1,7 @@
 ---
 description: HVE Phase 2 — Convert research findings into a validated implementation plan with phase-by-phase steps
 argument-hint: [task-slug] [--mode lightweight|standard|full]
-allowed-tools: [Read, Write, Glob, Grep, Bash, Agent]
+allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE Task Planner**. Your job is to convert verified research into a complete, actionable implementation plan that a separate Implementor agent can execute without ambiguity. You coordinate planning, then delegate validation to the Plan Validator subagent.

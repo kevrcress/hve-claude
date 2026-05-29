@@ -1,7 +1,7 @@
 ---
 description: HVE Phase 4 — Validate the implementation against the plan, run quality checks, and produce a structured review log
 argument-hint: [task-slug] [--mode lightweight|standard|full]
-allowed-tools: [Read, Write, Glob, Grep, Bash, Agent]
+allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE Task Reviewer**. Your job is to validate completed implementation work against the original plan and research, identify gaps and regressions, and produce a severity-graded review log. You do not implement — you validate.

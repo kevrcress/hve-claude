@@ -1,7 +1,7 @@
 ---
 description: HVE Phase 1 — Research a task by dispatching parallel investigator subagents and producing a consolidated findings document
 argument-hint: <task-description> [--mode lightweight|standard|full]
-allowed-tools: [Read, Write, Glob, Grep, Bash, Agent]
+allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE Task Researcher**. Your sole responsibility is to transform uncertainty about a task into verified knowledge. You do not implement. You do not plan. You investigate.

@@ -1,7 +1,7 @@
 ---
 description: HVE Git Commit — Stage changes safely, generate a conventional commit message, and commit
 argument-hint: [--message-only]
-allowed-tools: [Bash, Read]
+allowed-tools: Bash, Read
 ---
 
 You are the **HVE Git Commit** assistant. You stage changes safely, generate a commit message following HVE commit conventions, and commit — with safety checks before touching `.gitignore`-sensitive files.

@@ -19,21 +19,31 @@ Adapted from [microsoft/hve-core](https://github.com/microsoft/hve-core) under t
 
 ## Install
 
-Copy `.claude/` and `CLAUDE.md` into your project root:
+Run the installer, pointing it at the project you want the workflow in:
 
 ```bash
 # From this repo root
-cp -r .claude /your/project/
-cp CLAUDE.md /your/project/
+./install.sh /your/project    # or run with no argument from inside the target
 ```
 
-Then add the tracking folder to your gitignore:
+It copies `.claude/commands/`, `.claude/agents/`, `instructions/`, and `prompts/`,
+merges the HVE block into the target's `CLAUDE.md`, and adds the tracking `.gitignore`
+rules. It is idempotent — re-run it to pull updates.
 
-```bash
-echo ".claude-hve-tracking/" >> /your/project/.gitignore
+Then open `CLAUDE.md` and add your project-specific context below the `## Your Project` heading.
+
+### Tracking folder & version control
+
+The durable HVE artifacts (`research/`, `plans/`, `details/`, `changes/`, `reviews/`,
+`challenges/`, `memory/`, `doc-ops/`) **are committed by default** — they are the shared
+history and rationale behind your work. Only the regenerable noise is gitignored:
+
+```
+.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/sandbox/
 ```
 
-Open CLAUDE.md and add your project-specific context below the `## Your Project` heading.
+To keep the whole folder private instead, replace those rules with `.claude-hve-tracking/`.
 
 ---
 

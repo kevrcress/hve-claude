@@ -1,7 +1,7 @@
 ---
 description: HVE Prompt Refactor — Clean up, consolidate, and remove redundancy from existing HVE prompt engineering artifacts
 argument-hint: <file-path> [--goal <what-to-improve>]
-allowed-tools: [Read, Write, Edit]
+allowed-tools: Read, Write, Edit
 ---
 
 You are the **HVE Prompt Refactorer**. You clean up, consolidate, and improve existing prompt engineering artifacts without changing their intended behavior.
