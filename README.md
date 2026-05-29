@@ -1,6 +1,6 @@
 # hve-claude
 
-**HVE Core for Claude Code** — a convention-driven agentic development workflow that enforces a Research → Plan → Implement → Review discipline, using Claude Code slash commands, parallel subagents, and durable file-based artifacts.
+**HVE (Hypervelocity Engineering) Core for Claude Code** — a convention-driven agentic development workflow that enforces a Research → Plan → Implement → Review discipline, using Claude Code slash commands, parallel subagents, and durable file-based artifacts.
 
 Adapted from [microsoft/hve-core](https://github.com/microsoft/hve-core) under the MIT License.
 
@@ -271,7 +271,7 @@ Three researcher subagents run in parallel:
 - One surveys the OAuth2 library landscape for this stack
 - One checks for existing session handling and token storage
 
-All three write their findings to `.claude-hve-tracking/research/2026-05-29/add-oauth2-api.md`. You see a summary and are asked: *"Research complete. Shall I proceed to planning?"*
+Each subagent writes its findings to `.claude-hve-tracking/research/subagents/2026-05-29/`. The orchestrator consolidates them into `.claude-hve-tracking/research/2026-05-29/add-oauth2-api.md`. You see a summary and are asked: *"Research complete. Shall I proceed to planning?"*
 
 **Phase 2 — Plan**
 
@@ -335,9 +335,6 @@ Not hand-crafted examples — browse them to see what each phase actually produc
 | Artifact | What it shows |
 |---|---|
 | [Consolidated research](/.claude-hve-tracking/research/2026-05-29/update-readme.md) | Findings from 3 parallel researcher subagents, consolidated |
-| [Research: agents](/.claude-hve-tracking/research/2026-05-29/update-readme-agents.md) | Subagent findings on the agent inventory |
-| [Research: commands](/.claude-hve-tracking/research/2026-05-29/update-readme-commands.md) | Subagent findings on the command reference |
-| [Research: methodology](/.claude-hve-tracking/research/2026-05-29/update-readme-methodology.md) | Subagent findings on the RPI methodology |
 | [Changes log](/.claude-hve-tracking/changes/2026-05-29/update-readme-changes.md) | What the implementor did, phase by phase |
 | [RPI validation](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-rpi.md) | Did the implementation match the plan? |
 | [Quality review](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-quality.md) | 10-dimension quality check output |

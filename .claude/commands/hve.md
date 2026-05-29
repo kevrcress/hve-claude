@@ -48,9 +48,10 @@ Run each phase in sequence. Use the TodoWrite tool to display live progress:
 Execute the research protocol from `/hve-research` inline (do not call the slash command — follow the same steps):
 
 1. Define research questions (3–7 specific unknowns)
-2. Spawn `hve-researcher` subagents in parallel (one per research theme)
+2. Spawn `hve-researcher` subagents in parallel (one per research theme), passing each an output path under `.claude-hve-tracking/research/subagents/YYYY-MM-DD/TASK-SLUG-THEME.md`
 3. Wait for all to complete
-4. Consolidate findings to `.claude-hve-tracking/research/YYYY-MM-DD/TASK-SLUG.md`
+4. Read each subagent's file from `subagents/YYYY-MM-DD/`
+5. Consolidate findings to `.claude-hve-tracking/research/YYYY-MM-DD/TASK-SLUG.md`
 
 Mark Research complete in the todo list.
 

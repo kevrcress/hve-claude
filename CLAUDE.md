@@ -1,4 +1,4 @@
-# HVE Claude — Human-Value Engineering for Claude Code
+# HVE Claude — Hypervelocity Engineering for Claude Code
 
 This repository provides the **HVE Core** workflow adapted natively for Claude Code. It implements the Research → Plan → Implement → Review (RPI) methodology using slash commands, subagents, and durable file-based handoff artifacts.
 
@@ -44,7 +44,7 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 | `/hve-doc-ops` | Documentation QA and gap detection | After major feature work |
 | `/hve-prompt-builder` | Iterative prompt engineering sandbox | When authoring new HVE agents or prompts |
 | `/hve-prompt-analyze <file>` | Evaluate an existing artifact against quality criteria | Quick quality check without full rebuild |
-| `/hve-prompt-refactor <file>` | Clean up and de-Copilot an existing artifact | When porting or cleaning up prompt files |
+| `/hve-prompt-refactor <file>` | Remove low-quality or AI-generated boilerplate from an existing artifact | When porting or cleaning up prompt files |
 | `/hve-git-commit` | Stage safely, generate conventional commit message, commit | Before every commit |
 | `/hve-git-merge <op> <branch>` | Merge / rebase / rebase-onto with conflict handling | When integrating branches |
 | `/hve-git-setup` | Audit and configure git identity and tooling | New machine or project setup |
@@ -55,7 +55,7 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 
 ## Tracking Folder Structure
 
-All runtime artifacts live in `.claude-hve-tracking/` (gitignored). This folder is the handoff medium between phases and between sessions.
+All runtime artifacts live in `.claude-hve-tracking/`. Durable artifacts are committed; only regenerable output is gitignored — see [Tracking folder & version control](#tracking-folder--version-control) below. This folder is the handoff medium between phases and between sessions.
 
 ```
 .claude-hve-tracking/
@@ -63,8 +63,8 @@ All runtime artifacts live in `.claude-hve-tracking/` (gitignored). This folder 
 │   ├── YYYY-MM-DD/topic.md                    # Consolidated findings
 │   └── subagents/YYYY-MM-DD/topic.md           # Per-subagent raw findings
 ├── plans/
-│   ├── YYYY-MM-DD/task-slug-plan.md            # Implementation plan (phases + deps)
-│   └── logs/YYYY-MM-DD/task-slug-log.md        # Planning discrepancy log (DR-/DD- items)
+│   ├── YYYY-MM-DD/task-slug-plan.md            # Implementation plan (phases + dependencies)
+│   └── logs/YYYY-MM-DD/task-slug-log.md        # Planning discrepancy log (DR-/DD- items; DR = Discrepancy from Research, DD = Design Decision)
 ├── details/
 │   └── YYYY-MM-DD/task-slug-details.md         # Implementation details
 ├── changes/
@@ -109,7 +109,7 @@ Used in all review, validation, and challenge agents:
 | **Major** | Specification deviation that degrades correctness, maintainability, or security |
 | **Minor** | Style gap, documentation omission, or improvement opportunity |
 
-Finding ID format: `IV-001`, `IV-002`, ... (sequential per session, reset per artifact)
+Finding ID format: `IV-001`, `IV-002`, ... (sequential per session, reset per artifact; IV = Implementation Validation)
 
 ---
 
@@ -144,7 +144,7 @@ Use plain workspace-relative paths. No markdown hyperlinks in findings.
 All HVE subagents return in this format (never more):
 
 1. One line: artifact path written (the parent re-reads this for detail)
-2. One line: status (Pass / Fail / Complete / Blocked)
+2. One line: status — validators use Pass / Fail; other agents use Complete / Blocked
 3. Up to **7 bullet-point findings** (≤ 240 chars each; prioritize Critical/Major)
 4. A checklist of up to **5 recommended follow-on items** not yet completed
 5. Up to **3 clarifying questions** — only if blocking
@@ -177,7 +177,7 @@ The `/hve` orchestrator omits this block (it handles transitions internally).
 - Phase commands are **fully self-contained**: they discover tracking artifacts from disk, not from conversation history.
 - For tasks spanning multiple phases: **starting a new conversation per phase** is recommended to keep context lean.
 - For simple tasks (< 50 lines, one phase): continuing in the same conversation is fine.
-- No manual file attachment or `/clear` equivalent is needed — just run the next command.
+- No manual file attachment or context management is needed — just run the next command.
 
 ---
 
@@ -189,11 +189,16 @@ Before implementing in a specific language or tool, read the relevant convention
 |---|---|
 | Bash | `instructions/bash.md` |
 | Python | `instructions/python.md` |
+| Python (uv) | `instructions/python-uv.md` |
+| Python Tests | `instructions/python-tests.md` |
 | C# | `instructions/csharp.md` |
+| C# Tests | `instructions/csharp-tests.md` |
 | Rust | `instructions/rust.md` |
+| Rust Tests | `instructions/rust-tests.md` |
 | Terraform | `instructions/terraform.md` |
 | Markdown | `instructions/markdown.md` |
 | Git commits | `instructions/git-commit-messages.md` |
+| Writing Style | `instructions/writing-style.md` |
 
 Phase commands that involve implementation explicitly instruct Claude to read the relevant file before writing code.
 
@@ -201,7 +206,7 @@ Phase commands that involve implementation explicitly instruct Claude to read th
 
 ## Security Hygiene
 
-All implementation reviews check these automatically (via the `hve-implementation-validator` subagent, dimension 10):
+All implementation reviews check these automatically (via the `hve-implementation-validator` subagent, dimension 9):
 
 - **Secret exposure**: grep changed files for `PRIVATE KEY`, `api_key\s*=`, `password\s*=`, `Bearer `, `-----BEGIN`, AWS/GCP key prefixes
 - **.gitignore hygiene**: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12` must be listed
@@ -270,4 +275,10 @@ whole folder private instead, replace those rules with `.claude-hve-tracking/`.
 <!-- Add your project-specific context below this line.
      The HVE conventions above apply to all projects.
      Your context should describe: tech stack, key conventions, testing approach,
-     critical files to be aware of, and any constraints that affect implementation. -->
+     critical files to be aware of, and any constraints that affect implementation.
+
+     Example:
+     - Stack: Node.js 20 / TypeScript / PostgreSQL
+     - Tests: Jest, run with `npm test`; integration tests require a running DB
+     - Key files: src/server.ts (entrypoint), prisma/schema.prisma (data model)
+     - Constraints: no breaking changes to the public API without a migration guide -->
