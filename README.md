@@ -308,6 +308,14 @@ You get a final report with a severity-graded finding list and overall status.
 
 ---
 
+## Limitations
+
+**HVE verifies structure, not external truth.** Researchers treat the codebase as the source of truth — they'll confirm a term *is* defined, but won't catch a wrong definition unless you tell them where to verify against. Example: vanilla Claude Code defined HVE as "Human-Value Engineering" (incorrect). When asked to audit CLAUDE.md and verify abbreviations were correctly defined, `/hve-research` marked it ✅ — because the term *was* defined. It only caught the error when explicitly told to cross-reference against the Microsoft repo, where the correct definition ("Hypervelocity Engineering") is documented.
+
+**Tip:** If your task involves verifying correctness against a spec, upstream repo, or external standard, include the reference explicitly in your prompt — e.g. *"verify terms against microsoft/hve-core."*
+
+---
+
 ## See it in action
 
 This repo was initially built with vanilla Claude Code, then HVE was installed into itself and used to improve its own README. The artifacts below are real output from that first dogfood run:
