@@ -38,6 +38,8 @@ git clone https://github.com/kevrcress/hve-claude
 /hve add OAuth2 authentication to the API
 ```
 
+_(Replace the OAuth2 example with your actual task — that's just an example of how you'd phrase a prompt.)_
+
 That's it. Claude researches, plans, implements, and reviews — pausing for your approval between phases.
 
 ---
@@ -51,6 +53,8 @@ That's it. Claude researches, plans, implements, and reviews — pausing for you
 ---
 
 ## How it works
+
+> **Note:** The examples throughout this documentation use "add OAuth2 authentication to the API" as a sample task. Substitute any task relevant to your project.
 
 HVE runs a four-phase loop. Each phase is handled by a specialized agent that only does one thing:
 
@@ -249,6 +253,8 @@ To keep the entire tracking folder private instead, replace those rules with:
 ---
 
 ## Workflow walkthrough
+
+> **Note:** "Add OAuth2 authentication to the API" is used as an example task throughout — substitute your own.
 
 Here's what happens when you run `/hve add OAuth2 to the API`:
 
