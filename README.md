@@ -29,7 +29,13 @@ Works for new or existing projects — never touches your source code.
 
 1. Paste this into Claude Code in your project directory to install HVE:
 ```
-Please install HVE into this project: clone https://github.com/kevrcress/hve-claude to a temporary directory, run install.sh targeting the current directory, then clean up the temp clone.
+Please install the HVE Claude Code workflow into this project. Clone
+https://github.com/kevrcress/hve-claude into a temporary directory, then
+copy its hve-* commands and agents into my .claude/ folder, copy its
+instructions/ and prompts/ files in, and merge everything above the
+'## Your Project' heading in its CLAUDE.md into mine without disturbing my
+own content. Add the .claude-hve-tracking subagents and sandbox paths to
+my .gitignore, then delete the temp clone and show me what changed.
 ```
 2. Paste this to add your project context:
 ```
@@ -42,7 +48,7 @@ Please add context about this project under ## Your Project in CLAUDE.md.
 
 That's it. Claude researches, plans, implements, and reviews — pausing for your approval between phases.
 
-> **Prefer the terminal?** Clone the repo anywhere outside your project and run `./hve-claude/install.sh /path/to/your/project` manually.
+> **Prefer manual steps or the bash installer?** See the [Installation](#installation) section below for Option B (step-by-step manual instructions) and the bash script option for Mac/Linux/WSL users.
 
 ---
 
@@ -201,25 +207,97 @@ These commands are for extending HVE itself — building new slash commands, age
 
 ## Installation
 
-### Step 1: Run the installer
+### Option A — Paste to install (recommended)
 
-```bash
-# From the hve-claude repo root
-./install.sh /path/to/your/project
+Paste this into Claude Code from inside your project directory. Claude will clone the repo, copy all the files, merge the HVE block into your CLAUDE.md, add the .gitignore rules, and clean up — no shell scripts needed.
 
-# Or from inside the target project
-/path/to/hve-claude/install.sh
+```
+Please install the HVE Claude Code workflow into this project. Clone
+https://github.com/kevrcress/hve-claude into a temporary directory, then
+copy its hve-* commands and agents into my .claude/ folder, copy its
+instructions/ and prompts/ files in, and merge everything above the
+'## Your Project' heading in its CLAUDE.md into mine without disturbing my
+own content. Add the .claude-hve-tracking subagents and sandbox paths to
+my .gitignore, then delete the temp clone and show me what changed.
 ```
 
-The installer:
-- Copies `.claude/commands/hve*.md` and `.claude/agents/hve*.md` into your project
-- Copies `instructions/` (language conventions) and `prompts/` (reusable task prompts: `rpi.md`, `checkpoint.md`, `doc-ops.md`, `pull-request.md`, `task-challenge.md`, `prompt-build.md`)
-- **Merges** the HVE methodology block into your project's `CLAUDE.md` — it preserves any content you have under `## Your Project` and is safe to re-run
-- Adds `.gitignore` rules for the regenerable parts of `.claude-hve-tracking/`
+Works on any OS. Claude uses its own file tools — no shell execution required.
 
-The installer is **idempotent** — re-run it any time to pull in updates from this repo.
+---
 
-### Step 2: Add your project context
+### Option B — Manual steps
+
+Follow these steps on any OS (Mac, Windows, Linux):
+
+1. Clone or download the repo to a temporary directory:
+   ```bash
+   git clone https://github.com/kevrcress/hve-claude /tmp/hve-claude
+   ```
+   Or download a ZIP from GitHub and unzip to any temp directory.
+
+2. Copy commands into your project (create the directory if needed):
+   ```
+   Source:  hve-claude/.claude/commands/hve*.md
+   Target:  <your-project>/.claude/commands/
+   ```
+
+3. Copy agents:
+   ```
+   Source:  hve-claude/.claude/agents/hve*.md
+   Target:  <your-project>/.claude/agents/
+   ```
+
+4. Copy instruction files:
+   ```
+   Source:  hve-claude/instructions/*.md
+   Target:  <your-project>/instructions/
+   ```
+
+5. Copy prompt files:
+   ```
+   Source:  hve-claude/prompts/*.md
+   Target:  <your-project>/prompts/
+   ```
+
+6. Merge the HVE block into your `CLAUDE.md`. Open `hve-claude/CLAUDE.md` and copy everything above the `## Your Project` heading. Wrap it in these markers:
+   ```
+   <!-- HVE:START — managed by install.sh, do not edit between markers -->
+   ...pasted HVE block...
+   <!-- HVE:END -->
+   ```
+   Then apply the case that matches your project:
+   - **No CLAUDE.md yet:** Create one. Paste the wrapped block, then add `## Your Project` and your project context below it.
+   - **CLAUDE.md exists with the markers:** Replace everything between the markers. Leave all content outside the markers untouched.
+   - **CLAUDE.md exists without the markers:** Prepend the wrapped block to the top of the file. Leave your existing content below it.
+
+7. Add these lines to your `.gitignore` (create if needed). Skip any lines already present:
+   ```
+   # HVE tracking — commit durable artifacts, ignore regenerable noise
+   .claude-hve-tracking/**/subagents/
+   .claude-hve-tracking/sandbox/
+   ```
+
+Re-installing to get updates: repeat steps 1–7 — all steps are idempotent.
+
+---
+
+### Terminal / bash users (optional)
+
+A bash installer is available for Mac, Linux, WSL, or Git Bash on Windows:
+
+```bash
+# From inside your project
+/path/to/hve-claude/install.sh
+
+# Or targeting a specific project
+./install.sh /path/to/your/project
+```
+
+The script runs the same steps as Option B above and is idempotent — safe to re-run to pull in updates.
+
+---
+
+### Add your project context
 
 Open `CLAUDE.md` and add your project-specific details under `## Your Project`:
 
@@ -507,7 +585,7 @@ Run the standalone phase commands directly. If you already know what needs to be
 
 **How do I update HVE in my project?**
 
-Pull the latest from this repo and re-run `install.sh` — it's idempotent. It overwrites the command and agent files but preserves your `## Your Project` section in `CLAUDE.md`.
+Re-paste the Option A prompt into Claude Code, follow the Option B manual steps again, or re-run `install.sh` (bash users) — all three paths are idempotent. They overwrite the command and agent files but preserve your `## Your Project` section in `CLAUDE.md`.
 
 ---
 
