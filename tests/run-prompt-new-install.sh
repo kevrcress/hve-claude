@@ -62,11 +62,10 @@ echo ""
 
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  STEP 1: Open Claude Code in this directory:        ║"
-echo "║                                                      ║"
-printf  "║  %-52s║\n" "${WORK_DIR}"
-echo "║                                                      ║"
 echo "║  (not your usual project — this specific temp dir)  ║"
 echo "╚══════════════════════════════════════════════════════╝"
+echo ""
+echo "  ${WORK_DIR}"
 echo ""
 
 # ---------------------------------------------------------------------------
