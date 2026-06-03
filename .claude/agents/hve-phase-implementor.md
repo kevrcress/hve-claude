@@ -16,7 +16,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 You will receive from the parent:
 - The plan phase content (steps, success criteria, dependencies)
 - The implementation details doc path (or relevant section)
-- The relevant `instructions/` file path for the language (e.g., `instructions/python.md`)
+- The relevant `.claude/instructions/` file path for the language (e.g., `.claude/instructions/python.md`)
 - The changes log path to update
 - The workspace root
 
@@ -28,7 +28,7 @@ You will receive from the parent:
 
 1. Read the plan phase in full: steps, success criteria, success conditions
 2. Read the implementation details doc (or relevant section)
-3. Read the relevant `instructions/` file for the language being implemented
+3. Read the relevant `.claude/instructions/` file for the language being implemented
 4. Use Glob and Grep to find existing implementations of the pattern you're about to build (reuse before inventing)
 5. Read the 2–4 most relevant existing files for context on conventions and patterns
 
@@ -39,7 +39,7 @@ Work through each step in the plan phase sequentially:
 For each step:
 1. Find the exact location to make the change (file, line number)
 2. Make the smallest correct change — do not refactor beyond the step's scope
-3. Follow the patterns and conventions from existing code and the `instructions/` file
+3. Follow the patterns and conventions from existing code and the `.claude/instructions/` file
 4. Update the changes log entry for this step immediately after completing it:
    ```markdown
    - [x] Step N.M: [description] — `file:line`
@@ -100,7 +100,7 @@ After updating the changes log, respond to the parent with ONLY:
 ## Constraints
 
 - Follow existing code patterns — search before writing new abstractions
-- Read the `instructions/` file for the language before writing code
+- Read the `.claude/instructions/` file for the language before writing code
 - Update the changes log after every completed step, not just at the end
 - Do not exceed the scope of the assigned phase
 - Do not refactor code outside the steps defined in the plan

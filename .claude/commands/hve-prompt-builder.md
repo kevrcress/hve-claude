@@ -23,7 +23,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 1. Understand what kind of artifact is being built:
    - Slash command (`.claude/commands/`)
    - Agent definition (`.claude/agents/`)
-   - Instruction file (`instructions/`)
+   - Instruction file (`.claude/instructions/`)
    - Reusable prompt (`prompts/`)
 2. Read existing similar artifacts for pattern reference
 3. Create the sandbox directory: `.claude-hve-tracking/sandbox/YYYY-MM-DD-TOPIC-run-01/`
@@ -84,7 +84,7 @@ After iterations complete:
 3. On confirmation, write to the appropriate location:
    - `.claude/commands/` for slash commands
    - `.claude/agents/` for agent definitions
-   - `instructions/` for instruction files
+   - `.claude/instructions/` for instruction files
    - `prompts/` for reusable prompts
 
 ```

@@ -27,7 +27,7 @@ Before starting, read the plan in full. Confirm all plan phases and their depend
 1. Read the plan and details documents
 2. Build a dependency graph of plan phases (which phases must complete before others can start)
 3. Identify which phases can run in parallel (no dependencies between them)
-4. Read the relevant `instructions/` file for the primary language involved (e.g., `instructions/python.md`) — instruct subagents to do the same
+4. Read the relevant `.claude/instructions/` file for the primary language involved (e.g., `.claude/instructions/python.md`) — instruct subagents to do the same
 5. Create the changes log file if it doesn't exist:
    `.claude-hve-tracking/changes/YYYY-MM-DD/TASK-SLUG-changes.md`
 
@@ -68,7 +68,7 @@ For each plan phase (respecting dependencies):
 2. Pass it:
    - The plan phase content (steps, success criteria, dependencies)
    - The details doc (or the relevant section)
-   - The relevant `instructions/` file path for the language
+   - The relevant `.claude/instructions/` file path for the language
    - The changes log path to update
    - The workspace root
 3. Wait for the subagent to complete
