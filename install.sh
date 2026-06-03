@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# install.sh — install the HVE Claude Code workflow into a project.
+# install.sh: install the HVE Claude Code workflow into a project.
 #
 # Usage:
 #   ./install.sh [target-dir]
@@ -8,7 +8,7 @@
 #   target-dir   Project to install into. Defaults to the current directory.
 #                Pass a path to install elsewhere, e.g. ./install.sh ~/code/my-app
 #
-# What it does (idempotent — safe to re-run for updates):
+# What it does (idempotent; safe to re-run for updates):
 #   - copies hve-* slash commands     -> <target>/.claude/commands/
 #   - copies hve-* agents             -> <target>/.claude/agents/
 #   - copies .claude/instructions/ and prompts/ reference docs
@@ -29,7 +29,7 @@ if [ "$SOURCE" = "$TARGET" ]; then
 fi
 
 if [ ! -d "$SOURCE/.claude/commands" ] || [ ! -d "$SOURCE/.claude/instructions" ]; then
-  echo "error: HVE source at $SOURCE appears incomplete — .claude/commands/ or .claude/instructions/ is missing." >&2
+  echo "error: HVE source at $SOURCE appears incomplete: .claude/commands/ or .claude/instructions/ is missing." >&2
   echo "       Ensure you are running install.sh from the root of the hve-claude repository." >&2
   exit 1
 fi
@@ -73,7 +73,7 @@ if [ -d "$OLD_INSTRUCTIONS_DIR" ]; then
         rm "$old_file"
         _migrated=$((_migrated + 1))
       else
-        echo "  ! kept instructions/$fname — it differs from the installed version (possible local customization); review and remove manually if unneeded."
+        echo "  ! kept instructions/$fname: it differs from the installed version (possible local customization); review and remove manually if unneeded."
         _kept=$((_kept + 1))
       fi
     fi
@@ -86,7 +86,7 @@ if [ -d "$OLD_INSTRUCTIONS_DIR" ]; then
       echo "  ✓ migrated instructions/ to .claude/instructions/ (removed old top-level copy)"
     fi
   elif [ "$_kept" -eq 0 ] && [ "$_migrated" -eq 0 ]; then
-    : # directory had no HVE files — leave it untouched silently
+    : # directory had no HVE files; leave it untouched silently
   fi
 fi
 
@@ -146,7 +146,7 @@ add_ignore() {
 }
 if [ ! -f "$GITIGNORE" ] || ! grep -qF ".claude-hve-tracking" "$GITIGNORE"; then
   [ -f "$GITIGNORE" ] && printf '\n' >> "$GITIGNORE"
-  printf '# HVE tracking — commit durable artifacts, ignore regenerable noise\n' >> "$GITIGNORE"
+  printf '# HVE tracking: commit durable artifacts, ignore regenerable noise\n' >> "$GITIGNORE"
 fi
 add_ignore '.claude-hve-tracking/**/subagents/'
 add_ignore '.claude-hve-tracking/sandbox/'
