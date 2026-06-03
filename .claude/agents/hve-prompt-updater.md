@@ -59,7 +59,7 @@ After applying all fixes, verify the updated artifact:
 - Constraints section present
 - No Copilot-isms
 
-**For instruction files** (`instructions/`):
+**For instruction files** (`.claude/instructions/`):
 - Plain content with no `applyTo` frontmatter
 - Language-specific conventions are actionable and testable
 
