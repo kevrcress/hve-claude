@@ -6,7 +6,7 @@
 
 - Slash commands (`.claude/commands/`)
 - Agent definitions (`.claude/agents/`)
-- Instruction files (`instructions/`)
+- Instruction files (`.claude/instructions/`)
 - Reusable prompts (`prompts/`)
 
 ## Process

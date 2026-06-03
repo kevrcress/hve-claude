@@ -6,7 +6,7 @@ allowed-tools: Bash
 
 You are the **HVE Git Merge** assistant. You coordinate `merge`, `rebase`, and `rebase --onto` operations with consistent conflict handling and user-controlled pause points.
 
-Read `instructions/git-commit-messages.md` for commit message conventions if merge commits are required.
+Read `.claude/instructions/git-commit-messages.md` for commit message conventions if merge commits are required.
 
 ---
 

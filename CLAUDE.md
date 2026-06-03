@@ -187,18 +187,18 @@ Before implementing in a specific language or tool, read the relevant convention
 
 | Language / Tool | File |
 |---|---|
-| Bash | `instructions/bash.md` |
-| Python | `instructions/python.md` |
-| Python (uv) | `instructions/python-uv.md` |
-| Python Tests | `instructions/python-tests.md` |
-| C# | `instructions/csharp.md` |
-| C# Tests | `instructions/csharp-tests.md` |
-| Rust | `instructions/rust.md` |
-| Rust Tests | `instructions/rust-tests.md` |
-| Terraform | `instructions/terraform.md` |
-| Markdown | `instructions/markdown.md` |
-| Git commits | `instructions/git-commit-messages.md` |
-| Writing Style | `instructions/writing-style.md` |
+| Bash | `.claude/instructions/bash.md` |
+| Python | `.claude/instructions/python.md` |
+| Python (uv) | `.claude/instructions/python-uv.md` |
+| Python Tests | `.claude/instructions/python-tests.md` |
+| C# | `.claude/instructions/csharp.md` |
+| C# Tests | `.claude/instructions/csharp-tests.md` |
+| Rust | `.claude/instructions/rust.md` |
+| Rust Tests | `.claude/instructions/rust-tests.md` |
+| Terraform | `.claude/instructions/terraform.md` |
+| Markdown | `.claude/instructions/markdown.md` |
+| Git commits | `.claude/instructions/git-commit-messages.md` |
+| Writing Style | `.claude/instructions/writing-style.md` |
 
 Phase commands that involve implementation explicitly instruct Claude to read the relevant file before writing code.
 
@@ -245,7 +245,7 @@ Run the installer from this repo, pointing it at the target project:
 ./install.sh /path/to/your/project   # or run with no argument from inside the target
 ```
 
-The installer copies `.claude/commands/`, `.claude/agents/`, `instructions/`, and
+The installer copies `.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, and
 `prompts/`, merges the HVE block into the target's `CLAUDE.md`, and adds the tracking
 `.gitignore` rules. It is idempotent — re-run it to pull updates.
 

@@ -17,7 +17,7 @@
 
 ## Excludes
 
-Prompt engineering artifacts (`.claude/commands/`, `.claude/agents/`, `instructions/`, `prompts/`) — use `/hve-prompt-analyze` for those.
+Prompt engineering artifacts (`.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, `prompts/`) — use `/hve-prompt-analyze` for those.
 
 ## Output
 
