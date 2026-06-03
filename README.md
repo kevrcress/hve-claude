@@ -32,10 +32,16 @@ Works for new or existing projects — never touches your source code.
 Please install the HVE Claude Code workflow into this project. Clone
 https://github.com/kevrcress/hve-claude into a temporary directory, then
 copy its hve-* commands and agents into my .claude/ folder, copy its
-instructions/ and prompts/ files in, and merge everything above the
-'## Your Project' heading in its CLAUDE.md into mine without disturbing my
-own content. Add the .claude-hve-tracking subagents and sandbox paths to
-my .gitignore, then delete the temp clone and show me what changed.
+.claude/instructions/ and prompts/ files in, and merge everything above the
+'## Your Project' heading in its CLAUDE.md into mine wrapped in these markers:
+<!-- HVE:START - managed by install.sh, do not edit between markers -->
+...HVE content...
+<!-- HVE:END -->
+If my CLAUDE.md already has those markers, replace the content between them.
+If it has no markers, prepend the wrapped block before my existing content.
+Never touch anything outside the markers or below '## Your Project'. Add the
+.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
+delete the temp clone and show me what changed.
 ```
 2. Paste this to add your project context:
 ```
@@ -78,7 +84,7 @@ HVE runs a four-phase loop. Each phase is handled by a specialized agent that on
                         ↓  [checkpoint: "Plan ready. Proceed to implementation?"]
 
   Phase 3 — Implement   Dispatches phase-implementor subagents per plan phase. Each reads the
-                        relevant instructions/ file, writes code, and updates the changes log.
+                        relevant .claude/instructions/ file, writes code, and updates the changes log.
                         ↓  [checkpoint: "Implementation complete. Run review?"]
 
   Phase 4 — Review      RPI-validator subagents check each phase against the plan. An
@@ -209,16 +215,22 @@ These commands are for extending HVE itself — building new slash commands, age
 
 ### Option A — Paste to install (recommended)
 
-Paste this into Claude Code from inside your project directory. Claude will clone the repo, copy all the files, merge the HVE block into your CLAUDE.md, add the .gitignore rules, and clean up — no shell scripts needed.
+Paste this into Claude Code from inside your project directory. Claude will clone the repo, copy all the files, merge the HVE block into your CLAUDE.md wrapped in update markers, add the .gitignore rules, and clean up — no shell scripts needed.
 
 ```
 Please install the HVE Claude Code workflow into this project. Clone
 https://github.com/kevrcress/hve-claude into a temporary directory, then
 copy its hve-* commands and agents into my .claude/ folder, copy its
-instructions/ and prompts/ files in, and merge everything above the
-'## Your Project' heading in its CLAUDE.md into mine without disturbing my
-own content. Add the .claude-hve-tracking subagents and sandbox paths to
-my .gitignore, then delete the temp clone and show me what changed.
+.claude/instructions/ and prompts/ files in, and merge everything above the
+'## Your Project' heading in its CLAUDE.md into mine wrapped in these markers:
+<!-- HVE:START - managed by install.sh, do not edit between markers -->
+...HVE content...
+<!-- HVE:END -->
+If my CLAUDE.md already has those markers, replace the content between them.
+If it has no markers, prepend the wrapped block before my existing content.
+Never touch anything outside the markers or below '## Your Project'. Add the
+.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
+delete the temp clone and show me what changed.
 ```
 
 Works on any OS. Claude uses its own file tools — no shell execution required.
@@ -249,8 +261,8 @@ Follow these steps on any OS (Mac, Windows, Linux):
 
 4. Copy instruction files:
    ```
-   Source:  hve-claude/instructions/*.md
-   Target:  <your-project>/instructions/
+   Source:  hve-claude/.claude/instructions/*.md
+   Target:  <your-project>/.claude/instructions/
    ```
 
 5. Copy prompt files:
@@ -261,7 +273,7 @@ Follow these steps on any OS (Mac, Windows, Linux):
 
 6. Merge the HVE block into your `CLAUDE.md`. Open `hve-claude/CLAUDE.md` and copy everything above the `## Your Project` heading. Wrap it in these markers:
    ```
-   <!-- HVE:START — managed by install.sh, do not edit between markers -->
+   <!-- HVE:START - managed by install.sh, do not edit between markers -->
    ...pasted HVE block...
    <!-- HVE:END -->
    ```
@@ -279,6 +291,8 @@ Follow these steps on any OS (Mac, Windows, Linux):
 
 Re-installing to get updates: repeat steps 1–7 — all steps are idempotent.
 
+**Upgrading from an older install?** Prior versions placed instruction files at `<your-project>/instructions/`. The new location is `<your-project>/.claude/instructions/`. After copying the files to the new location, remove the old folder manually: for each file in `instructions/`, if it matches the installed version byte-for-byte, delete it; if it differs (local customization), leave it and migrate manually. Remove `instructions/` with `rmdir` once it is empty — never `rm -rf`. The HVE instruction files are: `bash.md`, `csharp.md`, `csharp-tests.md`, `python.md`, `python-tests.md`, `python-uv.md`, `rust.md`, `rust-tests.md`, `terraform.md`, `markdown.md`, `git-commit-messages.md`, `writing-style.md`.
+
 ---
 
 ### Terminal / bash users (optional)
@@ -293,7 +307,34 @@ A bash installer is available for Mac, Linux, WSL, or Git Bash on Windows:
 ./install.sh /path/to/your/project
 ```
 
-The script runs the same steps as Option B above and is idempotent — safe to re-run to pull in updates.
+The script runs the same steps as Option B above and is idempotent — safe to re-run to pull in updates. On upgrade it automatically migrates any old top-level `instructions/` folder: identical files are removed silently; customized files are left in place with a warning.
+
+---
+
+### Updating an existing install
+
+Paste this into Claude Code from inside your project directory. It overwrites commands, agents, instruction files, and prompts with the latest versions, refreshes the HVE block in your `CLAUDE.md` without touching your `## Your Project` content, and migrates any old top-level `instructions/` folder to `.claude/instructions/` (identical files removed silently; customized files left with a warning).
+
+```
+Please update the HVE Claude Code workflow in this project. Clone
+https://github.com/kevrcress/hve-claude into a temporary directory, then
+overwrite the hve-* files in .claude/commands/ and .claude/agents/, overwrite
+all files in .claude/instructions/ and prompts/ with the latest versions, and
+update the HVE block in my CLAUDE.md with the new content from the cloned
+repo (everything above its '## Your Project' heading), wrapped in these
+markers:
+<!-- HVE:START - managed by install.sh, do not edit between markers -->
+...HVE content...
+<!-- HVE:END -->
+If my CLAUDE.md already has those markers, replace the content between them.
+If it has no markers, find the existing HVE block (it begins with the HVE
+heading and ends just before my project-specific content), replace it with the
+new content wrapped in the markers above. Never touch anything outside the
+markers or my project-specific content. If an instructions/ folder exists at
+the project root from a prior install, move any file that matches the installed
+version byte-for-byte to .claude/instructions/ and remove the folder once it
+is empty. Delete the temp clone and show me what changed.
+```
 
 ---
 
@@ -336,6 +377,44 @@ To keep the entire tracking folder private instead, replace those rules with:
 
 ---
 
+## Development
+
+### Branch strategy
+
+Work happens on `feature/` branches, which merge into `dev`. Once all tests pass on `dev`, it merges into `main`. Nothing goes directly to `main` — all changes are tested before they land.
+
+### Running the automated tests
+
+No network connection required. Run from the repo root:
+
+```bash
+./tests/run-install-tests.sh
+```
+
+Covers 5 install.sh scenarios: new install, prepend case, clean upgrade, old em-dash marker upgrade, and diverged upgrade. All tests should print `[ OK ]`.
+
+### Running the prompt tests
+
+These test the natural-language install and update prompts from the README. They require:
+
+1. The `dev` branch pushed to GitHub (the scripts clone `dev`)
+2. Claude Code available in your terminal
+
+Run each script separately — each seeds a temp project, prints the exact prompt to paste, and waits:
+
+```bash
+./tests/run-prompt-new-install.sh   # tests Option A install prompt
+./tests/run-prompt-upgrade.sh       # tests the update prompt
+```
+
+Open Claude Code in the directory shown, paste the prompt, then press Enter when Claude finishes. The script asserts the expected outcome and prints a pass/fail summary.
+
+### Prompt script maintenance
+
+The prompt scripts embed the Option A and update prompts verbatim, with the clone URL pointing to the `dev` branch. If those prompts change in a future release, update the corresponding script to match.
+
+---
+
 ## Workflow walkthrough
 
 > **Note:** "Add OAuth2 authentication to the API" is used as an example task throughout — substitute your own.
@@ -364,7 +443,7 @@ A `hve-plan-validator` subagent checks the plan against the research for gaps or
 
 **Phase 3 — Implement**
 
-Independent phases run in parallel (phases 1 and 5 can run simultaneously). Each `hve-phase-implementor` subagent reads `instructions/` for the relevant language before writing any code, then updates the changes log. You see a summary of files changed and are asked: *"Implementation complete. Shall I run the review?"*
+Independent phases run in parallel (phases 1 and 5 can run simultaneously). Each `hve-phase-implementor` subagent reads `.claude/instructions/` for the relevant language before writing any code, then updates the changes log. You see a summary of files changed and are asked: *"Implementation complete. Shall I run the review?"*
 
 **Phase 4 — Review**
 
@@ -455,7 +534,7 @@ Not hand-crafted examples — browse them to see what each phase actually produc
 
 ## Language instruction files
 
-HVE works with any language or tech stack — these instruction files are optional style guides, not a requirement. The `hve-phase-implementor` reads the relevant file in `instructions/` before writing code if one exists for that language. If your language isn't listed, HVE still implements — it just won't have a pre-loaded convention guide. You can add your own instruction files for any language and reference them in `CLAUDE.md`.
+HVE works with any language or tech stack — these instruction files are optional style guides, not a requirement. The `hve-phase-implementor` reads the relevant file in `.claude/instructions/` before writing code if one exists for that language. If your language isn't listed, HVE still implements — it just won't have a pre-loaded convention guide. You can add your own instruction files for any language and reference them in `CLAUDE.md`.
 
 The files below are included out of the box (ported from the MS repo):
 
@@ -573,7 +652,7 @@ The difficulty classification still applies — a one-paragraph edit is Simple a
 
 **Does HVE only work with the languages listed in the instruction files?**
 
-No — HVE works with any language or tech stack. The `instructions/` files are optional style guides that give the implementor subagent pre-loaded conventions (naming, formatting, test patterns) for specific languages. If your language isn't listed, HVE will still research, plan, implement, and review — it just won't have a dedicated convention file to reference. You can add your own by creating a file in `instructions/` and referencing it in `CLAUDE.md`.
+No — HVE works with any language or tech stack. The `.claude/instructions/` files are optional style guides that give the implementor subagent pre-loaded conventions (naming, formatting, test patterns) for specific languages. If your language isn't listed, HVE will still research, plan, implement, and review — it just won't have a dedicated convention file to reference. You can add your own by creating a file in `.claude/instructions/` and referencing it in `CLAUDE.md`.
 
 ---
 
@@ -585,13 +664,68 @@ Run the standalone phase commands directly. If you already know what needs to be
 
 **How do I update HVE in my project?**
 
-Re-paste the Option A prompt into Claude Code, follow the Option B manual steps again, or re-run `install.sh` (bash users) — all three paths are idempotent. They overwrite the command and agent files but preserve your `## Your Project` section in `CLAUDE.md`.
+Use the [update prompt](#updating-an-existing-install) in the Installation section, follow the Option B manual steps again, or re-run `install.sh` (bash users) — all three paths are idempotent. They overwrite the command and agent files but preserve your `## Your Project` section in `CLAUDE.md`.
 
 ---
 
 **How do I extend or customize HVE?**
 
-Add your own language instruction files to `instructions/` and reference them in `CLAUDE.md`. Add prompts to `prompts/`. Modify agent definitions in `.claude/agents/` — or use `/hve-prompt-builder` to iteratively develop new ones with an automated test-evaluate-update loop.
+Add your own language instruction files to `.claude/instructions/` and reference them in `CLAUDE.md`. Add prompts to `prompts/`. Modify agent definitions in `.claude/agents/` — or use `/hve-prompt-builder` to iteratively develop new ones with an automated test-evaluate-update loop.
+
+---
+
+## Testing locally
+
+Use these steps to verify changes to the install and update paths before rolling them out. All `install.sh` commands below are run from the root of this repo.
+
+### install.sh — idempotent upgrade
+
+Run against a throwaway copy of an existing HVE project:
+
+```bash
+cp -r /path/to/existing-hve-project /tmp/hve-upgrade-test
+./install.sh /tmp/hve-upgrade-test
+```
+
+Expected: `✓ updated CLAUDE.md HVE block` (not `created`). Diff `CLAUDE.md` to confirm only the content between the `HVE:START` / `HVE:END` markers changed and your `## Your Project` section is untouched.
+
+### install.sh — migration from old instructions/ layout
+
+Simulate a pre-migration install on the same copy, then run the installer:
+
+```bash
+mkdir /tmp/hve-upgrade-test/instructions
+cp /tmp/hve-upgrade-test/.claude/instructions/*.md /tmp/hve-upgrade-test/instructions/
+./install.sh /tmp/hve-upgrade-test
+```
+
+Expected: `✓ migrated instructions/ to .claude/instructions/`. To exercise the "differs" warning path, modify one file before running:
+
+```bash
+echo "# local customization" >> /tmp/hve-upgrade-test/instructions/python.md
+./install.sh /tmp/hve-upgrade-test
+# python.md should be warned and kept; all other files removed; instructions/ left non-empty
+```
+
+### install.sh — fresh install
+
+Run against a project that doesn't have HVE yet:
+
+```bash
+./install.sh /path/to/project-without-hve
+```
+
+Expected: `✓ created CLAUDE.md` (or `✓ prepended HVE block` if the project already has a CLAUDE.md without markers). Confirm `.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, and `prompts/` were all created.
+
+Reset between test runs with `rm -rf /tmp/hve-upgrade-test`.
+
+### Natural language update prompt
+
+Open a new Claude Code session inside an existing HVE project and paste the update prompt from [Updating an existing install](#updating-an-existing-install). Verify:
+
+1. The temp clone is deleted when Claude finishes
+2. Commands, agents, instructions, and prompts were overwritten
+3. Only the content between `HVE:START` / `HVE:END` in `CLAUDE.md` changed — `## Your Project` is untouched
 
 ---
 
