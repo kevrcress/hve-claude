@@ -103,7 +103,7 @@ all files in .claude/instructions/ and .claude/prompts/ with the latest versions
 update the HVE block in my CLAUDE.md with the new content from the cloned
 repo (everything above its '## Your Project' heading), wrapped in these
 markers:
-<!-- HVE:START - managed by install.sh, do not edit between markers -->
+<!-- HVE:START - managed by hve-claude, do not edit between markers -->
 ...HVE content...
 <!-- HVE:END -->
 If my CLAUDE.md already has those markers, replace the content between them.

@@ -133,7 +133,7 @@ fi
 # than duplicating it, and so the user's own content is never touched.
 HVE_BLOCK="$(awk '/^## Your Project/{exit} {print}' "$SOURCE/CLAUDE.md")"
 TARGET_CLAUDE="$TARGET/CLAUDE.md"
-MARK_START="<!-- HVE:START - managed by install.sh, do not edit between markers -->"
+MARK_START="<!-- HVE:START - managed by hve-claude, do not edit between markers -->"
 MARK_END="<!-- HVE:END -->"
 
 WRAPPED="$(printf '%s\n%s\n%s\n' "$MARK_START" "$HVE_BLOCK" "$MARK_END")"

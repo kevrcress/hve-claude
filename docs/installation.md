@@ -16,7 +16,7 @@ https://github.com/kevrcress/hve-claude into a temporary directory, then
 copy its hve-* commands and agents into my .claude/ folder, copy its
 .claude/instructions/ and .claude/prompts/ files in, and merge everything above the
 '## Your Project' heading in its CLAUDE.md into mine wrapped in these markers:
-<!-- HVE:START - managed by install.sh, do not edit between markers -->
+<!-- HVE:START - managed by hve-claude, do not edit between markers -->
 ...HVE content...
 <!-- HVE:END -->
 If my CLAUDE.md already has those markers, replace the content between them.
@@ -65,7 +65,7 @@ Follow these steps on any OS (Mac, Windows, Linux):
 6. Merge the HVE block into your `CLAUDE.md`. Open `hve-claude/CLAUDE.md` and copy
    everything above the `## Your Project` heading. Wrap it in these markers:
    ```
-   <!-- HVE:START - managed by install.sh, do not edit between markers -->
+   <!-- HVE:START - managed by hve-claude, do not edit between markers -->
    ...pasted HVE block...
    <!-- HVE:END -->
    ```
@@ -132,7 +132,7 @@ all files in .claude/instructions/ and .claude/prompts/ with the latest versions
 update the HVE block in my CLAUDE.md with the new content from the cloned
 repo (everything above its '## Your Project' heading), wrapped in these
 markers:
-<!-- HVE:START - managed by install.sh, do not edit between markers -->
+<!-- HVE:START - managed by hve-claude, do not edit between markers -->
 ...HVE content...
 <!-- HVE:END -->
 If my CLAUDE.md already has those markers, replace the content between them.

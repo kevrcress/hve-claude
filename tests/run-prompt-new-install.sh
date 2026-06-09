@@ -83,7 +83,7 @@ temporary directory, then copy its hve-* commands and agents into my
 .claude/ folder, copy its .claude/instructions/ and .claude/prompts/ files in,
 and merge everything above the '## Your Project' heading in its CLAUDE.md
 into mine wrapped in these markers:
-<!-- HVE:START - managed by install.sh, do not edit between markers -->
+<!-- HVE:START - managed by hve-claude, do not edit between markers -->
 ...HVE content...
 <!-- HVE:END -->
 If my CLAUDE.md already has those markers, replace the content between them.

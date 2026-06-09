@@ -1,4 +1,4 @@
-<!-- HVE:START - managed by install.sh, do not edit between markers -->
+<!-- HVE:START - managed by hve-claude, do not edit between markers -->
 # HVE Claude — Older Version
 
 This is stub older HVE content that should be replaced.
