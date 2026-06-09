@@ -87,16 +87,16 @@ Follow these steps on any OS (Mac, Windows, Linux):
 
 Re-installing to get updates: repeat steps 1–7, all steps are idempotent.
 
-**Upgrading from an older install?** Prior versions placed instruction files at
-`<your-project>/instructions/`. The new location is
-`<your-project>/.claude/instructions/`. After copying the files to the new
-location, remove the old folder manually: for each file in `instructions/`, if it
-matches the installed version byte-for-byte, delete it; if it differs (local
-customization), leave it and migrate manually. Remove `instructions/` with `rmdir`
-once it is empty, never `rm -rf`. The HVE instruction files are: `bash.md`,
-`csharp.md`, `csharp-tests.md`, `python.md`, `python-tests.md`, `python-uv.md`,
-`rust.md`, `rust-tests.md`, `terraform.md`, `markdown.md`, `git-commit-messages.md`,
-`writing-style.md`.
+**Upgrading from an older install?** Two top-level folders have moved:
+
+- Prior versions placed instruction files at `<your-project>/instructions/`. The new location is `<your-project>/.claude/instructions/`.
+- Prior versions placed prompt files at `<your-project>/prompts/`. The new location is `<your-project>/.claude/prompts/`.
+
+For each old folder: copy any files that don't already exist in the new location, then for each file in the old folder, if it matches the installed version byte-for-byte, delete it; if it differs (local customization), leave it and migrate manually. Remove the old folder with `rmdir` once empty, never `rm -rf`.
+
+HVE instruction files: `bash.md`, `csharp.md`, `csharp-tests.md`, `python.md`, `python-tests.md`, `python-uv.md`, `rust.md`, `rust-tests.md`, `terraform.md`, `markdown.md`, `git-commit-messages.md`, `writing-style.md`.
+
+HVE prompt files: `checkpoint.md`, `doc-ops.md`, `prompt-build.md`, `pull-request.md`, `rpi.md`, `task-challenge.md`.
 
 ## Terminal / bash users (optional)
 
@@ -112,8 +112,8 @@ A bash installer is available for Mac, Linux, WSL, or Git Bash on Windows:
 
 The script runs the same steps as Option B above and is idempotent, safe to
 re-run to pull in updates. On upgrade it automatically migrates any old top-level
-`instructions/` folder: identical files are removed silently; customized files are
-left in place with a warning.
+`instructions/` and `prompts/` folders: identical files are removed silently;
+customized files are left in place with a warning.
 
 ## Updating an existing install
 
@@ -142,7 +142,9 @@ new content wrapped in the markers above. Never touch anything outside the
 markers or my project-specific content. If an instructions/ folder exists at
 the project root from a prior install, move any file that matches the installed
 version byte-for-byte to .claude/instructions/ and remove the folder once it
-is empty. Delete the temp clone and show me what changed.
+is empty. If a prompts/ folder exists at the project root from a prior install,
+do the same: move matching files to .claude/prompts/ and remove the folder once
+empty. Delete the temp clone and show me what changed.
 ```
 
 Other update paths: follow the Option B manual steps again, or re-run `install.sh`

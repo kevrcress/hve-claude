@@ -87,6 +87,25 @@ echo "# local customization" >> /tmp/hve-upgrade-test/instructions/python.md
 # python.md should be warned and kept; all other files removed; instructions/ left non-empty
 ```
 
+### Migration from old prompts/ layout
+
+Simulate a pre-migration install with the old top-level `prompts/` folder:
+
+```bash
+mkdir /tmp/hve-upgrade-test/prompts
+cp /tmp/hve-upgrade-test/.claude/prompts/*.md /tmp/hve-upgrade-test/prompts/
+./install.sh /tmp/hve-upgrade-test
+```
+
+Expected: `✓ migrated prompts/ to .claude/prompts/`. To exercise the "differs"
+warning path, modify one file before running:
+
+```bash
+echo "# local customization" >> /tmp/hve-upgrade-test/prompts/rpi.md
+./install.sh /tmp/hve-upgrade-test
+# rpi.md should be warned and kept; all other files removed; prompts/ left non-empty
+```
+
 ### Fresh install
 
 Run against a project that doesn't have HVE yet:
