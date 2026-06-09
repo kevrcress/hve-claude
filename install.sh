@@ -11,7 +11,7 @@
 # What it does (idempotent; safe to re-run for updates):
 #   - copies hve-* slash commands     -> <target>/.claude/commands/
 #   - copies hve-* agents             -> <target>/.claude/agents/
-#   - copies .claude/instructions/ and prompts/ reference docs
+#   - copies .claude/instructions/ and .claude/prompts/ reference docs
 #   - merges the HVE block into       <target>/CLAUDE.md (between HVE markers)
 #   - adds tracking rules to          <target>/.gitignore
 #   - migrates any old top-level      <target>/instructions/ from prior installs
@@ -28,8 +28,8 @@ if [ "$SOURCE" = "$TARGET" ]; then
   exit 1
 fi
 
-if [ ! -d "$SOURCE/.claude/commands" ] || [ ! -d "$SOURCE/.claude/instructions" ]; then
-  echo "error: HVE source at $SOURCE appears incomplete: .claude/commands/ or .claude/instructions/ is missing." >&2
+if [ ! -d "$SOURCE/.claude/commands" ] || [ ! -d "$SOURCE/.claude/instructions" ] || [ ! -d "$SOURCE/.claude/prompts" ]; then
+  echo "error: HVE source at $SOURCE appears incomplete: .claude/commands/, .claude/instructions/, or .claude/prompts/ is missing." >&2
   echo "       Ensure you are running install.sh from the root of the hve-claude repository." >&2
   exit 1
 fi
@@ -40,7 +40,7 @@ echo "  into: $TARGET"
 echo
 
 # --- copy command/agent/reference files ----------------------------------------
-mkdir -p "$TARGET/.claude/commands" "$TARGET/.claude/agents" "$TARGET/.claude/instructions" "$TARGET/prompts"
+mkdir -p "$TARGET/.claude/commands" "$TARGET/.claude/agents" "$TARGET/.claude/instructions" "$TARGET/.claude/prompts"
 
 cp "$SOURCE"/.claude/commands/hve*.md "$TARGET/.claude/commands/"
 echo "  ✓ commands -> .claude/commands/"
@@ -49,8 +49,8 @@ cp "$SOURCE"/.claude/agents/hve*.md "$TARGET/.claude/agents/"
 echo "  ✓ agents   -> .claude/agents/"
 
 cp "$SOURCE"/.claude/instructions/*.md "$TARGET/.claude/instructions/"
-cp "$SOURCE"/prompts/*.md "$TARGET/prompts/"
-echo "  ✓ .claude/instructions/ and prompts/"
+cp "$SOURCE"/.claude/prompts/*.md "$TARGET/.claude/prompts/"
+echo "  ✓ .claude/instructions/ and .claude/prompts/"
 
 # --- migrate old top-level instructions/ from prior installs -------------------
 # Known HVE filenames that may exist in the old location.
@@ -87,6 +87,43 @@ if [ -d "$OLD_INSTRUCTIONS_DIR" ]; then
     fi
   elif [ "$_kept" -eq 0 ] && [ "$_migrated" -eq 0 ]; then
     : # directory had no HVE files; leave it untouched silently
+  fi
+fi
+
+# --- migrate old top-level prompts/ from prior installs ------------------------
+# Prior installs copied reference prompts to <target>/prompts/. They now live in
+# .claude/prompts/. Move any file that matches the shipped version byte-for-byte,
+# keep diverged ones (possible local edits), and remove the old dir once empty.
+# Keep in sync with HVE_PROMPT_FILES in tests/lib/prompt-files.sh.
+HVE_PROMPT_FILES=(
+  checkpoint.md doc-ops.md prompt-build.md pull-request.md rpi.md task-challenge.md
+)
+
+OLD_PROMPTS_DIR="$TARGET/prompts"
+
+if [ -d "$OLD_PROMPTS_DIR" ]; then
+  _p_migrated=0
+  _p_kept=0
+  for fname in "${HVE_PROMPT_FILES[@]}"; do
+    old_file="$OLD_PROMPTS_DIR/$fname"
+    new_source="$SOURCE/.claude/prompts/$fname"
+    if [ -f "$old_file" ]; then
+      if cmp -s "$new_source" "$old_file"; then
+        rm "$old_file"
+        _p_migrated=$((_p_migrated + 1))
+      else
+        echo "  ! kept prompts/$fname: it differs from the installed version (possible local customization); review and remove manually if unneeded."
+        _p_kept=$((_p_kept + 1))
+      fi
+    fi
+  done
+
+  # Remove the old directory only if it is now empty.
+  if [ -d "$OLD_PROMPTS_DIR" ] && [ -z "$(ls -A "$OLD_PROMPTS_DIR")" ]; then
+    rmdir "$OLD_PROMPTS_DIR"
+    if [ "$_p_migrated" -gt 0 ]; then
+      echo "  ✓ migrated prompts/ to .claude/prompts/ (removed old top-level copy)"
+    fi
   fi
 fi
 

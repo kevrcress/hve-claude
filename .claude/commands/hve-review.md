@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 4 — Validate the implementation against the plan, run quality checks, and produce a structured review log
-argument-hint: [task-slug] [--mode lightweight|standard|full]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
@@ -99,6 +99,8 @@ Wait for it to complete. Add Critical and Major findings to the review log.
 ---
 
 ## Phase 4 — Review Completion
+
+If `--think` was passed in `$ARGUMENTS`, or if any Critical findings were recorded in Phase 2 or Phase 3, invoke `/think` to reason through severity weights and cross-dimension conflicts before writing the final verdict block.
 
 1. Tally findings: count Critical / Major / Minor across all validators
 2. Determine overall status:

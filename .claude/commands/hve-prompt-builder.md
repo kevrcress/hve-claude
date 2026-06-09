@@ -24,7 +24,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
    - Slash command (`.claude/commands/`)
    - Agent definition (`.claude/agents/`)
    - Instruction file (`.claude/instructions/`)
-   - Reusable prompt (`prompts/`)
+   - Reusable prompt (`.claude/prompts/`)
 2. Read existing similar artifacts for pattern reference
 3. Create the sandbox directory: `.claude-hve-tracking/sandbox/YYYY-MM-DD-TOPIC-run-01/`
 4. Draft an initial version of the artifact
@@ -35,29 +35,22 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 Repeat for N iterations (default 3, or until evaluation shows no remaining issues):
 
-### Step A — Test (via hve-prompt-tester subagent)
+### Steps A and B — Test and Evaluate (parallel)
 
-Spawn one `hve-prompt-tester` subagent via the Agent tool.
+Spawn the `hve-prompt-tester` and `hve-prompt-evaluator` subagents in parallel (two Agent tool calls in one response). Both read the current draft: there is no write conflict at this step. Wait for both to complete, then read both output logs before running the Updater.
 
-Pass it:
+**hve-prompt-tester** receives:
 - The draft prompt/agent file path
 - 2–3 representative test scenarios (describe what a user would ask or what context the agent would receive)
 - The sandbox path for test execution logs
-- Instructions to execute the prompt literally — no interpretation beyond what's written
+- Instructions to execute the prompt literally, no interpretation beyond what's written
 
-Wait for the tester to complete. Read the execution log.
-
-### Step B — Evaluate (via hve-prompt-evaluator subagent)
-
-Spawn one `hve-prompt-evaluator` subagent via the Agent tool.
-
-Pass it:
-- The test execution log
-- The original prompt/agent draft
+**hve-prompt-evaluator** receives:
+- The draft prompt/agent file path
 - The intended behavior description
 - Quality criteria: clarity, completeness, actionability, Claude Code format compliance, absence of Copilot-isms
 
-Wait for the evaluator. Read its evaluation log.
+After both subagents complete, read both output logs. Combine their findings before passing to the Updater.
 
 ### Step C — Update (via hve-prompt-updater subagent)
 
@@ -85,7 +78,7 @@ After iterations complete:
    - `.claude/commands/` for slash commands
    - `.claude/agents/` for agent definitions
    - `.claude/instructions/` for instruction files
-   - `prompts/` for reusable prompts
+   - `.claude/prompts/` for reusable prompts
 
 ```
 ╭─────────────────────────────────────────────────────╮

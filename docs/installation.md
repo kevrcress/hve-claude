@@ -14,7 +14,7 @@ update markers, add the .gitignore rules, and clean up, no shell scripts needed.
 Please install the HVE Claude Code workflow into this project. Clone
 https://github.com/kevrcress/hve-claude into a temporary directory, then
 copy its hve-* commands and agents into my .claude/ folder, copy its
-.claude/instructions/ and prompts/ files in, and merge everything above the
+.claude/instructions/ and .claude/prompts/ files in, and merge everything above the
 '## Your Project' heading in its CLAUDE.md into mine wrapped in these markers:
 <!-- HVE:START - managed by install.sh, do not edit between markers -->
 ...HVE content...
@@ -58,8 +58,8 @@ Follow these steps on any OS (Mac, Windows, Linux):
 
 5. Copy prompt files:
    ```
-   Source:  hve-claude/prompts/*.md
-   Target:  <your-project>/prompts/
+   Source:  hve-claude/.claude/prompts/*.md
+   Target:  <your-project>/.claude/prompts/
    ```
 
 6. Merge the HVE block into your `CLAUDE.md`. Open `hve-claude/CLAUDE.md` and copy
@@ -128,7 +128,7 @@ with a warning).
 Please update the HVE Claude Code workflow in this project. Clone
 https://github.com/kevrcress/hve-claude into a temporary directory, then
 overwrite the hve-* files in .claude/commands/ and .claude/agents/, overwrite
-all files in .claude/instructions/ and prompts/ with the latest versions, and
+all files in .claude/instructions/ and .claude/prompts/ with the latest versions, and
 update the HVE block in my CLAUDE.md with the new content from the cloned
 repo (everything above its '## Your Project' heading), wrapped in these
 markers:

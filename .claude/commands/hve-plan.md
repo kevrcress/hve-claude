@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 2 — Convert research findings into a validated implementation plan with phase-by-phase steps
-argument-hint: [task-slug] [--mode lightweight|standard|full]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
@@ -23,8 +23,9 @@ Discover inputs automatically — do not ask the user to provide files:
 
 1. Read the research document in full
 2. Identify the task slug from the research doc frontmatter or filename
-3. List the key constraints, dependencies, and success criteria derived from research
-4. Assess planning complexity:
+3. Extract `--think` from `$ARGUMENTS` if present; set THINK_MODE=true
+4. List the key constraints, dependencies, and success criteria derived from research
+5. Assess planning complexity:
    - **Simple plan**: 1–3 sequential steps, single file or module → write plan directly
    - **Standard plan**: 4–8 steps, 2–5 files → standard planning with Plan Validator
    - **Complex plan**: > 8 steps, cross-cutting, phased dependencies → full planning with parallel validation
@@ -34,6 +35,8 @@ If `--mode` was specified in `$ARGUMENTS`, use that. Otherwise, infer from compl
 ---
 
 ## Phase 2 — Planning
+
+If THINK_MODE is true, begin this phase by invoking `/think` to reason through task complexity, risk surface, and phase ordering before drafting any artifacts.
 
 Create three artifacts in parallel:
 

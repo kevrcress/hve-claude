@@ -66,7 +66,7 @@ The files below are included out of the box (ported from the MS repo):
 
 ## Reusable prompts
 
-The `prompts/` directory contains task-specific prompts copied into your project by
+The `.claude/prompts/` directory contains task-specific prompts copied into your project by
 the installer. They're used internally by phase commands and can also be referenced
 directly.
 

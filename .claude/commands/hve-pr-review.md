@@ -1,6 +1,6 @@
 ---
 description: HVE PR Review — Senior-level code review across 8 quality dimensions with severity-graded findings
-argument-hint: [branch-name] [--dimension all|functional|design|idiomatic|reuse|performance|reliability|security|docs]
+argument-hint: [branch-name] [--dimension all|functional|design|idiomatic|reuse|performance|reliability|security|docs] [--compact]
 allowed-tools: Read, Glob, Grep, Bash, Agent
 ---
 
@@ -24,7 +24,12 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 2. Get the diff: `git diff main...HEAD --stat` (or `git diff origin/main...HEAD --stat`)
 3. Get changed files: `git diff main...HEAD --name-only`
 4. Get commit messages: `git log main..HEAD --oneline`
-5. Create the review output directory and file
+5. Extract `--compact` from `$ARGUMENTS` if present. When set, review uses 4 paired dimension subagents instead of 8 single-dimension subagents. The compact dimension pairs are:
+   * Pair 1: Functional Correctness + Design and Architecture
+   * Pair 2: Idiomatic Implementation + Reusability and Leverage
+   * Pair 3: Performance and Scalability + Reliability and Observability
+   * Pair 4: Security and Compliance + Documentation and Operations
+6. Create the review output directory and file
 
 Review log structure:
 ```markdown
@@ -50,31 +55,53 @@ Overall: ✅ Approve | ⚠️ Request Changes | 🚫 Block
 
 ## Phase 2 — Parallel Analysis
 
-Spawn **parallel review subagents** using the Agent tool, one per active dimension:
+Spawn **parallel review subagents** using the Agent tool. The number of subagents depends on whether `--compact` was set.
 
-**Dimension assignments** (spawn all 8 in parallel for `--dimension all`):
+### Default mode (no `--compact` flag)
+
+Spawn all 8 subagents in parallel for `--dimension all`, one per dimension:
 
 1. **Functional Correctness** — Does the implementation do what the PR description says? Are there logic errors, edge cases, off-by-ones? Are error paths handled?
 
-2. **Design & Architecture** — Does the PR respect existing module boundaries? Does it introduce appropriate abstractions, or too many? Would a new contributor understand the structure?
+2. **Design and Architecture** — Does the PR respect existing module boundaries? Does it introduce appropriate abstractions, or too many? Would a new contributor understand the structure?
 
 3. **Idiomatic Implementation** — Is the code written in the idioms of the language and framework? Does it use the project's established patterns, or invent new ones?
 
-4. **Reusability & Leverage** — Does the code reuse existing utilities, or does it reinvent? Are new utilities general enough to be reused elsewhere?
+4. **Reusability and Leverage** — Does the code reuse existing utilities, or does it reinvent? Are new utilities general enough to be reused elsewhere?
 
-5. **Performance & Scalability** — Are there N+1 queries, unnecessary loops over large data, blocking I/O in async contexts, or memory leaks?
+5. **Performance and Scalability** — Are there N+1 queries, unnecessary loops over large data, blocking I/O in async contexts, or memory leaks?
 
-6. **Reliability & Observability** — Are errors logged appropriately? Is there sufficient instrumentation? Are retry/timeout/backoff patterns used where needed?
+6. **Reliability and Observability** — Are errors logged appropriately? Is there sufficient instrumentation? Are retry/timeout/backoff patterns used where needed?
 
-7. **Security & Compliance** — Run the full security checklist from CLAUDE.md: secret exposure, .gitignore hygiene, input validation, SQL injection, XSS, dependency audit.
+7. **Security and Compliance** — Run the full security checklist from CLAUDE.md: secret exposure, .gitignore hygiene, input validation, SQL injection, XSS, dependency audit.
 
-8. **Documentation & Operations** — Are public APIs documented? Are README or operational docs updated? Are migration steps noted if schema changes exist?
+8. **Documentation and Operations** — Are public APIs documented? Are README or operational docs updated? Are migration steps noted if schema changes exist?
 
 Each review subagent receives:
-- The list of changed files
-- The diff for those files (`git diff main...HEAD -- [file]` for each)
-- The dimension it is reviewing
-- Instructions to return findings in `IV-NNN [DIMENSION] [SEVERITY]` format
+* The list of changed files
+* The diff for those files (`git diff main...HEAD -- [file]` for each)
+* The dimension it is reviewing
+* Instructions to return findings in `IV-NNN [DIMENSION] [SEVERITY]` format
+
+### Compact mode (`--compact` flag set)
+
+Spawn 4 paired subagents in parallel instead of 8. Each subagent covers two dimensions and must report findings in two separate sections (one per dimension) so the review log remains structured by dimension.
+
+**Compact subagent assignments:**
+
+1. **Pair 1: Functional Correctness + Design and Architecture**
+   Instruction: "Review for functional correctness AND design quality. Report findings in two sections: one headed 'Functional Correctness' and one headed 'Design and Architecture'. Use `IV-NNN [DIMENSION] [SEVERITY]` format."
+
+2. **Pair 2: Idiomatic Implementation + Reusability and Leverage**
+   Instruction: "Review for idiomatic style AND code reuse and simplification opportunities. Report findings in two sections: one headed 'Idiomatic Implementation' and one headed 'Reusability and Leverage'. Use `IV-NNN [DIMENSION] [SEVERITY]` format."
+
+3. **Pair 3: Performance and Scalability + Reliability and Observability**
+   Instruction: "Review for performance AND reliability and error handling. Report findings in two sections: one headed 'Performance and Scalability' and one headed 'Reliability and Observability'. Use `IV-NNN [DIMENSION] [SEVERITY]` format."
+
+4. **Pair 4: Security and Compliance + Documentation and Operations**
+   Instruction: "Review for security vulnerabilities AND documentation gaps. Report findings in two sections: one headed 'Security and Compliance' and one headed 'Documentation and Operations'. Use `IV-NNN [DIMENSION] [SEVERITY]` format."
+
+Each compact subagent receives the same inputs as a standard subagent: changed files, diffs, and the paired dimension instructions above.
 
 Wait for all subagents to complete.
 

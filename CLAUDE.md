@@ -27,18 +27,20 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 | Medium-Hard | Cross-cutting, multiple modules | Parallel research + plan validation |
 | Challenging | New patterns, high risk, unclear requirements | Full parallel dispatch: research, plan, implement, review |
 
+**Effort level:** For Challenging-difficulty tasks, increase reasoning depth by passing `--effort xhigh` on the CLI or setting `effortLevel: xhigh` in `.claude/settings.json`. This extends the model's internal reasoning budget, improving plan quality and review thoroughness at higher token cost.
+
 ---
 
 ## Command Reference
 
 | Command | Purpose | When to use |
 |---|---|---|
-| `/hve <task>` | Full RPI loop: Research → Plan → Implement → Review | Default for any non-trivial task |
+| `/hve <task>` | Full RPI loop: Research → Plan → Implement → Review. `--mode lightweight` skips subagents and implements directly; `--mode standard` runs the full loop with 1–2 researchers; `--mode full` uses maximum parallel dispatch. `--think` activates extended reasoning during planning (auto-enabled for Challenging tasks and `--mode full`). | Default for any non-trivial task |
 | `/hve-research <task>` | Research phase only | When you want to investigate before committing to a plan |
-| `/hve-plan` | Plan phase only | After research exists; reads latest research artifact |
+| `/hve-plan` | Plan phase only. Accepts `--think` for extended reasoning. | After research exists; reads latest research artifact |
 | `/hve-implement` | Implement phase only | After a plan exists; reads latest plan artifact |
-| `/hve-review` | Review phase only | After implementation; validates changes against plan |
-| `/hve-pr-review` | Senior-level PR code review | Before merging a branch |
+| `/hve-review` | Review phase only. Accepts `--think` for extended reasoning during verdict synthesis. | After implementation; validates changes against plan |
+| `/hve-pr-review` | Senior-level PR code review. Accepts `--compact` to run 4 paired subagents instead of 8 for a faster review. | Before merging a branch |
 | `/hve-memory` | Save conversation context for future sessions | When ending a session mid-task |
 | `/hve-challenge` | Adversarial questioning of current work | When you want a skeptic's view on a plan or implementation |
 | `/hve-doc-ops` | Documentation QA and gap detection | After major feature work |
@@ -246,7 +248,7 @@ Run the installer from this repo, pointing it at the target project:
 ```
 
 The installer copies `.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, and
-`prompts/`, merges the HVE block into the target's `CLAUDE.md`, and adds the tracking
+`.claude/prompts/`, merges the HVE block into the target's `CLAUDE.md`, and adds the tracking
 `.gitignore` rules. It is idempotent — re-run it to pull updates.
 
 After installing:

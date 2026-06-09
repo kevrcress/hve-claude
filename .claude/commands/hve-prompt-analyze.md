@@ -25,7 +25,7 @@ If no argument is provided, ask: "Which file would you like me to analyze?"
    - Slash command (`.claude/commands/`)
    - Agent definition (`.claude/agents/`)
    - Instruction file (`.claude/instructions/`)
-   - Reusable prompt (`prompts/`)
+   - Reusable prompt (`.claude/prompts/`)
 3. Identify the intended behavior from the artifact's description and content
 
 ---

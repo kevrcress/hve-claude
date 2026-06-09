@@ -218,6 +218,6 @@ are idempotent. They overwrite the command and agent files but preserve your
 **How do I extend or customize HVE?**
 
 Add your own language instruction files to `.claude/instructions/` and reference
-them in `CLAUDE.md`. Add prompts to `prompts/`. Modify agent definitions in
+them in `CLAUDE.md`. Add prompts to `.claude/prompts/`. Modify agent definitions in
 `.claude/agents/`, or use `/hve-prompt-builder` to iteratively develop new ones
 with an automated test-evaluate-update loop.

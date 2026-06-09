@@ -20,6 +20,8 @@ WORK_DIR="$(mktemp -d)"
 source "${REPO_ROOT}/tests/lib/assert.sh"
 # shellcheck source=tests/lib/instruction-files.sh
 source "${REPO_ROOT}/tests/lib/instruction-files.sh"
+# shellcheck source=tests/lib/prompt-files.sh
+source "${REPO_ROOT}/tests/lib/prompt-files.sh"
 
 # Cleanup on exit: remove all temp dirs and the assertion log.
 trap 'rm -rf "${WORK_DIR}"; rm -f "${ASSERT_LOG}"' EXIT
@@ -103,6 +105,21 @@ seed_old_instructions() {
 }
 
 # ---------------------------------------------------------------------------
+# seed_old_prompts <target_dir>
+# Copies all HVE prompt files from .claude/prompts/ into <target_dir>/prompts/
+# simulating a prior install at the old (root) location.
+# ---------------------------------------------------------------------------
+seed_old_prompts() {
+  local target="${1}"
+  local source_dir="${REPO_ROOT}/.claude/prompts"
+  mkdir -p "${target}/prompts"
+  local fname
+  for fname in "${HVE_PROMPT_FILES[@]}"; do
+    cp "${source_dir}/${fname}" "${target}/prompts/${fname}"
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Test 1 — New install (no CLAUDE.md at all)
 # ---------------------------------------------------------------------------
 test1_new_install() {
@@ -141,15 +158,15 @@ test1_new_install() {
     "${test_dir}/.claude/instructions" "*.md" 12 \
     "test1: .claude/instructions/ has exactly 12 .md files"
 
-  # prompts/ has at least one .md
+  # .claude/prompts/ has at least one .md
   local prompts_count
-  prompts_count="$(find "${test_dir}/prompts" -maxdepth 1 -name "*.md" \
+  prompts_count="$(find "${test_dir}/.claude/prompts" -maxdepth 1 -name "*.md" \
     | wc -l | tr -d '[:space:]')"
   if (( prompts_count >= 1 )); then
-    _ok_inline "test1: prompts/ .md count" "found ${prompts_count} file(s)"
+    _ok_inline "test1: .claude/prompts/ .md count" "found ${prompts_count} file(s)"
   else
-    _fail_inline "test1: prompts/ .md count" \
-      "expected >=1 .md in prompts/, got ${prompts_count}"
+    _fail_inline "test1: .claude/prompts/ .md count" \
+      "expected >=1 .md in .claude/prompts/, got ${prompts_count}"
   fi
 
   # CLAUDE.md exists
@@ -169,6 +186,10 @@ test1_new_install() {
   # No root-level instructions/ directory
   assert_not_exists "${test_dir}/instructions" \
     "test1: no instructions/ at root"
+
+  # No root-level prompts/ directory
+  assert_not_exists "${test_dir}/prompts" \
+    "test1: no prompts/ at root"
 }
 
 # ---------------------------------------------------------------------------
@@ -228,6 +249,7 @@ test3_clean_upgrade() {
   mkdir -p "${test_dir}"
   cp "${FIXTURES}/claude-md-current-marker.md" "${test_dir}/CLAUDE.md"
   seed_old_instructions "${test_dir}"
+  seed_old_prompts "${test_dir}"
 
   local output
   output="$("${INSTALL_SH}" "${test_dir}" 2>&1)"
@@ -240,6 +262,15 @@ test3_clean_upgrade() {
   # instructions/ root dir removed (all files were identical)
   assert_not_exists "${test_dir}/instructions" \
     "test3: instructions/ at root removed after clean migration"
+
+  # .claude/prompts/ has exactly 6 .md files
+  assert_file_count \
+    "${test_dir}/.claude/prompts" "*.md" 6 \
+    "test3: .claude/prompts/ has exactly 6 .md files"
+
+  # prompts/ root dir removed (all files were identical)
+  assert_not_exists "${test_dir}/prompts" \
+    "test3: prompts/ at root removed after clean migration"
 
   # Output does NOT contain "! kept" (no diverged-file warnings)
   if echo "${output}" | grep -qF "! kept"; then

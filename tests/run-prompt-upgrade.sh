@@ -8,7 +8,7 @@
 #   1. Seeds a temp project that looks like an older HVE install:
 #      - CLAUDE.md with current HVE markers (older content inside)
 #      - instructions/ at project root with 12 HVE files (old location)
-#      - .claude/commands/, .claude/agents/, .claude/instructions/, prompts/
+#      - .claude/commands/, .claude/agents/, .claude/instructions/, .claude/prompts/
 #        populated with current files (simulates an already-working install)
 #   2. Prints the update prompt to paste into Claude Code
 #   3. Pauses for you to run Claude Code
@@ -20,6 +20,7 @@ readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 source "${REPO_ROOT}/tests/lib/assert.sh"
 source "${REPO_ROOT}/tests/lib/instruction-files.sh"
+source "${REPO_ROOT}/tests/lib/prompt-files.sh"
 
 # ---------------------------------------------------------------------------
 # Setup — create and seed the temp project
@@ -40,11 +41,17 @@ echo ""
 # 1. Seed CLAUDE.md with current-marker fixture (older content inside)
 cp "${REPO_ROOT}/tests/fixtures/claude-md-current-marker.md" "${WORK_DIR}/CLAUDE.md"
 
-# 2. Seed old-style instructions/ at project root (12 HVE files)
+# 2. Seed old-style instructions/ and prompts/ at project root (old locations)
 mkdir -p "${WORK_DIR}/instructions"
 for fname in "${HVE_INSTRUCTION_FILES[@]}"; do
   cp "${REPO_ROOT}/.claude/instructions/${fname}" \
      "${WORK_DIR}/instructions/${fname}"
+done
+
+mkdir -p "${WORK_DIR}/prompts"
+for fname in "${HVE_PROMPT_FILES[@]}"; do
+  cp "${REPO_ROOT}/.claude/prompts/${fname}" \
+     "${WORK_DIR}/prompts/${fname}"
 done
 
 # 3. Seed current HVE files in new locations (simulates a working install)
@@ -54,16 +61,16 @@ cp "${REPO_ROOT}/.claude/commands/hve"*.md "${WORK_DIR}/.claude/commands/"
 mkdir -p "${WORK_DIR}/.claude/agents"
 cp "${REPO_ROOT}/.claude/agents/hve"*.md "${WORK_DIR}/.claude/agents/"
 
-mkdir -p "${WORK_DIR}/prompts"
-cp "${REPO_ROOT}/prompts/"*.md "${WORK_DIR}/prompts/"
+mkdir -p "${WORK_DIR}/.claude/prompts"
+cp "${REPO_ROOT}/.claude/prompts/"*.md "${WORK_DIR}/.claude/prompts/"
 
 mkdir -p "${WORK_DIR}/.claude/instructions"
 cp "${REPO_ROOT}/.claude/instructions/"*.md "${WORK_DIR}/.claude/instructions/"
 
 echo "Seeded upgrade scenario:"
 echo "  - CLAUDE.md with current HVE markers (older content)"
-echo "  - instructions/ at root with 12 HVE files (old location — should be migrated)"
-echo "  - .claude/commands/, .claude/agents/, .claude/instructions/, prompts/ populated"
+echo "  - instructions/ and prompts/ at root (old locations — should be migrated)"
+echo "  - .claude/commands/, .claude/agents/, .claude/instructions/, .claude/prompts/ populated"
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -92,7 +99,7 @@ cat <<'PROMPT'
 Please update the HVE Claude Code workflow in this project. Clone
 https://github.com/kevrcress/hve-claude -b dev into a temporary directory, then
 overwrite the hve-* files in .claude/commands/ and .claude/agents/, overwrite
-all files in .claude/instructions/ and prompts/ with the latest versions, and
+all files in .claude/instructions/ and .claude/prompts/ with the latest versions, and
 update the HVE block in my CLAUDE.md with the new content from the cloned
 repo (everything above its '## Your Project' heading), wrapped in these
 markers:
@@ -103,10 +110,11 @@ If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, find the existing HVE block (it begins with the HVE
 heading and ends just before my project-specific content), replace it with the
 new content wrapped in the markers above. Never touch anything outside the
-markers or my project-specific content. If an instructions/ folder exists at
-the project root from a prior install, move any file that matches the installed
-version byte-for-byte to .claude/instructions/ and remove the folder once it
-is empty. Delete the temp clone and show me what changed.
+markers or my project-specific content. If an instructions/ or prompts/ folder
+exists at the project root from a prior install, move any file that matches the
+installed version byte-for-byte to .claude/instructions/ or .claude/prompts/
+respectively and remove each folder once it is empty. Delete the temp clone and
+show me what changed.
 PROMPT
 echo ""
 
@@ -138,8 +146,8 @@ assert_exists \
   ".claude/instructions/ contains at least one .md"
 
 assert_exists \
-  "$(find "${WORK_DIR}/prompts" -maxdepth 1 -name '*.md' -print -quit 2>/dev/null)" \
-  "prompts/ contains at least one .md"
+  "$(find "${WORK_DIR}/.claude/prompts" -maxdepth 1 -name '*.md' -print -quit 2>/dev/null)" \
+  ".claude/prompts/ contains at least one .md"
 
 assert_contains \
   "${WORK_DIR}/CLAUDE.md" \
@@ -159,6 +167,10 @@ assert_contains \
 assert_not_exists \
   "${WORK_DIR}/instructions" \
   "instructions/ at root no longer exists (migration completed)"
+
+assert_not_exists \
+  "${WORK_DIR}/prompts" \
+  "prompts/ at root no longer exists (migration completed)"
 
 finish
 

@@ -80,7 +80,7 @@ cat <<'PROMPT'
 Please install the HVE Claude Code workflow into this project. Clone
 https://github.com/kevrcress/hve-claude -b dev (branch: dev) into a
 temporary directory, then copy its hve-* commands and agents into my
-.claude/ folder, copy its .claude/instructions/ and prompts/ files in,
+.claude/ folder, copy its .claude/instructions/ and .claude/prompts/ files in,
 and merge everything above the '## Your Project' heading in its CLAUDE.md
 into mine wrapped in these markers:
 <!-- HVE:START - managed by install.sh, do not edit between markers -->
@@ -125,8 +125,8 @@ assert_has_files \
   ".claude/instructions contains at least one .md"
 
 assert_has_files \
-  "${WORK_DIR}/prompts" "*.md" \
-  "prompts/ contains at least one .md"
+  "${WORK_DIR}/.claude/prompts" "*.md" \
+  ".claude/prompts/ contains at least one .md"
 
 assert_exists \
   "${WORK_DIR}/CLAUDE.md" \

@@ -97,7 +97,7 @@ Run against a project that doesn't have HVE yet:
 
 Expected: `✓ created CLAUDE.md` (or `✓ prepended HVE block` if the project already
 has a CLAUDE.md without markers). Confirm `.claude/commands/`, `.claude/agents/`,
-`.claude/instructions/`, and `prompts/` were all created.
+`.claude/instructions/`, and `.claude/prompts/` were all created.
 
 Reset between test runs with `rm -rf /tmp/hve-upgrade-test`.
 

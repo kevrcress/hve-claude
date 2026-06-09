@@ -32,7 +32,7 @@ Works for new or existing projects, never touches your source code.
 Please install the HVE Claude Code workflow into this project. Clone
 https://github.com/kevrcress/hve-claude into a temporary directory, then
 copy its hve-* commands and agents into my .claude/ folder, copy its
-.claude/instructions/ and prompts/ files in, and merge everything above the
+.claude/instructions/ and .claude/prompts/ files in, and merge everything above the
 '## Your Project' heading in its CLAUDE.md into mine wrapped in these markers:
 <!-- HVE:START - managed by install.sh, do not edit between markers -->
 ...HVE content...
@@ -118,11 +118,11 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 
 | Command | Purpose |
 |---|---|
-| `/hve <task>` | Full RPI loop in one conversation with user checkpoints between every phase. Accepts `--mode lightweight\|standard\|full` to override the automatic difficulty classification. |
+| `/hve <task>` | Full RPI loop in one conversation with user checkpoints between every phase. Accepts `--mode lightweight\|standard\|full` to override difficulty classification: `lightweight` skips subagents and implements directly; `standard` runs the full loop with 1–2 researchers; `full` uses maximum parallel dispatch (multiple researchers, parallel implementors, parallel review validators). Pass `--think` to activate extended reasoning during planning (auto-enabled for `--mode full` and Challenging tasks). |
 | `/hve-research <task>` | Research phase only, spawns parallel investigators, writes findings |
-| `/hve-plan` | Plan phase only, reads latest research artifact, writes implementation plan |
+| `/hve-plan` | Plan phase only, reads latest research artifact, writes implementation plan. Pass `--think` to activate extended reasoning. |
 | `/hve-implement` | Implement phase only, reads latest plan, dispatches implementors per phase |
-| `/hve-review` | Review phase only, validates changes against plan, runs quality checks |
+| `/hve-review` | Review phase only, validates changes against plan, runs quality checks. Pass `--think` to activate extended reasoning during verdict synthesis. |
 
 > **`/hve` vs standalone phase commands**, `/hve` runs all four phases in one conversation, convenient for most tasks. Context accumulates across phases, though. For large or multi-day tasks, run each phase command in a fresh conversation to keep each phase lean; the standalone commands auto-discover the previous phase's artifact automatically. See [docs/workflow.md](docs/workflow.md#faq) for detail.
 
@@ -130,7 +130,7 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 
 | Command | Purpose |
 |---|---|
-| `/hve-pr-review` | Senior-level code review across 8 quality dimensions (functional, design, idiomatic, reuse, performance, reliability, security, docs). Supports `--dimension` to focus on one area. |
+| `/hve-pr-review` | Senior-level code review across 8 quality dimensions (functional, design, idiomatic, reuse, performance, reliability, security, docs). Supports `--dimension` to focus on one area. Pass `--compact` to run 4 paired subagents instead of 8 for a faster, lower-cost review. |
 | `/hve-challenge` | Adversarial questioning of any current plan or implementation, acts as an uninformed skeptic to surface hidden assumptions |
 | `/hve-doc-ops` | Documentation QA: pattern compliance, accuracy verification, gap detection. Supports `--scope` to target a specific area. |
 | `/hve-memory` | Saves current session context, decisions, and open questions to `.claude-hve-tracking/memory/` for future conversations |
@@ -158,8 +158,9 @@ These commands are for extending HVE itself, building new slash commands, agent 
 ```
 # Full RPI loop
 /hve add OAuth2 authentication to the API
-/hve --mode lightweight fix the typo in the 404 error message
-/hve --mode full migrate the database schema to support multi-tenancy
+/hve --mode lightweight fix the typo in the 404 error message   # skip subagents, implement directly
+/hve --mode full migrate the database schema to support multi-tenancy  # max parallel dispatch
+/hve --think redesign the caching layer                 # extended reasoning during planning
 
 # Run phases individually (recommended for large tasks)
 /hve-research investigate the existing auth middleware
@@ -170,6 +171,7 @@ These commands are for extending HVE itself, building new slash commands, agent 
 # Utility
 /hve-pr-review                          # review current branch
 /hve-pr-review --dimension security     # security-only review
+/hve-pr-review --compact                # faster review with 4 paired subagents
 /hve-challenge                          # challenge the latest plan
 /hve-doc-ops                            # full documentation QA
 /hve-doc-ops --scope src/auth/          # scoped to one directory
