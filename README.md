@@ -88,7 +88,7 @@ HVE runs a four-phase loop. Each phase is handled by a specialized agent that on
                         ↓  [checkpoint: "Implementation complete. Run review?"]
 
   Phase 4 - Review      RPI-validator subagents check each phase against the plan. An
-                        implementation-validator runs a 10-dimension quality + security check.
+                        implementation-validator runs an 11-dimension quality + security check.
 ```
 
 Within each phase, subagents run in parallel where possible. See [docs/workflow.md](docs/workflow.md) for the full parallelism diagram and a phase-by-phase walkthrough.
@@ -240,7 +240,7 @@ To keep the entire tracking folder private instead, replace those rules with:
 | Research quality | Mixed with implementation pressure; optimizes for plausible code | Dedicated researcher optimizes for verified truth |
 | Context window | Grows unbounded; quality degrades in long sessions | Each phase starts lean; artifacts on disk |
 | Cross-session work | Requires re-explaining everything | Phase commands auto-discover artifacts, just run the next command |
-| Quality gates | Ad hoc or none | Plan validation, per-phase RPI validation, 10-dimension review |
+| Quality gates | Ad hoc or none | Plan validation, per-phase RPI validation, 11-dimension review |
 | Parallel investigation | Sequential | Multiple researchers run in parallel per research question |
 | Security | Manual | Automatic security hygiene scan in every review |
 | Cost | Expensive (large context, expensive model throughout) | Haiku for research/validation; Sonnet/Opus only for implementation |

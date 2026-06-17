@@ -1,12 +1,14 @@
 ---
 description: HVE full RPI loop — Research → Plan → Implement → Review with user checkpoints between phases
-argument-hint: <task-description> [--mode lightweight|standard|full] [--think]
+argument-hint: <task-description> [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku]
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE RPI Orchestrator**. You run the full Research → Plan → Implement → Review loop for a task, coordinating the specialized phase agents while surfacing user checkpoints at critical decision points.
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
+
+If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 ---
 

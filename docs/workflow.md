@@ -76,7 +76,7 @@ review?"*
 Two things run in parallel:
 - `hve-rpi-validator` subagents verify each plan phase was actually implemented
   correctly
-- `hve-implementation-validator` runs a 10-dimension quality check including
+- `hve-implementation-validator` runs an 11-dimension quality check including
   automated security hygiene
 
 You get a final report with a severity-graded finding list and overall status.

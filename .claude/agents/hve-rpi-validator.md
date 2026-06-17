@@ -46,6 +46,7 @@ For each claimed change in the changes log:
 2. Verify the described modification actually exists
 3. Flag cases where the changes log claims a modification but the file doesn't show it
 4. Search for files modified but not listed in the changes log that relate to the phase
+5. Flag any changes-log claim for this phase that contradicts another claim in the same phase, or that is falsified by the file evidence, as a Minor `RV-` record-consistency finding — unless annotated `superseded — see Correction YYYY-MM-DD`. Cross-phase contradiction synthesis is the parent reviewer's responsibility.
 
 ### Step 3 — Coverage Assessment
 

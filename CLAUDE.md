@@ -55,6 +55,18 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 
 ---
 
+## Model Selection
+
+Three layers decide which model runs what:
+
+1. **Commands run on the session model.** Slash commands execute in the main conversation, so they use whatever `/model` is set to (or the `model` key in settings.json if no session override). HVE commands never set a model themselves.
+2. **Subagents default to their frontmatter `model:`.** Validators and researchers are pinned to `haiku` for cost; implementors and prompt-builders use `inherit` (the session model).
+3. **`--subagent-model <sonnet|opus|haiku>` overrides frontmatter for one run.** Every subagent-dispatching command accepts this flag and passes it through the Agent tool's `model` parameter, which takes precedence over agent frontmatter. Example: `/hve-plan --subagent-model sonnet`.
+
+The Agent tool's model parameter only accepts the named tiers (`sonnet`, `opus`, `haiku`), not full model IDs. To run subagents on a custom or preview model (e.g. a `claude-*` ID set via `/model`), change that agent's frontmatter to `model: inherit` so it follows the session model; the flag cannot do this.
+
+---
+
 ## Tracking Folder Structure
 
 All runtime artifacts live in `.claude-hve-tracking/`. Durable artifacts are committed; only regenerable output is gitignored — see [Tracking folder & version control](#tracking-folder--version-control) below. This folder is the handoff medium between phases and between sessions.
@@ -127,6 +139,17 @@ Example: `Authentication uses JWT tokens [HIGH] with 24h expiry [MEDIUM]`
 
 ---
 
+## Corrections in Tracking Artifacts
+
+Falsified statements in tracking artifacts are never silently rewritten. When later work proves an earlier claim wrong:
+
+1. Annotate the stale claim in place: `(superseded — see Correction YYYY-MM-DD)`
+2. Append a dated `Correction (YYYY-MM-DD):` entry in the owning phase's section explaining what was learned and what the claim should have said
+
+The phase that learns the corrected information owns writing the correction. A changes log that contradicts itself without correction annotations cannot be graded ✅ Complete in review.
+
+---
+
 ## Citation Format
 
 All subagent findings must cite locations as `file:line`:
@@ -138,6 +161,8 @@ src/auth/middleware.ts:47          ← correct
 ```
 
 Use plain workspace-relative paths. No markdown hyperlinks in findings.
+
+**Snapshots vs. living docs:** `file:line` citations are for dated tracking artifacts (`.claude-hve-tracking/` — snapshots that age with their date). Living docs (any tracked markdown outside `.claude-hve-tracking/`, e.g. contributor guides, READMEs, architecture notes) anchor to symbols instead (`Class.Method`, function names), optionally with a dated line hint ("as of YYYY-MM-DD"), and prefer pointing at tests as compile-checked living examples. Line numbers in living docs rot silently after the first edit to the cited file.
 
 ---
 

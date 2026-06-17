@@ -1,12 +1,14 @@
 ---
 description: HVE Phase 4 — Validate the implementation against the plan, run quality checks, and produce a structured review log
-argument-hint: [task-slug] [--mode lightweight|standard|full] [--think]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE Task Reviewer**. Your job is to validate completed implementation work against the original plan and research, identify gaps and regressions, and produce a severity-graded review log. You do not implement — you validate.
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
+
+If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 ---
 
@@ -28,7 +30,8 @@ If any required artifact is missing, tell the user which phase to run first and 
 1. Read the plan, changes log, and research document
 2. List all plan phases and their completion status from the changes log
 3. Identify which phases are marked Complete vs. In Progress vs. Blocked
-4. Create the review log:
+4. **Record consistency scan**: re-read the changes log end-to-end. Flag any claim contradicted by a later claim (e.g. "no build environment available" vs. an executed test count) that is not annotated `superseded — see Correction YYYY-MM-DD` per the CLAUDE.md corrections convention. Record each un-annotated contradiction as a Minor finding for the review log's Record Consistency section.
+5. Create the review log:
    `.claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-review.md`
 
 Review log structure:
@@ -49,9 +52,13 @@ Overall Status: In Progress
 ## Security Findings
 [populated in Phase 3]
 
+## Record Consistency
+[un-annotated contradictions found in the changes log; populated in Phase 1]
+
 ## Summary
 Status: ✅ Complete | ⚠️ Needs Rework | 🚫 Blocked
 Critical: N | Major: N | Minor: N
+Record consistency: ✅ Consistent | ⚠️ Contradictions (correction appendix required)
 ```
 
 ---
@@ -82,7 +89,7 @@ Pass it:
 - The plan and research doc paths
 - Output path: `.claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-quality.md`
 
-The implementation validator checks all 10 dimensions:
+The implementation validator checks all 11 dimensions:
 1. Architecture conformance
 2. Design principles
 3. DRY compliance
@@ -93,6 +100,7 @@ The implementation validator checks all 10 dimensions:
 8. Test coverage
 9. Security posture (including secret exposure, .gitignore hygiene)
 10. Overall quality
+11. Documentation integrity (living-doc citation rot)
 
 Wait for it to complete. Add Critical and Major findings to the review log.
 
@@ -100,11 +108,11 @@ Wait for it to complete. Add Critical and Major findings to the review log.
 
 ## Phase 4 — Review Completion
 
-If `--think` was passed in `$ARGUMENTS`, or if any Critical findings were recorded in Phase 2 or Phase 3, invoke `/think` to reason through severity weights and cross-dimension conflicts before writing the final verdict block.
+If `--think` was passed in `$ARGUMENTS`, or if any Critical findings were recorded in Phase 2 or Phase 3, use extended reasoning to think through severity weights and cross-dimension conflicts before writing the final verdict block.
 
 1. Tally findings: count Critical / Major / Minor across all validators
 2. Determine overall status:
-   - **✅ Complete** — no Critical, ≤ 2 Major findings, all plan phases validated
+   - **✅ Complete** — no Critical, ≤ 2 Major findings, all plan phases validated, and the changes log is internally consistent (no un-annotated contradictions; any falsified earlier claim carries a dated Correction per the CLAUDE.md corrections convention). Contradictions without corrections → ⚠️ Needs Rework.
    - **⚠️ Needs Rework** — any Critical finding, or > 2 Major findings
    - **🚫 Blocked** — a plan phase is not yet implemented or a dependency is missing
 3. Update the review log with final summary

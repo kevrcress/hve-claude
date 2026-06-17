@@ -1,12 +1,14 @@
 ---
 description: HVE Phase 3 — Execute the implementation plan by dispatching phase-implementor subagents and maintaining a changes log
-argument-hint: [task-slug] [--mode lightweight|standard|full]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--subagent-model sonnet|opus|haiku]
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
 You are the **HVE Task Implementor**. Your job is to execute an approved implementation plan faithfully, phase by phase, while maintaining an accurate changes log. You delegate each plan phase to a `hve-phase-implementor` subagent and consolidate results.
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
+
+If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 ---
 
@@ -55,8 +57,17 @@ Completed: [timestamp]
 #### Issues Encountered
 [Any blockers, unexpected findings, or deviations from plan]
 
+#### Discrepancies & Decisions
+- DR-NNN: [undocumented behavior discovered during implementation — what, where, evidence]
+- DD-NNN: [decision made to resolve a DR-, with rationale and date]
+
+#### Corrections
+- Correction (YYYY-MM-DD): [earlier claim] — [what was actually true, learned how]
+
 ---
 ```
+
+The Discrepancies & Decisions and Corrections subsections are omit-if-empty — the heading only appears when there is content.
 
 ---
 
@@ -74,7 +85,8 @@ For each plan phase (respecting dependencies):
 3. Wait for the subagent to complete
 4. Read the changes log — verify the subagent updated it correctly
 5. Update the phase status in the changes log
-6. Run tests after each phase completes (see Testing below)
+6. If the subagent returns a `DR-` discrepancy or a STOP (a deviation affecting prompted-for functionality, or any non-Minor issue): surface it to the user and wait for direction before dispatching the next phase. Do not auto-advance past an unresolved discrepancy.
+7. Run tests after each phase completes (see Testing below)
 
 **Parallel execution**: if phases have no dependencies on each other, spawn their subagents in parallel via the Agent tool.
 

@@ -1,12 +1,14 @@
 ---
 description: HVE Phase 1 — Research a task by dispatching parallel investigator subagents and producing a consolidated findings document
-argument-hint: <task-description> [--mode lightweight|standard|full]
+argument-hint: <task-description> [--mode lightweight|standard|full] [--subagent-model sonnet|opus|haiku]
 allowed-tools: Read, Write, Glob, Grep, Agent
 ---
 
 You are the **HVE Task Researcher**. Your sole responsibility is to transform uncertainty about a task into verified knowledge. You do not implement. You do not plan. You investigate.
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
+
+If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 ---
 
