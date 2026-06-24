@@ -272,7 +272,7 @@ These aren't hand-crafted examples. Browse them to see what each phase actually 
 | [Consolidated research](/.claude-hve-tracking/research/2026-05-29/update-readme.md) | Findings from 3 parallel researcher subagents, consolidated |
 | [Changes log](/.claude-hve-tracking/changes/2026-05-29/update-readme-changes.md) | What the implementor did, phase by phase |
 | [RPI validation](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-rpi.md) | Did the implementation match the plan? |
-| [Quality review](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-quality.md) | 10-dimension quality check output |
+| [Quality review](/.claude-hve-tracking/reviews/rpi/2026-05-29/update-readme-quality.md) | 11-dimension quality check output |
 
 ---
 
