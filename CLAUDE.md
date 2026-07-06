@@ -270,11 +270,19 @@ Run the installer from this repo, pointing it at the target project:
 
 ```bash
 ./install.sh /path/to/your/project   # or run with no argument from inside the target
+./install.sh --global                # or install once for every project (~/.claude)
 ```
 
 The installer copies `.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, and
 `.claude/prompts/`, merges the HVE block into the target's `CLAUDE.md`, and adds the tracking
 `.gitignore` rules. It is idempotent — re-run it to pull updates.
+
+With `--global`, files go to `~/.claude/` (`%USERPROFILE%\.claude` on Windows) and the HVE block
+merges into `~/.claude/CLAUDE.md`, making HVE available in all projects; `.claude-hve-tracking/`
+is still created per project on first use. Windows users without bash: use the global
+paste-to-install prompt in docs/installation.md instead. Global mode skips `.gitignore`: add the tracking rules below to each project where
+you use HVE, and don't combine a global install with per-project copies (duplicates shadow each
+other).
 
 After installing:
 

@@ -115,6 +115,83 @@ re-run to pull in updates. On upgrade it automatically migrates any old top-leve
 `instructions/` and `prompts/` folders: identical files are removed silently;
 customized files are left in place with a warning.
 
+## Global install (all projects on this machine)
+
+Claude Code loads user-level commands and agents from `~/.claude/` and global
+instructions from `~/.claude/CLAUDE.md`, so HVE can be installed once and used
+in every project. On Windows, `~` means your user profile folder: the same
+paths are `%USERPROFILE%\.claude` (e.g. `C:\Users\you\.claude`). The tracking
+folder is unaffected by this choice: `.claude-hve-tracking/` is created inside
+whichever project you first run an HVE command in, exactly as with a project
+install.
+
+### Paste to install globally (any OS)
+
+Paste this into Claude Code running anywhere on the machine:
+
+```
+Please install the HVE Claude Code workflow globally for all my projects.
+Clone https://github.com/kevrcress/hve-claude into a temporary directory,
+then copy files into my user-level Claude folder (~/.claude on Mac/Linux,
+%USERPROFILE%\.claude on Windows): its hve-* commands into commands/, its
+hve-* agents into agents/, and its .claude/instructions/ and .claude/prompts/
+files into instructions/ and prompts/ there. Merge everything above the
+'## Your Project' heading in its CLAUDE.md into the CLAUDE.md in that same
+user-level folder, wrapped in these markers:
+<!-- HVE:START - managed by hve-claude, do not edit between markers -->
+...HVE content...
+<!-- HVE:END -->
+If that CLAUDE.md already has those markers, replace the content between
+them. If it has no markers, prepend the wrapped block before the existing
+content. If it does not exist, create it with the block followed by a
+'## Your Global Context' heading. Do not modify any .gitignore, but remind
+me to add .claude-hve-tracking/**/subagents/ and .claude-hve-tracking/sandbox/
+to the .gitignore of each project where I use HVE. Delete the temp clone and
+show me what changed.
+```
+
+Re-paste the same prompt later to update; the markers keep it idempotent.
+
+### Bash users (Mac, Linux, WSL, Git Bash on Windows)
+
+```bash
+/path/to/hve-claude/install.sh --global
+```
+
+The script installs to `$HOME/.claude`. In Git Bash, `$HOME` is your Windows
+user profile, which is where Claude Code on Windows looks, so the result is the
+same as the paste prompt. In WSL it installs to your WSL home, which is correct
+for Claude Code running inside WSL (but invisible to a Windows-native Claude
+Code; use the paste prompt for that).
+
+What differs from a project install:
+
+- Files go to `~/.claude/commands/`, `~/.claude/agents/`, `~/.claude/instructions/`,
+  and `~/.claude/prompts/`.
+- The HVE block merges into `~/.claude/CLAUDE.md` (wrapped in the same update
+  markers), not into a project `CLAUDE.md`.
+- **No `.gitignore` changes are made** (those are per-project). Add these lines to
+  the `.gitignore` of each project where you use HVE:
+  ```
+  # HVE tracking: commit durable artifacts, ignore regenerable noise
+  .claude-hve-tracking/**/subagents/
+  .claude-hve-tracking/sandbox/
+  ```
+
+Manual alternative: follow the Option B manual steps, substituting `~/.claude/`
+(Windows: `%USERPROFILE%\.claude\`) for `<your-project>/.claude/` in steps 2–5,
+merging the block into the `CLAUDE.md` in that folder in step 6, and skipping
+step 7.
+
+**Pick one mode per project.** If a project has its own copies of the hve-*
+commands and agents, they shadow the global ones and each command shows up twice
+in the command list. To switch an already-installed project over to the global
+install, delete the project's `.claude/commands/hve*.md` and
+`.claude/agents/hve*.md` and remove the HVE marker block from its `CLAUDE.md`.
+
+Updating a global install: re-run `./install.sh --global` from an updated clone,
+or re-paste the global install prompt. Both are idempotent, same as project mode.
+
 ## Updating an existing install
 
 Paste this into Claude Code from inside your project directory. It overwrites
