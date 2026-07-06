@@ -17,14 +17,16 @@ follow a strict response format and write durable artifacts to disk.
 
 | Agent | Role | Tools | Model |
 |---|---|---|---|
-| `hve-researcher` | Targeted codebase + web investigation | Read, Write, Glob, Grep, WebFetch | Haiku |
+| `hve-researcher` | Targeted codebase + web investigation | Read, Write, Glob, Grep, WebFetch | Inherit |
 | `hve-plan-validator` | Validates plan against research for completeness and coverage gaps | Read, Write, Edit, Glob, Grep | Haiku |
 | `hve-phase-implementor` | Executes one plan phase: writes code, updates changes log | All tools | Inherit |
 | `hve-rpi-validator` | Verifies a completed implementation phase matches what the plan required | Read, Write, Glob, Grep | Haiku |
-| `hve-implementation-validator` | 11-dimension quality check including automated security hygiene | Read, Write, Glob, Grep, Bash | Haiku |
-| `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / format / no-Copilot criteria | Read, Write, Glob, Grep | Haiku |
+| `hve-implementation-validator` | 11-dimension quality check including automated security hygiene | Read, Write, Glob, Grep, Bash | Sonnet |
+| `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / format / no-Copilot criteria | Read, Write, Glob, Grep | Sonnet |
 | `hve-prompt-tester` | Executes a draft prompt or agent definition literally against test scenarios | All tools | Inherit |
 | `hve-prompt-updater` | Rewrites a draft prompt based on evaluator findings | All tools | Inherit |
+
+Model values mirror each agent's `model:` frontmatter in `.claude/agents/` — that frontmatter is the source of truth; update this table when it changes.
 
 **Orchestrator spawning tree:**
 

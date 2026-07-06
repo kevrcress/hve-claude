@@ -1,7 +1,7 @@
 ---
 name: hve-researcher
 description: Use this agent when an hve-research or hve (orchestrator) command spawns a parallel investigator to research a specific topic or question about the codebase or a task.
-model: haiku
+model: inherit
 color: cyan
 tools: Read, Write, Glob, Grep, WebFetch
 ---

@@ -15,3 +15,11 @@ Thumbs.db
 
 # Node (if used in this repo)
 node_modules/
+
+# Credentials & secrets (HVE security hygiene — see CLAUDE.md, Security Hygiene)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx

@@ -1,7 +1,7 @@
 ---
 name: hve-prompt-evaluator
 description: Use this agent when an hve-prompt-builder command needs to evaluate a test execution log against quality criteria and produce severity-graded findings.
-model: haiku
+model: sonnet
 color: yellow
 tools: Read, Write, Glob, Grep
 ---

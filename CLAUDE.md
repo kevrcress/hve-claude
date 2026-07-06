@@ -60,7 +60,7 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 Three layers decide which model runs what:
 
 1. **Commands run on the session model.** Slash commands execute in the main conversation, so they use whatever `/model` is set to (or the `model` key in settings.json if no session override). HVE commands never set a model themselves.
-2. **Subagents default to their frontmatter `model:`.** Validators and researchers are pinned to `haiku` for cost; implementors and prompt-builders use `inherit` (the session model).
+2. **Subagents default to their frontmatter `model:`.** Mechanical checkers (plan validator, RPI validator) are pinned to `haiku` for cost; judgment-graded reviewers (implementation validator, prompt evaluator) are pinned to `sonnet`; researchers, implementors, and prompt-builders use `inherit` (the session model).
 3. **`--subagent-model <sonnet|opus|haiku>` overrides frontmatter for one run.** Every subagent-dispatching command accepts this flag and passes it through the Agent tool's `model` parameter, which takes precedence over agent frontmatter. Example: `/hve-plan --subagent-model sonnet`.
 
 The Agent tool's model parameter only accepts the named tiers (`sonnet`, `opus`, `haiku`), not full model IDs. To run subagents on a custom or preview model (e.g. a `claude-*` ID set via `/model`), change that agent's frontmatter to `model: inherit` so it follows the session model; the flag cannot do this.
