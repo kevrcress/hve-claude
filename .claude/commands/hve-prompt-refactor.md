@@ -38,7 +38,7 @@ Apply these improvements:
 
 ### Remove Copilot-Isms
 - `runSubagent(...)` → Agent tool instructions
-- Copilot model strings → `model: haiku` frontmatter
+- Copilot model strings → tier-appropriate `model:` frontmatter (`haiku` for mechanical checkers, `sonnet` for judgment-graded reviewers, `inherit` for judgment-heavy agents)
 - `applyTo` patterns → remove (no Claude Code equivalent)
 - VS Code keyboard shortcuts → remove
 - GitHub Copilot Chat UI references → remove

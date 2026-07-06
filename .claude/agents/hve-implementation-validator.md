@@ -1,7 +1,7 @@
 ---
 name: hve-implementation-validator
 description: Use this agent when an hve-review command needs to validate implementation quality across architecture, design, DRY, API usage, security, and other dimensions with severity-graded findings.
-model: haiku
+model: sonnet
 color: red
 tools: Read, Write, Glob, Grep, Bash
 ---
