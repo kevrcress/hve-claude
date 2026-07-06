@@ -194,6 +194,8 @@ These commands are for extending HVE itself, building new slash commands, agent 
 
 The paste-to-install prompt in [Quick start](#quick-start) is the fastest path and works on any OS. For step-by-step manual instructions, the bash installer, and the update prompt, see **[docs/installation.md](docs/installation.md)**.
 
+Prefer HVE in every project on your machine? Install it once globally: commands and agents go to your user-level `~/.claude/` folder (`%USERPROFILE%\.claude` on Windows) and work everywhere, while each project still gets its own `.claude-hve-tracking/` folder on first use. Use `./install.sh --global` (Mac/Linux/WSL/Git Bash) or the any-OS paste prompt in [Global install](docs/installation.md#global-install-all-projects-on-this-machine).
+
 ### Add your project context
 
 Open `CLAUDE.md` and add your project-specific details under `## Your Project`:

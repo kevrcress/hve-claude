@@ -3,7 +3,7 @@
 #
 # Usage: ./tests/run-install-tests.sh
 #
-# Runs all 5 install.sh test cases in isolated temp dirs, prints per-test
+# Runs all install.sh test cases in isolated temp dirs, prints per-test
 # pass/fail, exits 0 only if all assertions pass.
 #
 set -euo pipefail
@@ -362,6 +362,131 @@ test4_diverged_upgrade() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 5: Global install (--global against an isolated HOME)
+# ---------------------------------------------------------------------------
+test5_global_install() {
+  local fake_home="${WORK_DIR}/test5-home"
+  mkdir -p "${fake_home}"
+
+  local output
+  output="$(HOME="${fake_home}" "${INSTALL_SH}" --global 2>&1)"
+
+  # Commands and agents land under ~/.claude/, not ~/.claude/.claude/
+  local cmd_count
+  cmd_count="$(find "${fake_home}/.claude/commands" -maxdepth 1 -name "hve*.md" \
+    2>/dev/null | wc -l | tr -d '[:space:]')"
+  if (( cmd_count >= 1 )); then
+    _ok_inline "test5: ~/.claude/commands/ hve*.md count" \
+      "found ${cmd_count} file(s)"
+  else
+    _fail_inline "test5: ~/.claude/commands/ hve*.md count" \
+      "expected >=1 hve*.md, got ${cmd_count}"
+  fi
+
+  assert_file_count \
+    "${fake_home}/.claude/instructions" "*.md" 12 \
+    "test5: ~/.claude/instructions/ has exactly 12 .md files"
+
+  # HVE block merges into ~/.claude/CLAUDE.md (what Claude Code loads globally)
+  assert_exists "${fake_home}/.claude/CLAUDE.md" \
+    "test5: ~/.claude/CLAUDE.md created"
+  assert_contains "${fake_home}/.claude/CLAUDE.md" "<!-- HVE:START" \
+    "test5: ~/.claude/CLAUDE.md contains HVE:START"
+  assert_contains "${fake_home}/.claude/CLAUDE.md" "## Your Global Context" \
+    "test5: ~/.claude/CLAUDE.md has global placeholder section"
+
+  # No pollution of the home directory itself
+  assert_not_exists "${fake_home}/CLAUDE.md" \
+    "test5: no ~/CLAUDE.md created"
+  assert_not_exists "${fake_home}/.gitignore" \
+    "test5: no ~/.gitignore created"
+
+  assert_output_contains "${output}" "skipped .gitignore" \
+    "test5: output explains the skipped .gitignore step"
+
+  # Re-run is idempotent: exactly one managed block
+  HOME="${fake_home}" "${INSTALL_SH}" --global > /dev/null 2>&1
+  local marker_count
+  marker_count="$(grep -c "<!-- HVE:START" "${fake_home}/.claude/CLAUDE.md")"
+  if (( marker_count == 1 )); then
+    _ok_inline "test5: re-run keeps exactly one HVE:START" "count=1"
+  else
+    _fail_inline "test5: re-run keeps exactly one HVE:START" \
+      "count=${marker_count}"
+  fi
+
+  # --global rejects a trailing target directory
+  local rc=0
+  HOME="${fake_home}" "${INSTALL_SH}" --global "${WORK_DIR}" \
+    > /dev/null 2>&1 || rc=$?
+  if (( rc != 0 )); then
+    _ok_inline "test5: --global with target-dir exits nonzero" "rc=${rc}"
+  else
+    _fail_inline "test5: --global with target-dir exits nonzero" \
+      "expected failure, got rc=0"
+  fi
+
+  # --global fails cleanly when HOME is unset
+  rc=0
+  env -u HOME "${INSTALL_SH}" --global > /dev/null 2>&1 || rc=$?
+  if (( rc != 0 )); then
+    _ok_inline "test5: --global with unset HOME exits nonzero" "rc=${rc}"
+  else
+    _fail_inline "test5: --global with unset HOME exits nonzero" \
+      "expected failure, got rc=0"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Test 5b: Global upgrade over a pre-existing ~/.claude/CLAUDE.md
+# Covers the marker-replace and prepend branches in global mode.
+# ---------------------------------------------------------------------------
+test5b_global_existing_claude_md() {
+  # Case 1: existing global CLAUDE.md with markers is replaced in place.
+  local home_marked="${WORK_DIR}/test5b-home-marked"
+  mkdir -p "${home_marked}/.claude"
+  cp "${FIXTURES}/claude-md-current-marker.md" "${home_marked}/.claude/CLAUDE.md"
+
+  HOME="${home_marked}" "${INSTALL_SH}" --global > /dev/null 2>&1
+
+  local marker_count
+  marker_count="$(grep -c "<!-- HVE:START" "${home_marked}/.claude/CLAUDE.md")"
+  if (( marker_count == 1 )); then
+    _ok_inline "test5b: marked upgrade keeps exactly one HVE:START" "count=1"
+  else
+    _fail_inline "test5b: marked upgrade keeps exactly one HVE:START" \
+      "count=${marker_count}"
+  fi
+  assert_not_contains "${home_marked}/.claude/CLAUDE.md" \
+    "stub older HVE content" \
+    "test5b: marked upgrade replaces old block content"
+  assert_contains "${home_marked}/.claude/CLAUDE.md" \
+    "SENTINEL_YOUR_PROJECT_CONTENT" \
+    "test5b: marked upgrade preserves content outside markers"
+
+  # Case 2: existing global CLAUDE.md without markers gets the block prepended.
+  local home_plain="${WORK_DIR}/test5b-home-plain"
+  mkdir -p "${home_plain}/.claude"
+  cp "${FIXTURES}/claude-md-no-hve.md" "${home_plain}/.claude/CLAUDE.md"
+
+  HOME="${home_plain}" "${INSTALL_SH}" --global > /dev/null 2>&1
+
+  assert_contains "${home_plain}/.claude/CLAUDE.md" "<!-- HVE:START" \
+    "test5b: unmarked upgrade prepends HVE block"
+  assert_contains "${home_plain}/.claude/CLAUDE.md" \
+    "SENTINEL_ORIGINAL_CONTENT" \
+    "test5b: unmarked upgrade preserves existing content"
+  local first_line
+  first_line="$(head -1 "${home_plain}/.claude/CLAUDE.md")"
+  if [[ "${first_line}" == "<!-- HVE:START"* ]]; then
+    _ok_inline "test5b: block is prepended, not appended" "first line is marker"
+  else
+    _fail_inline "test5b: block is prepended, not appended" \
+      "first line: ${first_line}"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -375,6 +500,9 @@ main() {
   run_test "Test 3: Clean upgrade (identical instructions/)" test3_clean_upgrade
   run_test "Test 3b: Old em-dash marker upgrade" test3b_old_marker_upgrade
   run_test "Test 4: Diverged upgrade (bash.md modified)" test4_diverged_upgrade
+  run_test "Test 5: Global install (--global)" test5_global_install
+  run_test "Test 5b: Global upgrade (existing ~/.claude/CLAUDE.md)" \
+    test5b_global_existing_claude_md
 
   finish
 }

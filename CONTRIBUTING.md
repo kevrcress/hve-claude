@@ -21,8 +21,10 @@ No network connection required. Run from the repo root:
 ./tests/run-install-tests.sh
 ```
 
-Covers 5 `install.sh` scenarios: new install, prepend case, clean upgrade, old
-em-dash marker upgrade, and diverged upgrade. All tests should print `[ OK ]`.
+Covers 7 `install.sh` scenarios: new install, prepend case, clean upgrade, old
+em-dash marker upgrade, diverged upgrade, global install (`--global`), and
+global upgrade over an existing `~/.claude/CLAUDE.md`. All tests should print
+`[ OK ]`.
 
 ## Running the prompt tests
 
