@@ -27,6 +27,10 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 | Medium-Hard | Cross-cutting, multiple modules | Parallel research + plan validation |
 | Challenging | New patterns, high risk, unclear requirements | Full parallel dispatch: research, plan, implement, review |
 
+**Risk override:** classify at least Medium regardless of size when the change touches (a) code consumed outside this repo (published packages, installed prompts, APIs), (b) auth/security/crypto, (c) migrations or irreversible operations, (d) code paths with no test coverage.
+
+"Steps" means plan checklist bullets (Step N.M items), not plan phases.
+
 **Effort level:** For Challenging-difficulty tasks, increase reasoning depth by passing `--effort xhigh` on the CLI or setting `effortLevel: xhigh` in `.claude/settings.json`. This extends the model's internal reasoning budget, improving plan quality and review thoroughness at higher token cost.
 
 ---
@@ -60,7 +64,7 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 Three layers decide which model runs what:
 
 1. **Commands run on the session model.** Slash commands execute in the main conversation, so they use whatever `/model` is set to (or the `model` key in settings.json if no session override). HVE commands never set a model themselves.
-2. **Subagents default to their frontmatter `model:`.** Mechanical checkers (plan validator, RPI validator) are pinned to `haiku` for cost; judgment-graded reviewers (implementation validator, prompt evaluator) are pinned to `sonnet`; researchers, implementors, and prompt-builders use `inherit` (the session model).
+2. **Subagents default to their frontmatter `model:`.** Mechanical checkers (plan validator, RPI validator) are pinned to `haiku` for cost; judgment-graded reviewers (implementation validator, prompt evaluator, PR reviewer) are pinned to `sonnet`; researchers, implementors, and prompt-builders use `inherit` (the session model).
 3. **`--subagent-model <sonnet|opus|haiku>` overrides frontmatter for one run.** Every subagent-dispatching command accepts this flag and passes it through the Agent tool's `model` parameter, which takes precedence over agent frontmatter. Example: `/hve-plan --subagent-model sonnet`.
 
 The Agent tool's model parameter only accepts the named tiers (`sonnet`, `opus`, `haiku`), not full model IDs. To run subagents on a custom or preview model (e.g. a `claude-*` ID set via `/model`), change that agent's frontmatter to `model: inherit` so it follows the session model; the flag cannot do this.
@@ -92,9 +96,17 @@ All runtime artifacts live in `.claude-hve-tracking/`. Durable artifacts are com
 │   └── YYYY-MM-DD/kebab-slug.md
 ├── doc-ops/
 │   └── YYYY-MM-DD-session.md
+├── friction/
+│   └── YYYY-MM-DD-phase-slug.md                # Optional --friction-log notes
 └── sandbox/
     └── YYYY-MM-DD-topic-run-N/
 ```
+
+---
+
+## Friction Capture
+
+The six dispatching commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, `/hve-challenge`) accept an optional `--friction-log` flag. When set, the command records friction encountered during the phase (rough edges, ambiguous instructions, tooling gaps, wasted steps) to a dedicated artifact so the workflow itself can be improved. Friction notes write to `.claude-hve-tracking/friction/YYYY-MM-DD-phase-slug.md`. The flag is off by default; the per-command flag mechanics live in each command file.
 
 ---
 
@@ -110,6 +122,8 @@ All runtime artifacts live in `.claude-hve-tracking/`. Durable artifacts are com
 Example: task "add OAuth2 to the API" → slug `add-oauth2-api`
 - Plan: `.claude-hve-tracking/plans/2025-01-15/add-oauth2-api-plan.md`
 - Changes: `.claude-hve-tracking/changes/2025-01-15/add-oauth2-api-changes.md`
+
+Slug derivation: derive the slug from the primary deliverable of the task description (3–6 kebab-case words). When one prompt bundles several asks, slug the primary deliverable and list the secondary asks in the artifact body; do not concatenate them into the slug.
 
 ---
 
@@ -181,6 +195,20 @@ The parent agent reads the written artifact for full detail. Chat responses are 
 
 ---
 
+## Subagent Dispatch Discipline
+
+**Shell stays in the parent.** HVE subagents are read-only by design; most have no Bash. The parent session runs all git/shell commands and passes pre-digested results (short excerpts, counts, file lists) into subagent prompts. Never delegate a step requiring command execution to a subagent without checking its tool list; a validator without Bash will silently downgrade to static inference.
+
+If you dispatch an agent type not in the HVE roster (`.claude/agents/`), record in the phase artifact which type you used and why. Improvisation is allowed; invisible improvisation is not.
+
+---
+
+## Template Blanks
+
+Every template blank must be genuinely obtainable in-session or carry an explicit N/A branch (example: `Tests: N/A - no test runner in repo`). A blank that no one can fill produces a fabricated value or a stalled phase. `/hve-prompt-builder` enforces this check when authoring or revising templates.
+
+---
+
 ## Handoff Block Format
 
 Every standalone phase command ends with this copyable block:
@@ -208,6 +236,28 @@ The `/hve` orchestrator omits this block (it handles transitions internally).
 
 ---
 
+## Artifact Discovery & Relevance
+
+Phase commands discover their input artifacts from `.claude-hve-tracking/` deterministically:
+
+1. A task slug given in arguments wins.
+2. Otherwise collect the distinct slugs from artifacts dated within the last 7 days. A single candidate wins.
+3. Multiple candidates: prefer the slug matching the current git branch name; otherwise list the candidates and ask. Never silently pick between same-day slugs.
+4. Whatever is chosen, check topic relevance against the task before using it. An artifact about a different task is treated as absent, not as evidence.
+
+When a normally-expected input is absent or irrelevant:
+
+- **Reconstructible inputs** (research, details): record the skip and proceed. The plan file header records `Research: none — [reason]` and the planning log gets a DD- entry. A recorded skip is legitimate; an unrecorded one is not.
+- **Unreconstructible inputs** (plan file for implement, changes log for review): stop and tell the user which phase to run first.
+
+---
+
+## Mid-Flow Scope Changes
+
+Chat instructions do not survive phase handoffs — disk does. When the user adds or changes requirements after the plan is written, append them to the PLAN file under `## Requirements added after <phase>` with a date. Every later phase command must read that section as part of plan discovery and treat its entries as plan content. Standing instructions ("always do X for the rest of this task") are recorded the same way.
+
+---
+
 ## Instructions Reference
 
 Before implementing in a specific language or tool, read the relevant conventions file:
@@ -224,10 +274,14 @@ Before implementing in a specific language or tool, read the relevant convention
 | Rust Tests | `.claude/instructions/rust-tests.md` |
 | Terraform | `.claude/instructions/terraform.md` |
 | Markdown | `.claude/instructions/markdown.md` |
+| JavaScript | `.claude/instructions/javascript.md` |
+| TypeScript | `.claude/instructions/typescript.md` |
 | Git commits | `.claude/instructions/git-commit-messages.md` |
 | Writing Style | `.claude/instructions/writing-style.md` |
 
 Phase commands that involve implementation explicitly instruct Claude to read the relevant file before writing code.
+
+If no instructions file exists for the language at hand, do not block: follow the dominant conventions of the existing code in the repo, and note the missing instructions file in the changes log.
 
 ---
 
@@ -261,6 +315,8 @@ Claude Code's hooks can automatically append file edits to the changes log. Add 
 ```
 
 This is optional. The `hve-phase-implementor` subagent writes the changes log explicitly even without hooks.
+
+**Concurrent writes**: when phase implementors run in parallel, each agent owns exactly one `### Phase N:` section of the shared changes log and updates it only via targeted Edit calls anchored on its own heading. Whole-file Write of the changes log is forbidden once more than one agent may hold it — last-writer-wins destroys sibling sections silently.
 
 ---
 

@@ -25,6 +25,7 @@ follow a strict response format and write durable artifacts to disk.
 | `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / format / no-Copilot criteria | Read, Write, Glob, Grep | Sonnet |
 | `hve-prompt-tester` | Executes a draft prompt or agent definition literally against test scenarios | All tools | Inherit |
 | `hve-prompt-updater` | Rewrites a draft prompt based on evaluator findings | All tools | Inherit |
+| `hve-pr-reviewer` | Reviews a diff against one or two assigned quality dimensions, returning severity-graded, dimension-prefixed findings | Read, Write, Glob, Grep | Sonnet |
 
 Model values mirror each agent's `model:` frontmatter in `.claude/agents/` — that frontmatter is the source of truth; update this table when it changes.
 

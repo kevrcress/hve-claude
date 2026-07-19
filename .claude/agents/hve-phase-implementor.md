@@ -45,6 +45,8 @@ For each step:
    - [x] Step N.M: [description] — `file:line`
    ```
 
+**Concurrent writes**: when phase implementors run in parallel, each agent owns exactly one `### Phase N:` section of the shared changes log and updates it only via targeted Edit calls anchored on its own heading. Whole-file Write of the changes log is forbidden once more than one agent may hold it — last-writer-wins destroys sibling sections silently.
+
 If you encounter an unexpected blocker (missing file, conflicting pattern, ambiguous requirement):
 - Try to resolve it using existing code context
 - If unresolvable, add a `Blocked: [reason]` note to the changes log and surface it in your response
@@ -55,6 +57,8 @@ If a test failure reveals system behavior not covered by the plan, research, or 
 - Halt the step, or proceed only on the parts not gated by the discrepancy
 
 A test expectation may be changed only with a recorded `DD-` decision to cite.
+
+**Exception — plan-licensed contract change**: when a plan step explicitly changes a behavior contract, rewriting the covering tests to match the new contract is in-scope work, not a forbidden expectation-adjustment. Cite the plan step and log a `DD-` decision. This exception applies only when the plan itself authorizes the contract change; a test failure revealing undocumented behavior with no plan license still follows the DR-/halt rule above.
 
 ### Step 3 — Validate
 
@@ -72,8 +76,8 @@ Update the changes log with the full phase summary:
 ```markdown
 ### Phase N: [Phase Name]
 Status: Complete | Blocked
-Started: [ISO timestamp]
-Completed: [ISO timestamp]
+Started: [run `date -u +%Y-%m-%dT%H:%M:%SZ` — never write a timestamp you did not obtain]
+Completed: [same command at completion; if no clock is obtainable, write `N/A — no clock available`]
 
 #### Files Modified
 - `src/auth/middleware.ts:47` — Added JWT validation middleware
@@ -96,6 +100,14 @@ Completed: [ISO timestamp]
 ```
 
 Omit the Discrepancies & Decisions and Corrections subsections when empty — the heading only appears when there is content.
+
+When the phase touched testable code, record the test outcome in the changes log. After detecting the runner and running it (cap output at 100 lines):
+
+3. Record in the changes log exactly one of:
+   - `Tests: X passed, Y failed` — only with numbers read from actual runner output this session
+   - `Tests: N/A — no test runner detected in repo` — when step 1 finds no runner
+   - `Tests: not run — [reason]` — when a runner exists but running it was impossible
+   Never write a count that did not come from output you observed.
 
 ---
 

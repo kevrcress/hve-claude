@@ -91,7 +91,7 @@ run_test() {
 
 # ---------------------------------------------------------------------------
 # seed_old_instructions <target_dir>
-# Copies all 12 HVE instruction files from .claude/instructions/ into
+# Copies all 14 HVE instruction files from .claude/instructions/ into
 # <target_dir>/instructions/ simulating a prior install at the old location.
 # ---------------------------------------------------------------------------
 seed_old_instructions() {
@@ -153,10 +153,10 @@ test1_new_install() {
       "expected >=1 hve*.md, got ${agent_count}"
   fi
 
-  # .claude/instructions/ has exactly 12 .md files
+  # .claude/instructions/ has exactly 14 .md files
   assert_file_count \
-    "${test_dir}/.claude/instructions" "*.md" 12 \
-    "test1: .claude/instructions/ has exactly 12 .md files"
+    "${test_dir}/.claude/instructions" "*.md" 14 \
+    "test1: .claude/instructions/ has exactly 14 .md files"
 
   # .claude/prompts/ has at least one .md
   local prompts_count
@@ -254,10 +254,10 @@ test3_clean_upgrade() {
   local output
   output="$("${INSTALL_SH}" "${test_dir}" 2>&1)"
 
-  # .claude/instructions/ has exactly 12 .md files
+  # .claude/instructions/ has exactly 14 .md files
   assert_file_count \
-    "${test_dir}/.claude/instructions" "*.md" 12 \
-    "test3: .claude/instructions/ has exactly 12 .md files"
+    "${test_dir}/.claude/instructions" "*.md" 14 \
+    "test3: .claude/instructions/ has exactly 14 .md files"
 
   # instructions/ root dir removed (all files were identical)
   assert_not_exists "${test_dir}/instructions" \
@@ -355,10 +355,10 @@ test4_diverged_upgrade() {
   assert_not_exists "${test_dir}/instructions/python.md" \
     "test4: non-diverged instructions/python.md was removed"
 
-  # .claude/instructions/ has exactly 12 .md files
+  # .claude/instructions/ has exactly 14 .md files
   assert_file_count \
-    "${test_dir}/.claude/instructions" "*.md" 12 \
-    "test4: .claude/instructions/ has exactly 12 .md files"
+    "${test_dir}/.claude/instructions" "*.md" 14 \
+    "test4: .claude/instructions/ has exactly 14 .md files"
 }
 
 # ---------------------------------------------------------------------------
@@ -384,8 +384,8 @@ test5_global_install() {
   fi
 
   assert_file_count \
-    "${fake_home}/.claude/instructions" "*.md" 12 \
-    "test5: ~/.claude/instructions/ has exactly 12 .md files"
+    "${fake_home}/.claude/instructions" "*.md" 14 \
+    "test5: ~/.claude/instructions/ has exactly 14 .md files"
 
   # HVE block merges into ~/.claude/CLAUDE.md (what Claude Code loads globally)
   assert_exists "${fake_home}/.claude/CLAUDE.md" \

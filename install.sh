@@ -91,7 +91,8 @@ echo "  ✓ $CLAUDE_DIR_LABEL/instructions/ and $CLAUDE_DIR_LABEL/prompts/"
 # Keep in sync with HVE_INSTRUCTION_FILES in tests/lib/instruction-files.sh.
 HVE_INSTRUCTION_FILES=(
   bash.md csharp.md csharp-tests.md python.md python-tests.md python-uv.md
-  rust.md rust-tests.md terraform.md markdown.md git-commit-messages.md writing-style.md
+  rust.md rust-tests.md terraform.md javascript.md typescript.md markdown.md
+  git-commit-messages.md writing-style.md
 )
 
 OLD_INSTRUCTIONS_DIR="$TARGET/instructions"

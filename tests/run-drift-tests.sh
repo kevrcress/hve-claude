@@ -21,10 +21,23 @@ set -euo pipefail
 
 readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly AGENTS_DIR="${REPO_ROOT}/.claude/agents"
+readonly COMMANDS_DIR="${REPO_ROOT}/.claude/commands"
+readonly INSTRUCTIONS_DIR="${REPO_ROOT}/.claude/instructions"
 readonly INTERNALS_MD="${REPO_ROOT}/docs/internals.md"
 readonly CLAUDE_MD="${REPO_ROOT}/CLAUDE.md"
 readonly GITIGNORE="${REPO_ROOT}/.gitignore"
 readonly VALID_MODELS="haiku sonnet opus inherit"
+
+# Agents that carry the FULL Subagent Response Protocol (6 invariant lines).
+# The three prompt-builder sandbox agents (hve-prompt-evaluator,
+# hve-prompt-tester, hve-prompt-updater) intentionally use a reduced,
+# sandbox-local Response Format (no 3-question cap; the updater has no
+# 5-item checklist), so they are out of scope for the structural check
+# below. This explicit list is the discovery idiom — no agent file names
+# the protocol as a greppable string.
+readonly FULL_PROTOCOL_AGENTS="hve-researcher hve-phase-implementor \
+hve-plan-validator hve-rpi-validator hve-implementation-validator \
+hve-pr-reviewer"
 
 # Source the assertion library (sets ASSERT_LOG).
 # shellcheck source=tests/lib/assert.sh
@@ -252,6 +265,246 @@ test4_gitignore_hygiene() {
 }
 
 # ---------------------------------------------------------------------------
+# extract_line <file> <fixed-prefix>
+# Prints the FIRST line of <file> beginning with <fixed-prefix> (matched as
+# a literal, anchored to start-of-line). Empty if no such line exists. Used
+# to pull a single-line boilerplate paragraph for byte-identical comparison.
+# ---------------------------------------------------------------------------
+extract_line() {
+  local file="${1}"
+  local prefix="${2}"
+  grep -F -m1 -- "${prefix}" "${file}" 2>/dev/null || true
+}
+
+# ---------------------------------------------------------------------------
+# Test 5 — subagent_model_boilerplate
+# The `--subagent-model` paragraph is duplicated verbatim across every
+# command that carries it. Extract that line from each carrier and assert
+# all occurrences are byte-identical to the first occurrence.
+# ---------------------------------------------------------------------------
+readonly SUBAGENT_MODEL_PREFIX='If `--subagent-model'
+
+test5_subagent_model_boilerplate() {
+  local file stem line canonical="" canonical_file=""
+  local -a carriers=()
+  for file in "${COMMANDS_DIR}"/*.md; do
+    if grep -qF -- "${SUBAGENT_MODEL_PREFIX}" "${file}"; then
+      carriers+=("${file}")
+    fi
+  done
+
+  if (( ${#carriers[@]} < 2 )); then
+    _fail_inline "test5: carrier count" \
+      "expected >= 2 commands carrying the --subagent-model block, got ${#carriers[@]}"
+    return
+  fi
+  _ok_inline "test5: carrier count" \
+    "${#carriers[@]} command(s) carry the --subagent-model block"
+
+  for file in "${carriers[@]}"; do
+    stem="$(basename "${file}" .md)"
+    line="$(extract_line "${file}" "${SUBAGENT_MODEL_PREFIX}")"
+    if [[ -z "${canonical}" ]]; then
+      canonical="${line}"
+      canonical_file="${stem}"
+      _ok_inline "test5: ${stem} is canonical" "reference occurrence"
+      continue
+    fi
+    if [[ "${line}" == "${canonical}" ]]; then
+      _ok_inline "test5: ${stem} matches canonical" \
+        "byte-identical to ${canonical_file}"
+    else
+      _fail_inline "test5: ${stem} matches canonical" \
+        "--subagent-model block differs from ${canonical_file}"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Test 6 — friction_flag_boilerplate
+# The `--friction-log` paragraph is duplicated verbatim across exactly six
+# commands (research, plan, implement, review, pr-review, challenge). Assert
+# the carrier count is 6 and every occurrence is byte-identical to the first.
+# ---------------------------------------------------------------------------
+readonly FRICTION_FLAG_PREFIX='If `--friction-log`'
+readonly FRICTION_EXPECTED_COUNT=6
+
+test6_friction_flag_boilerplate() {
+  local file stem line canonical="" canonical_file=""
+  local -a carriers=()
+  for file in "${COMMANDS_DIR}"/*.md; do
+    if grep -qF -- "${FRICTION_FLAG_PREFIX}" "${file}"; then
+      carriers+=("${file}")
+    fi
+  done
+
+  if (( ${#carriers[@]} == FRICTION_EXPECTED_COUNT )); then
+    _ok_inline "test6: carrier count" \
+      "${#carriers[@]} commands carry the --friction-log block (expected ${FRICTION_EXPECTED_COUNT})"
+  else
+    _fail_inline "test6: carrier count" \
+      "expected ${FRICTION_EXPECTED_COUNT} commands carrying the --friction-log block, got ${#carriers[@]}"
+  fi
+
+  for file in "${carriers[@]}"; do
+    stem="$(basename "${file}" .md)"
+    line="$(extract_line "${file}" "${FRICTION_FLAG_PREFIX}")"
+    if [[ -z "${canonical}" ]]; then
+      canonical="${line}"
+      canonical_file="${stem}"
+      _ok_inline "test6: ${stem} is canonical" "reference occurrence"
+      continue
+    fi
+    if [[ "${line}" == "${canonical}" ]]; then
+      _ok_inline "test6: ${stem} matches canonical" \
+        "byte-identical to ${canonical_file}"
+    else
+      _fail_inline "test6: ${stem} matches canonical" \
+        "--friction-log block differs from ${canonical_file}"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Test 7 — response_protocol_structure
+# Each full-protocol agent must carry all six invariant lines of the
+# Subagent Response Protocol. Structural greps (not byte-diff), because
+# agents vary the status vocabulary (Status/Quality/Verdict) and the exact
+# wording of each item. See FULL_PROTOCOL_AGENTS for the in-scope set.
+# ---------------------------------------------------------------------------
+test7_response_protocol_structure() {
+  local stem file
+  for stem in ${FULL_PROTOCOL_AGENTS}; do
+    file="${AGENTS_DIR}/${stem}.md"
+    if [[ ! -f "${file}" ]]; then
+      _fail_inline "test7: ${stem} present" \
+        "expected agent file ${file} but not found"
+      continue
+    fi
+
+    _grep_invariant "${file}" "${stem}" "artifact-path line" \
+      'One line: `?(Written|Updated):'
+    _grep_invariant "${file}" "${stem}" "status line" \
+      '(Status:|Quality:|Verdict:)'
+    _grep_invariant "${file}" "${stem}" "7-bullet cap" \
+      'Up to \**7\** bullet'
+    _grep_invariant "${file}" "${stem}" "5-item checklist cap" \
+      'Up to \**5\**'
+    _grep_invariant "${file}" "${stem}" "3-question cap" \
+      'Up to \**3\**'
+    _grep_invariant "${file}" "${stem}" "Full detail line" \
+      'Full detail'
+  done
+}
+
+# _grep_invariant <file> <stem> <label> <ere>
+# Assert <file> contains at least one line matching <ere>.
+_grep_invariant() {
+  local file="${1}"
+  local stem="${2}"
+  local label="${3}"
+  local ere="${4}"
+  if grep -qE "${ere}" "${file}"; then
+    _ok_inline "test7: ${stem} ${label}" "present"
+  else
+    _fail_inline "test7: ${stem} ${label}" \
+      "no line matching /${ere}/ in ${stem}.md"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Test 8 — instructions_table_sync
+# The CLAUDE.md Instructions Reference table and .claude/instructions/ must
+# agree in both directions: every `.claude/instructions/*.md` path cited in
+# the table exists on disk, and every file on disk appears as a table row.
+# (The install suite only counts the instruction files; it does not check
+# the CLAUDE.md table, so this is a new assertion, not a duplicate.)
+# ---------------------------------------------------------------------------
+test8_instructions_table_sync() {
+  local -a table_paths=()
+  local path
+  # Extract every `.claude/instructions/NAME.md` path cited in CLAUDE.md.
+  while IFS= read -r path; do
+    [[ -n "${path}" ]] && table_paths+=("${path}")
+  done < <(grep -oE '\.claude/instructions/[A-Za-z0-9._-]+\.md' "${CLAUDE_MD}" \
+    | sort -u)
+
+  if (( ${#table_paths[@]} == 0 )); then
+    _fail_inline "test8: table rows present" \
+      "no .claude/instructions/*.md rows found in CLAUDE.md"
+    return
+  fi
+
+  # Direction 1: every cited path exists on disk.
+  for path in "${table_paths[@]}"; do
+    if [[ -f "${REPO_ROOT}/${path}" ]]; then
+      _ok_inline "test8: cited file exists" "${path}"
+    else
+      _fail_inline "test8: cited file exists" \
+        "CLAUDE.md cites ${path} but the file is missing"
+    fi
+  done
+
+  # Direction 2: every file on disk appears as a table row.
+  local file stem cited
+  for file in "${INSTRUCTIONS_DIR}"/*.md; do
+    stem="$(basename "${file}")"
+    cited=0
+    for path in "${table_paths[@]}"; do
+      if [[ "${path}" == ".claude/instructions/${stem}" ]]; then
+        cited=1
+        break
+      fi
+    done
+    if (( cited == 1 )); then
+      _ok_inline "test8: file in table" "${stem}"
+    else
+      _fail_inline "test8: file in table" \
+        "${stem} exists but is not a row in the CLAUDE.md Instructions Reference table"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Test 9 — agent_roster_references
+# Every hve-* agent type referenced by name in a command file must exist as
+# .claude/agents/<name>.md. References are extracted as bare backticked
+# tokens (`hve-foo`) — this excludes slash-command references (`/hve-foo`)
+# and the `.claude-hve-tracking` path token, both of which are backticked
+# with a different neighbour. Catches missing-agent regressions such as a
+# command dispatching an agent type whose definition file was never added.
+# ---------------------------------------------------------------------------
+test9_agent_roster_references() {
+  local -a tokens=()
+  local token
+  while IFS= read -r token; do
+    [[ -n "${token}" ]] && tokens+=("${token}")
+  done < <(grep -rhoE '`hve-[a-z-]+`' "${COMMANDS_DIR}"/*.md \
+    | tr -d '`' | sort -u)
+
+  if (( ${#tokens[@]} == 0 )); then
+    _fail_inline "test9: references present" \
+      "no backticked hve-* agent references found in command files"
+    return
+  fi
+
+  for token in "${tokens[@]}"; do
+    # A token that is itself a command file name is a command reference,
+    # not an agent reference; skip it.
+    if [[ -f "${COMMANDS_DIR}/${token}.md" ]]; then
+      _ok_inline "test9: ${token} is a command name" "not an agent reference"
+      continue
+    fi
+    if [[ -f "${AGENTS_DIR}/${token}.md" ]]; then
+      _ok_inline "test9: ${token} resolves" "agent file exists"
+    else
+      _fail_inline "test9: ${token} resolves" \
+        "command references \`${token}\` but ${AGENTS_DIR}/${token}.md is missing"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -260,8 +513,8 @@ main() {
   echo "  Agents    : ${AGENTS_DIR}"
 
   local target
-  for target in "${AGENTS_DIR}" "${INTERNALS_MD}" "${CLAUDE_MD}" \
-    "${GITIGNORE}"; do
+  for target in "${AGENTS_DIR}" "${COMMANDS_DIR}" "${INSTRUCTIONS_DIR}" \
+    "${INTERNALS_MD}" "${CLAUDE_MD}" "${GITIGNORE}"; do
     if [[ ! -e "${target}" ]]; then
       err "required path not found: ${target}"
       exit 1
@@ -274,6 +527,16 @@ main() {
   run_test "Test 3: CLAUDE.md Model Selection prose sync" \
     test3_claudemd_prose_sync
   run_test "Test 4: .gitignore security hygiene" test4_gitignore_hygiene
+  run_test "Test 5: --subagent-model boilerplate drift" \
+    test5_subagent_model_boilerplate
+  run_test "Test 6: --friction-log boilerplate drift" \
+    test6_friction_flag_boilerplate
+  run_test "Test 7: Subagent Response Protocol structure" \
+    test7_response_protocol_structure
+  run_test "Test 8: CLAUDE.md Instructions Reference table sync" \
+    test8_instructions_table_sync
+  run_test "Test 9: agent roster references resolve" \
+    test9_agent_roster_references
 
   finish
 }

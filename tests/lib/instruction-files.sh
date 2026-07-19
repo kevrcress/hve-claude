@@ -12,6 +12,8 @@ declare -a HVE_INSTRUCTION_FILES=(
   rust.md
   rust-tests.md
   terraform.md
+  javascript.md
+  typescript.md
   markdown.md
   git-commit-messages.md
   writing-style.md

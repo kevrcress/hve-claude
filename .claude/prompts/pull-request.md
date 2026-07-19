@@ -17,7 +17,7 @@ Analyzes the diff between the current branch and `main` (or a specified base) ac
 
 ## Output
 
-- Review log: `.claude-hve-tracking/pr/review/BRANCH-NAME/YYYY-MM-DD-review.md`
+- Review log: `.claude-hve-tracking/reviews/pr/BRANCH-NAME/YYYY-MM-DD-review.md`
 - Verdict: ✅ Approve | ⚠️ Request Changes | 🚫 Block
 - Findings organized by severity: Critical → Major → Minor
 
