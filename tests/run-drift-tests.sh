@@ -526,18 +526,23 @@ test9_agent_roster_references() {
 # prefix plus the number of files expected to carry it, and asserts every
 # occurrence is byte-identical to the first.
 #
-# Spec format: label|expected_carrier_count|fixed-string line prefix
+# Spec format: label|expected_carrier_count|mode|fixed-string line prefix
+#   mode=identical — every carrier's line must be byte-identical to the first
+#   mode=present   — carrier count only; use when the same guarantee is stated
+#                    inside different surrounding sentences, so byte-identity
+#                    would fail on legitimate variation
 # Corpus: .claude/commands/*.md, .claude/agents/*.md, CLAUDE.md
 # ---------------------------------------------------------------------------
 readonly -a CANONICAL_BLOCK_SPECS=(
-  'discovery_stub|3|Discover inputs per the Artifact Discovery & Relevance convention'
-  'concurrent_writes|3|**Concurrent writes**'
-  'timestamp_started|2|Started: [run `date -u'
-  'timestamp_completed|2|Completed: [same command at completion'
-  'testcount_passed|2|- `Tests: X passed, Y failed`'
-  'testcount_na|2|- `Tests: N/A'
-  'testcount_notrun|2|- `Tests: not run'
-  'testcount_never|2|Never write a count that did not come from'
+  'discovery_stub|3|identical|Discover inputs per the Artifact Discovery & Relevance convention'
+  'concurrent_writes|4|identical|**Concurrent writes**'
+  'timestamp_started|2|identical|Started: [run `date -u'
+  'timestamp_completed|2|identical|Completed: [same command at completion'
+  'testcount_passed|2|identical|- `Tests: X passed, Y failed`'
+  'testcount_na|2|identical|- `Tests: N/A'
+  'testcount_notrun|2|identical|- `Tests: not run'
+  'testcount_never|2|identical|Never write a count that did not come from'
+  'simple_carveout_guarantee|2|present|still creating and updating the changes log and running the test gate'
 )
 
 # canonical_block_corpus — prints the search corpus, one path per line.
@@ -551,15 +556,17 @@ canonical_block_corpus() {
   echo "${CLAUDE_MD}"
 }
 
-# assert_canonical_block label expected_count prefix
+# assert_canonical_block label expected_count mode prefix
 # Discovers every corpus file containing <prefix>, then asserts (a) the
-# carrier count matches <expected_count> and (b) each occurrence is
-# byte-identical to the first. A carrier-count mismatch short-circuits: a
-# block that vanished from a file is the signal, not the identity diff.
+# carrier count matches <expected_count> and, when mode=identical, (b) each
+# occurrence is byte-identical to the first. A carrier-count mismatch
+# short-circuits: a block that vanished from a file is the signal, not the
+# identity diff.
 assert_canonical_block() {
   local label="${1}"
   local expected="${2}"
-  local prefix="${3}"
+  local mode="${3}"
+  local prefix="${4}"
   local file stem line canonical="" canonical_file=""
   local -a carriers=()
 
@@ -575,6 +582,10 @@ assert_canonical_block() {
   else
     _fail_inline "test10: ${label} carrier count" \
       "expected ${expected} file(s) carrying the ${label} block, got ${#carriers[@]}"
+    return
+  fi
+
+  if [[ "${mode}" == "present" ]]; then
     return
   fi
 
@@ -598,10 +609,10 @@ assert_canonical_block() {
 }
 
 test10_canonical_block_drift() {
-  local spec label expected prefix
+  local spec label expected mode prefix
   for spec in "${CANONICAL_BLOCK_SPECS[@]}"; do
-    IFS='|' read -r label expected prefix <<< "${spec}"
-    assert_canonical_block "${label}" "${expected}" "${prefix}"
+    IFS='|' read -r label expected mode prefix <<< "${spec}"
+    assert_canonical_block "${label}" "${expected}" "${mode}" "${prefix}"
   done
 }
 
