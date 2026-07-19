@@ -16,6 +16,19 @@
 #      different tier for any pinned agent it names
 #   4. .gitignore hygiene    — credential patterns from the CLAUDE.md
 #      security checklist are present
+#   5. --subagent-model      — the boilerplate paragraph is byte-identical
+#      across every command that carries it
+#   6. --friction-log        — the flag block is byte-identical across the
+#      six dispatching commands
+#   7. Response protocol     — the full-protocol agents carry all six
+#      invariant lines (structural greps, not byte-diff)
+#   8. Instructions table    — CLAUDE.md Instructions Reference and
+#      .claude/instructions/*.md agree in both directions
+#   9. Agent roster refs     — every `hve-*` agent named in a command file
+#      exists in .claude/agents/
+#  10. Canonical blocks      — the other deliberately-duplicated blocks
+#      (discovery stub, concurrent-writes, timestamp, test-count) are
+#      byte-identical across their carriers
 #
 set -euo pipefail
 
@@ -505,6 +518,94 @@ test9_agent_roster_references() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 10 — canonical_block_drift
+# Tests 5 and 6 protect the --subagent-model and --friction-log paragraphs.
+# The remediation deliberately duplicates several OTHER canonical blocks whose
+# single source of truth is the implementation details doc; without a check
+# they can diverge silently. Each spec names one block by a fixed-string line
+# prefix plus the number of files expected to carry it, and asserts every
+# occurrence is byte-identical to the first.
+#
+# Spec format: label|expected_carrier_count|fixed-string line prefix
+# Corpus: .claude/commands/*.md, .claude/agents/*.md, CLAUDE.md
+# ---------------------------------------------------------------------------
+readonly -a CANONICAL_BLOCK_SPECS=(
+  'discovery_stub|3|Discover inputs per the Artifact Discovery & Relevance convention'
+  'concurrent_writes|3|**Concurrent writes**'
+  'timestamp_started|2|Started: [run `date -u'
+  'timestamp_completed|2|Completed: [same command at completion'
+  'testcount_passed|2|- `Tests: X passed, Y failed`'
+  'testcount_na|2|- `Tests: N/A'
+  'testcount_notrun|2|- `Tests: not run'
+  'testcount_never|2|Never write a count that did not come from'
+)
+
+# canonical_block_corpus — prints the search corpus, one path per line.
+canonical_block_corpus() {
+  local file
+  for file in "${COMMANDS_DIR}"/*.md "${AGENTS_DIR}"/*.md; do
+    if [[ -f "${file}" ]]; then
+      echo "${file}"
+    fi
+  done
+  echo "${CLAUDE_MD}"
+}
+
+# assert_canonical_block label expected_count prefix
+# Discovers every corpus file containing <prefix>, then asserts (a) the
+# carrier count matches <expected_count> and (b) each occurrence is
+# byte-identical to the first. A carrier-count mismatch short-circuits: a
+# block that vanished from a file is the signal, not the identity diff.
+assert_canonical_block() {
+  local label="${1}"
+  local expected="${2}"
+  local prefix="${3}"
+  local file stem line canonical="" canonical_file=""
+  local -a carriers=()
+
+  while IFS= read -r file; do
+    if grep -qF -- "${prefix}" "${file}"; then
+      carriers+=("${file}")
+    fi
+  done < <(canonical_block_corpus)
+
+  if (( ${#carriers[@]} == expected )); then
+    _ok_inline "test10: ${label} carrier count" \
+      "${#carriers[@]} file(s) carry the block (expected ${expected})"
+  else
+    _fail_inline "test10: ${label} carrier count" \
+      "expected ${expected} file(s) carrying the ${label} block, got ${#carriers[@]}"
+    return
+  fi
+
+  for file in "${carriers[@]}"; do
+    stem="$(basename "${file}" .md)"
+    line="$(extract_line "${file}" "${prefix}")"
+    if [[ -z "${canonical}" ]]; then
+      canonical="${line}"
+      canonical_file="${stem}"
+      _ok_inline "test10: ${label} ${stem} is canonical" "reference occurrence"
+      continue
+    fi
+    if [[ "${line}" == "${canonical}" ]]; then
+      _ok_inline "test10: ${label} ${stem} matches canonical" \
+        "byte-identical to ${canonical_file}"
+    else
+      _fail_inline "test10: ${label} ${stem} matches canonical" \
+        "${label} block differs from ${canonical_file}"
+    fi
+  done
+}
+
+test10_canonical_block_drift() {
+  local spec label expected prefix
+  for spec in "${CANONICAL_BLOCK_SPECS[@]}"; do
+    IFS='|' read -r label expected prefix <<< "${spec}"
+    assert_canonical_block "${label}" "${expected}" "${prefix}"
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -537,6 +638,8 @@ main() {
     test8_instructions_table_sync
   run_test "Test 9: agent roster references resolve" \
     test9_agent_roster_references
+  run_test "Test 10: canonical block drift" \
+    test10_canonical_block_drift
 
   finish
 }
