@@ -68,6 +68,19 @@ Record consistency: ✅ Consistent (after the record-only Correction appended to
 
 Verdict basis: 0 Critical, 1 Major (≤ 2), all 9 plan phases validated Pass, changes log internally consistent after the record-only correction. Meets ✅ Complete criteria. The single Major (IV-001) is a maintainability/future-proofing gap, not a present defect — the current tree is byte-consistent and both test suites are green — so it is routed as a recommended follow-up rather than blocking rework.
 
+## Post-review finding (added 2026-07-19, from consumer-repo smoke test)
+
+**IV-006 [MAJOR] — `/hve` Simple path produced no durable artifact. RESOLVED (commit `c62fabf`).**
+The Phase 9 Step 9.3 smoke test was run in privy-mvp. The Simple carve-out fired correctly (classified Simple, zero subagents), but **no changes log was written and the test gate never ran**. Root cause: `hve.md` states only "Implement directly without full RPI loop", while the carve-out guarantee ("still creating and updating the changes log and running the test gate") lives in `hve-implement.md`. The Simple path exits at `hve.md` Phase 0 and never reaches the "execute the implementation protocol from `/hve-implement` inline" reference at Phase 3, so that guarantee was **unreachable by construction**. This silently neutralized the F-06 timestamp fix and the F-07 test-count fix on the most common entry point for small tasks, since both operate on a changes log that was never created.
+
+Scope cause: `hve.md` appears in **no phase's ownership map** in the details doc, so no implementor edited it and no validator inspected it. An audit confirmed it carried zero of the new conventions. Note this is the same defect class the remediation targeted (a contradiction between two files), surviving in the one file nobody owned.
+
+Fix: added the guarantee to `hve.md`'s Simple path plus the O-12 concurrent-writes rule (`/hve` also spawns parallel implementors), and extended Test 10 with a `present` mode so the two files cannot drift apart. Both new assertions were perturbation-verified. Suite 151 → 153, install 48/0.
+
+Remaining `hve.md` gaps, reported not fixed (lower priority, no evidence of active harm): no `Requirements added after` convention (mid-flow scope changes are likely on this command, since it runs all phases in one session); no explicit parent-shell or roster-deviation lines (both are stated globally in CLAUDE.md). Absence of `--friction-log` is by design: CLAUDE.md scopes that flag to the six dispatching commands, which does not include the orchestrator.
+
+**Smoke-test scorecard:** carve-out fires ✅ | real timestamps ⚠️ untestable (no log) | real test count ❌ (gate never ran) | typescript.md consulted ⚠️ inconclusive | test baseline ❌ not run. Re-run required after global re-sync to clear signals 2 through 5.
+
 ## Recommended follow-ups (non-blocking)
 1. ~~**[Major, IV-001]** Extend `tests/run-drift-tests.sh` to byte/structure-protect the four unprotected duplicated blocks: the command-file discovery stub (Block 1), concurrent-writes rule (Block 18), timestamp template (Block 4), test-count template (Block 5).~~ **RESOLVED 2026-07-19** (commit `a6bd35e`): added data-driven Test 10 (`test10_canonical_block_drift`) covering all four blocks via 8 specs, each asserting carrier count plus byte-identity across `.claude/commands/*.md`, `.claude/agents/*.md`, and `CLAUDE.md`. Both failure arms were empirically verified by perturbation (prefix removal trips carrier count; tail edit trips byte-identity), restoring from `.bak` copies rather than `git checkout` per the DR-801 lesson. Suite: 125 → 151 assertions, 0 failed; install suite unchanged at 48/0.
 2. **[Minor, IV-002]** Add a drift check asserting `install.sh`'s `HVE_INSTRUCTION_FILES` equals `tests/lib/instruction-files.sh`'s (they are hand-duplicated).
