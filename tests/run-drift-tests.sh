@@ -543,6 +543,7 @@ readonly -a CANONICAL_BLOCK_SPECS=(
   'testcount_notrun|2|identical|- `Tests: not run'
   'testcount_never|2|identical|Never write a count that did not come from'
   'simple_carveout_guarantee|2|present|still creating and updating the changes log and running the test gate'
+  'test_baseline_semantics|2|present|pre-existing failures are noted, not blocking'
 )
 
 # canonical_block_corpus — prints the search corpus, one path per line.
