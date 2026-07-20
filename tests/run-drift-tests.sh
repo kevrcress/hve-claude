@@ -617,6 +617,69 @@ test10_canonical_block_drift() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 11 — instruction_array_sync
+#
+# The instruction-file list is hand-duplicated in tests/lib/instruction-files.sh
+# (the shared, sourceable list) and in install.sh (used to migrate pre-existing
+# installs). Nothing derives one from the other, so adding a file to one and not
+# the other is a silent divergence. The two arrays are formatted differently
+# (one entry per line vs. several), so compare the SET of entries, not the text.
+# ---------------------------------------------------------------------------
+
+# extract_bash_array file array_name — prints the array's entries, one per
+# line, sorted. Reads from `NAME=(` to the first line that is exactly `)`.
+extract_bash_array() {
+  local file="${1}" name="${2}"
+  awk -v want="${name}" '
+    $0 ~ "^(declare -a )?" want "=\\(" { collecting = 1; next }
+    collecting && /^\)/ { exit }
+    collecting {
+      sub(/#.*/, "")
+      for (i = 1; i <= NF; i++) { print $i }
+    }
+  ' "${file}" | sort
+}
+
+test11_instruction_array_sync() {
+  local shared_list install_list
+  shared_list="$(extract_bash_array "${REPO_ROOT}/tests/lib/instruction-files.sh" HVE_INSTRUCTION_FILES)"
+  install_list="$(extract_bash_array "${REPO_ROOT}/install.sh" HVE_INSTRUCTION_FILES)"
+
+  if [[ -z "${shared_list}" ]]; then
+    _fail_inline "test11: shared array parses" \
+      "extracted no entries from tests/lib/instruction-files.sh"
+    return
+  fi
+  if [[ -z "${install_list}" ]]; then
+    _fail_inline "test11: install.sh array parses" \
+      "extracted no entries from install.sh"
+    return
+  fi
+
+  if [[ "${shared_list}" == "${install_list}" ]]; then
+    _ok_inline "test11: HVE_INSTRUCTION_FILES in sync" \
+      "$(echo "${shared_list}" | wc -l | tr -d ' ') entries match across both files"
+  else
+    _fail_inline "test11: HVE_INSTRUCTION_FILES in sync" \
+      "install.sh and tests/lib/instruction-files.sh disagree: $(
+        diff <(echo "${shared_list}") <(echo "${install_list}") | tr '\n' ' '
+      )"
+  fi
+
+  # Every listed file must also exist on disk.
+  local fname
+  while IFS= read -r fname; do
+    [[ -z "${fname}" ]] && continue
+    if [[ -f "${INSTRUCTIONS_DIR}/${fname}" ]]; then
+      _ok_inline "test11: ${fname} exists" "found in .claude/instructions/"
+    else
+      _fail_inline "test11: ${fname} exists" \
+        "listed in HVE_INSTRUCTION_FILES but missing from .claude/instructions/"
+    fi
+  done <<< "${shared_list}"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -651,6 +714,8 @@ main() {
     test9_agent_roster_references
   run_test "Test 10: canonical block drift" \
     test10_canonical_block_drift
+  run_test "Test 11: instruction array sync" \
+    test11_instruction_array_sync
 
   finish
 }

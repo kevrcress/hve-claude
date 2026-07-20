@@ -46,7 +46,7 @@ unbounded spawning chains and keeps each subagent's scope fixed and auditable.
 
 ## `hve-implementation-validator` dimensions
 
-The quality validator always runs these 10 checks:
+The quality validator always runs these 11 checks:
 
 1. **Architecture Conformance**: layering, module boundaries, directory placement
 2. **Design Principles**: Single Responsibility, Open/Closed, interface segregation
@@ -62,3 +62,7 @@ The quality validator always runs these 10 checks:
    `git diff HEAD --name-only` for credential-like filenames; flags new
    unrecognized dependencies
 10. **Overall Quality**: readability, naming clarity, appropriate complexity
+11. **Documentation Integrity**: for each modified file, greps living docs (tracked
+    `.md` outside `.claude-hve-tracking/`) for citations of it and confirms the cited
+    symbols still exist; flags dead references and new bare `file:line` citations in
+    living docs as Minor. Dated tracking artifacts are snapshots and are exempt.

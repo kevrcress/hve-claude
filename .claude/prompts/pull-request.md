@@ -23,8 +23,12 @@ Analyzes the diff between the current branch and `main` (or a specified base) ac
 
 ## Options
 
-- `--dimension security` — review only the security dimension
-- `--dimension all` — all 8 dimensions (default)
+- `--dimension all` — all 8 dimensions (default). Narrow to one with
+  `functional`, `design`, `idiomatic`, `reuse`, `performance`, `reliability`,
+  `security`, or `docs`
+- `--compact` — 4 paired dimension subagents instead of 8 single-dimension ones
+- `--subagent-model sonnet|opus|haiku` — override each subagent's frontmatter model
+- `--friction-log` — record process friction encountered during the review
 
 ## PR Description
 
