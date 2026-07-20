@@ -81,6 +81,19 @@ Remaining `hve.md` gaps, reported not fixed (lower priority, no evidence of acti
 
 **Smoke-test scorecard:** carve-out fires ✅ | real timestamps ⚠️ untestable (no log) | real test count ❌ (gate never ran) | typescript.md consulted ⚠️ inconclusive | test baseline ❌ not run. Re-run required after global re-sync to clear signals 2 through 5.
 
+## Post-review finding (added 2026-07-20, from smoke-test re-run)
+
+**IV-007 [MAJOR] — Simple path ran a scoped test gate, not the full suite. RESOLVED (commit `e8ea88e`).**
+The re-run after the IV-006 fix confirmed the changes log is now written, with real `date -u` timestamps and a real, reproducible test count (every claim independently verified: function at the cited lines, `date-fns` import at the cited line, 6 real test cases, count reproduced exactly). But the gate ran **scoped** — `vitest run lib/utils.test.ts` — and reported `6 passed, 0 failed` in a repo whose full suite was `172 passed, 1 failed, 6 skipped`. No `## Test Baseline` was captured, so nothing could distinguish pre-existing from net-new failures.
+
+Harmless in this instance: the failing test (`tests/agent/api-routes.test.ts`, an Anthropic-proxy case) was confirmed pre-existing by stashing the change and reproducing the failure, and the `lib/utils.ts` edit had zero deletion lines. But a scoped run cannot see regressions outside the touched files, which is precisely what the gate exists to catch.
+
+Same root cause as IV-006, and specifically an **incompleteness in the IV-006 fix**: Block 6 (Test Baseline) also lives only in `hve-implement.md` Phase 1, on the path Simple skips. The IV-006 fix carried over the changes-log and test-count guarantees but not the baseline. Fixing one half of a reachability problem left the other half live.
+
+Fix: the Simple path now requires capturing `## Test Baseline` before editing, re-running the FULL suite after (explicitly never a scoped subset), and gating on net-new failures. Test 10 gained a `present`-mode spec pinning the semantics across both carriers; perturbation-verified. Suite 168 → 169.
+
+**Smoke-test scorecard (2026-07-20 re-run):** changes log written ✅ | real timestamps ✅ | real test count ✅ (reproduced) | citations accurate ✅ | test baseline ❌ → fixed in `e8ea88e`. Unprompted extras: wrote a 6-case test file, and logged an SSR locale hazard (DD-005) nobody asked for.
+
 ## Recommended follow-ups (non-blocking)
 1. ~~**[Major, IV-001]** Extend `tests/run-drift-tests.sh` to byte/structure-protect the four unprotected duplicated blocks: the command-file discovery stub (Block 1), concurrent-writes rule (Block 18), timestamp template (Block 4), test-count template (Block 5).~~ **RESOLVED 2026-07-19** (commit `a6bd35e`): added data-driven Test 10 (`test10_canonical_block_drift`) covering all four blocks via 8 specs, each asserting carrier count plus byte-identity across `.claude/commands/*.md`, `.claude/agents/*.md`, and `CLAUDE.md`. Both failure arms were empirically verified by perturbation (prefix removal trips carrier count; tail edit trips byte-identity), restoring from `.bak` copies rather than `git checkout` per the DR-801 lesson. Suite: 125 → 151 assertions, 0 failed; install suite unchanged at 48/0.
 2. **[Minor, IV-002]** Add a drift check asserting `install.sh`'s `HVE_INSTRUCTION_FILES` equals `tests/lib/instruction-files.sh`'s (they are hand-duplicated).
