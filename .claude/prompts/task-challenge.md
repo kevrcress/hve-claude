@@ -21,6 +21,7 @@ The challenger reads tracking artifacts as an uninformed skeptic and asks penetr
 - `--focus research` — challenge the research document
 - `--focus plan` — challenge the implementation plan
 - `--focus implementation` — challenge the changes log
+- `--friction-log` — record process friction encountered during the challenge session
 
 ## Output
 

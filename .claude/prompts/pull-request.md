@@ -1,6 +1,6 @@
 # Pull Request Reference
 
-> Generate a PR description with `/hve-pr-review [branch]`.
+> Senior-level PR code review with `/hve-pr-review [branch]`: 8 quality dimensions, severity-graded findings.
 
 ## What it does
 
@@ -29,7 +29,3 @@ Analyzes the diff between the current branch and `main` (or a specified base) ac
 - `--compact` — 4 paired dimension subagents instead of 8 single-dimension ones
 - `--subagent-model sonnet|opus|haiku` — override each subagent's frontmatter model
 - `--friction-log` — record process friction encountered during the review
-
-## PR Description
-
-After review, Claude can also generate a PR description template. Ask: "Generate a PR description based on this review."

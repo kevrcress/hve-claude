@@ -131,7 +131,7 @@ Risk: [What could go wrong]
 For **standard** and **complex** plans: spawn one `hve-plan-validator` subagent via the Agent tool.
 
 Pass the subagent:
-- Path to research document
+- Path to research document, or the explicit `Research: none — [reason]` marker from the plan header when research was recorded absent
 - Path to implementation plan
 - Path to planning log
 - Instruction to update the Discrepancy Log section only (DR-/DD- items), including flagging any "confirmed"/"verified" claim not adjacent to the command or citation that produced it, and any plan-step assumption missing a confidence marker

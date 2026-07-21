@@ -48,6 +48,8 @@ Apply these improvements:
 - Confidence markers: `[HIGH]`, `[MEDIUM]`, `[LOW]`
 - Citation format: `file:line` plain paths
 - Handoff Block for phase commands
+- Template Blanks: every template blank is genuinely obtainable in-session or carries an explicit N/A branch
+- Artifact Discovery & Relevance: slug argument wins, 7-day window, branch-name tiebreak, relevance check before use
 
 ---
 

@@ -22,7 +22,7 @@ follow a strict response format and write durable artifacts to disk.
 | `hve-phase-implementor` | Executes one plan phase: writes code, updates changes log | All tools | Inherit |
 | `hve-rpi-validator` | Verifies a completed implementation phase matches what the plan required | Read, Write, Glob, Grep | Haiku |
 | `hve-implementation-validator` | 11-dimension quality check including automated security hygiene | Read, Write, Glob, Grep, Bash | Sonnet |
-| `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / format / no-Copilot criteria | Read, Write, Glob, Grep | Sonnet |
+| `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / actionability / format / no-Copilot / Template Integrity criteria (the last checks every template blank is fillable in-session or carries an N/A branch) | Read, Write, Glob, Grep | Sonnet |
 | `hve-prompt-tester` | Executes a draft prompt or agent definition literally against test scenarios | All tools | Inherit |
 | `hve-prompt-updater` | Rewrites a draft prompt based on evaluator findings | All tools | Inherit |
 | `hve-pr-reviewer` | Reviews a diff against one or two assigned quality dimensions, returning severity-graded, dimension-prefixed findings | Read, Write, Glob, Grep | Sonnet |

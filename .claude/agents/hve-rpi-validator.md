@@ -17,9 +17,10 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 You will receive from the parent:
 - Plan file path
 - Changes log path
-- Research document path
+- Research document path (if present)
 - Phase number to validate
 - Output path: `.claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-phase-NNN-validation.md`
+- Changed-file list (if supplied): output of `git diff --name-only` run by the parent
 
 ---
 
@@ -27,10 +28,11 @@ You will receive from the parent:
 
 ### Pre-requisite — Load Context
 
-1. Create the validation document with placeholder sections if it doesn't exist
+1. Write the validation document only once the Load Context reads below have succeeded; if blocked mid-run, write the file with an explicit `Status: Blocked` header rather than leaving placeholder sections
 2. Read the plan file in full; extract all items for the specified phase
 3. Read the changes log in full; extract all changes claimed for the specified phase
-4. Read the research document; extract requirements relevant to the phase
+4. Read the research document if the parent supplied one
+   - If the parent reports research as absent (plan header reads `Research: none — [reason]`), skip requirement extraction. Record in the output: "Validated against the plan alone; research was recorded absent at planning time." Do not manufacture requirements the research never stated.
 
 ### Step 1 — Compare Plan Items to Changes
 
@@ -45,7 +47,7 @@ For each claimed change in the changes log:
 1. Read the referenced file at the referenced line
 2. Verify the described modification actually exists
 3. Flag cases where the changes log claims a modification but the file doesn't show it
-4. Search for files modified but not listed in the changes log that relate to the phase
+4. Compare the parent-supplied changed-file list against the entire changes log — every `### Phase N:` section in the document, not only this phase's section. Any file on the list but absent from the log is an unlisted change; grade per severity. If the parent supplied no list, do not infer one.
 5. Flag any changes-log claim for this phase that contradicts another claim in the same phase, or that is falsified by the file evidence, as a Minor `RV-` record-consistency finding — unless annotated `superseded — see Correction YYYY-MM-DD`. Cross-phase contradiction synthesis is the parent reviewer's responsibility.
 
 ### Step 3 — Coverage Assessment
@@ -85,7 +87,8 @@ Impact: [What breaks]
 Recommendation: [What to fix]
 
 ## Unlisted Changes
-[Files modified but not in the changes log, if any]
+[Files on the parent-supplied changed-file list but absent from the changes log]
+[N/A - no changed-file list supplied by parent]
 
 ## Research Coverage
 [Key research requirements for this phase and whether they are met]

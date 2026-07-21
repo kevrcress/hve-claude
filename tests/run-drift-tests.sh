@@ -29,6 +29,14 @@
 #  10. Canonical blocks      — the other deliberately-duplicated blocks
 #      (discovery stub, concurrent-writes, timestamp, test-count) are
 #      byte-identical across their carriers
+#  11. Instruction arrays    — HVE_INSTRUCTION_FILES agrees between
+#      install.sh and tests/lib/instruction-files.sh
+#  12. Dispatch targets      — every command declaring `Agent` in its
+#      allowed-tools frontmatter names at least one backticked `hve-*`
+#      agent, and each one resolves to .claude/agents/<name>.md
+#  13. Prompt option sync    — every option token in an Arguments/Options/
+#      Modes section of a .claude/prompts/ file resolves to a real option of
+#      its mapped command (argument-hint or a body code span)
 #
 set -euo pipefail
 
@@ -36,6 +44,7 @@ readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly AGENTS_DIR="${REPO_ROOT}/.claude/agents"
 readonly COMMANDS_DIR="${REPO_ROOT}/.claude/commands"
 readonly INSTRUCTIONS_DIR="${REPO_ROOT}/.claude/instructions"
+readonly PROMPTS_DIR="${REPO_ROOT}/.claude/prompts"
 readonly INTERNALS_MD="${REPO_ROOT}/docs/internals.md"
 readonly CLAUDE_MD="${REPO_ROOT}/CLAUDE.md"
 readonly GITIGNORE="${REPO_ROOT}/.gitignore"
@@ -531,7 +540,12 @@ test9_agent_roster_references() {
 #   mode=present   — carrier count only; use when the same guarantee is stated
 #                    inside different surrounding sentences, so byte-identity
 #                    would fail on legitimate variation
-# Corpus: .claude/commands/*.md, .claude/agents/*.md, CLAUDE.md
+# Corpus: .claude/commands/*.md, .claude/agents/*.md, .claude/prompts/*.md,
+#         CLAUDE.md
+# .claude/prompts/ is in the corpus because the paste-to-run prompt files carry
+# byte-identical copies of command prose (e.g. the per-project memory-store
+# sentence shared by hve-memory.md and checkpoint.md); without them in the
+# corpus those copies can diverge silently.
 # ---------------------------------------------------------------------------
 readonly -a CANONICAL_BLOCK_SPECS=(
   'discovery_stub|3|identical|Discover inputs per the Artifact Discovery & Relevance convention'
@@ -544,12 +558,13 @@ readonly -a CANONICAL_BLOCK_SPECS=(
   'testcount_never|2|identical|Never write a count that did not come from'
   'simple_carveout_guarantee|2|present|still creating and updating the changes log and running the test gate'
   'test_baseline_semantics|2|present|pre-existing failures are noted, not blocking'
+  'memory_store_scope|2|identical|Also write the most non-obvious decisions and patterns to the Claude Code native memory store'
 )
 
 # canonical_block_corpus — prints the search corpus, one path per line.
 canonical_block_corpus() {
   local file
-  for file in "${COMMANDS_DIR}"/*.md "${AGENTS_DIR}"/*.md; do
+  for file in "${COMMANDS_DIR}"/*.md "${AGENTS_DIR}"/*.md "${PROMPTS_DIR}"/*.md; do
     if [[ -f "${file}" ]]; then
       echo "${file}"
     fi
@@ -681,6 +696,227 @@ test11_instruction_array_sync() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 12 — dispatch_names_resolvable_agent
+#
+# Test 9 validates the agent tokens it finds, so a dispatch instruction that
+# names NO agent at all has nothing to match and passes silently — that was
+# the M-02 defect. Test 12 adds the missing non-empty requirement: every
+# command declaring the standalone token `Agent` in its allowed-tools
+# frontmatter must (a) backtick at least one `hve-*` agent name in its body
+# and (b) have every such name resolve to .claude/agents/<name>.md.
+#
+# The dispatcher set is derived from frontmatter at run time, never
+# hardcoded, so a newly-added dispatching command is covered automatically.
+# ---------------------------------------------------------------------------
+
+# command_dispatches_agent <file>
+# Succeeds when the file's frontmatter allowed-tools line lists `Agent` as a
+# standalone comma-separated token (so a future tool named e.g. AgentRunner
+# does not match). Note: frontmatter_value cannot be reused here — its key
+# strip pattern is /^[a-z]+:/, which does not cover the hyphenated key.
+command_dispatches_agent() {
+  local file="${1}"
+  local tools tool
+  tools="$(awk '
+    NR == 1 && $0 == "---" { in_fm = 1; next }
+    in_fm && $0 == "---" { exit }
+    in_fm && index($0, "allowed-tools:") == 1 {
+      val = $0
+      sub(/^allowed-tools:[[:space:]]*/, "", val)
+      print val
+      exit
+    }
+  ' "${file}")"
+  [[ -n "${tools}" ]] || return 1
+
+  while IFS= read -r tool; do
+    [[ "${tool}" == "Agent" ]] && return 0
+  done < <(echo "${tools}" | tr ',' '\n' \
+    | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+  return 1
+}
+
+test12_dispatch_names_resolvable_agent() {
+  local file stem token
+  local -a dispatchers=()
+  for file in "${COMMANDS_DIR}"/*.md; do
+    if command_dispatches_agent "${file}"; then
+      dispatchers+=("${file}")
+    fi
+  done
+
+  if (( ${#dispatchers[@]} == 0 )); then
+    _fail_inline "test12: dispatcher discovery" \
+      "no command declares Agent in its allowed-tools frontmatter"
+    return
+  fi
+  _ok_inline "test12: dispatcher discovery" \
+    "${#dispatchers[@]} command(s) declare Agent in allowed-tools"
+
+  local -a agent_tokens=()
+  for file in "${dispatchers[@]}"; do
+    stem="$(basename "${file}" .md)"
+    agent_tokens=()
+    while IFS= read -r token; do
+      [[ -n "${token}" ]] || continue
+      # A token that is itself a command file name is a slash-command
+      # reference, not an agent reference (same carve-out as test9).
+      [[ -f "${COMMANDS_DIR}/${token}.md" ]] && continue
+      agent_tokens+=("${token}")
+    done < <(grep -ohE '`hve-[a-z-]+`' "${file}" | tr -d '`' | sort -u)
+
+    if (( ${#agent_tokens[@]} == 0 )); then
+      _fail_inline "test12: ${stem} names an agent" \
+        "declares Agent in allowed-tools but its body backticks no \`hve-*\` agent name"
+      continue
+    fi
+    _ok_inline "test12: ${stem} names an agent" \
+      "${#agent_tokens[@]} token(s): ${agent_tokens[*]}"
+
+    for token in "${agent_tokens[@]}"; do
+      if [[ -f "${AGENTS_DIR}/${token}.md" ]]; then
+        _ok_inline "test12: ${stem} -> ${token}" "agent file exists"
+      else
+        _fail_inline "test12: ${stem} -> ${token}" \
+          "${stem} dispatches \`${token}\` but ${AGENTS_DIR}/${token}.md is missing"
+      fi
+    done
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Test 13 — prompt_option_sync
+#
+# Each .claude/prompts/ file is the paste-to-run twin of one command. An option
+# documented in the prompt but absent from the command is a phantom feature:
+# users invoke it and nothing implements it.
+#
+# Both halves of the check are deliberately narrow, and neither narrowing is
+# optional:
+#
+#   Extraction is SECTION-SCOPED to "## Arguments", "## Options" and "## Modes"
+#   blocks, and within those to leading tokens of list lines. Three shapes
+#   count: "- \`--flag\`", "- \`bare-token\`" and "- **BoldToken**". Anchoring on
+#   "- \`--" alone would miss bare tokens and bold mode names, which are exactly
+#   the phantom-option forms this test exists to catch. Dropping the section
+#   scope would sweep in list lines that are not options at all — the bold
+#   lines under "## What it checks" in doc-ops.md are dimension descriptions.
+#
+#   Resolution requires the token in the mapped command's frontmatter
+#   argument-hint, or failing that inside a backtick code span in the command
+#   body. A whole-file grep would false-pass: "suggestions" appears in hve.md
+#   prose and "## Phase 3 — Continue" is a heading in hve-memory.md, so a
+#   phantom \`suggest\` option and a phantom **Continue** mode would both
+#   resolve against text that implements nothing.
+#
+# One-directional by design: a command option missing from the prompt is a docs
+# gap, not a phantom feature, so only prompt -> command is enforced.
+#
+# Map format: prompt-file|command-file
+# ---------------------------------------------------------------------------
+readonly -a PROMPT_COMMAND_MAP=(
+  'rpi.md|hve.md'
+  'pull-request.md|hve-pr-review.md'
+  'checkpoint.md|hve-memory.md'
+  'doc-ops.md|hve-doc-ops.md'
+  'task-challenge.md|hve-challenge.md'
+  'prompt-build.md|hve-prompt-builder.md'
+)
+
+# prompt_option_tokens <file>
+# Prints the leading token of every option line inside an Arguments/Options/
+# Modes section, one per line, sorted and de-duplicated. Anything after the
+# first whitespace inside the token span is description text, not the token.
+prompt_option_tokens() {
+  awk '
+    /^## (Arguments|Options|Modes)([[:space:]]|$)/ { in_section = 1; next }
+    /^## / { in_section = 0 }
+    !in_section { next }
+    {
+      token = ""
+      if (match($0, /^- `[^`]+`/)) {
+        token = substr($0, RSTART + 3, RLENGTH - 4)
+      } else if (match($0, /^- \*\*[^*]+\*\*/)) {
+        token = substr($0, RSTART + 4, RLENGTH - 6)
+      }
+      if (token == "") { next }
+      sub(/[[:space:]].*/, "", token)
+      if (token ~ /^(--)?[A-Za-z][A-Za-z0-9_-]*$/) { print token }
+    }
+  ' "${1}" | sort -u
+}
+
+# code_span_contents <file>
+# Prints the contents of every backtick code span, one per line. Splitting per
+# line keeps the pairing honest: a span never straddles a newline, so text
+# sitting between two unrelated spans cannot masquerade as one.
+code_span_contents() {
+  awk '
+    {
+      n = split($0, parts, "`")
+      for (i = 2; i <= n; i += 2) { print parts[i] }
+    }
+  ' "${1}"
+}
+
+# option_resolves <command_file> <token>
+# True when the token appears in the command frontmatter argument-hint, or
+# inside a backtick code span in the command body. Prose and headings do not
+# resolve an option.
+option_resolves() {
+  local command_file="${1}" token="${2}" hint
+  hint="$(frontmatter_value "${command_file}" "argument-hint")"
+  # frontmatter_value only strips unhyphenated keys, so drop the key here.
+  hint="${hint#argument-hint:}"
+  if [[ -n "${hint}" && "${hint}" == *"${token}"* ]]; then
+    return 0
+  fi
+  code_span_contents "${command_file}" | grep -qF -- "${token}"
+}
+
+test13_prompt_option_sync() {
+  local entry prompt_name command_name prompt_file command_file token
+  local -a tokens=()
+  for entry in "${PROMPT_COMMAND_MAP[@]}"; do
+    IFS='|' read -r prompt_name command_name <<< "${entry}"
+    prompt_file="${PROMPTS_DIR}/${prompt_name}"
+    command_file="${COMMANDS_DIR}/${command_name}"
+
+    if [[ ! -f "${prompt_file}" ]]; then
+      _fail_inline "test13: ${prompt_name} present" \
+        "mapped prompt file missing: ${prompt_file}"
+      continue
+    fi
+    if [[ ! -f "${command_file}" ]]; then
+      _fail_inline "test13: ${command_name} present" \
+        "mapped command file missing: ${command_file}"
+      continue
+    fi
+
+    tokens=()
+    while IFS= read -r token; do
+      [[ -n "${token}" ]] && tokens+=("${token}")
+    done < <(prompt_option_tokens "${prompt_file}")
+
+    if (( ${#tokens[@]} == 0 )); then
+      _ok_inline "test13: ${prompt_name} option tokens" \
+        "no Arguments/Options/Modes option lines to check"
+      continue
+    fi
+
+    for token in "${tokens[@]}"; do
+      if option_resolves "${command_file}" "${token}"; then
+        _ok_inline "test13: ${prompt_name} ${token}" \
+          "implemented in ${command_name}"
+      else
+        _fail_inline "test13: ${prompt_name} ${token}" \
+          "${prompt_name} documents ${token} but ${command_name} implements no such option"
+      fi
+    done
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -690,7 +926,7 @@ main() {
 
   local target
   for target in "${AGENTS_DIR}" "${COMMANDS_DIR}" "${INSTRUCTIONS_DIR}" \
-    "${INTERNALS_MD}" "${CLAUDE_MD}" "${GITIGNORE}"; do
+    "${PROMPTS_DIR}" "${INTERNALS_MD}" "${CLAUDE_MD}" "${GITIGNORE}"; do
     if [[ ! -e "${target}" ]]; then
       err "required path not found: ${target}"
       exit 1
@@ -717,6 +953,10 @@ main() {
     test10_canonical_block_drift
   run_test "Test 11: instruction array sync" \
     test11_instruction_array_sync
+  run_test "Test 12: dispatching commands name a resolvable agent" \
+    test12_dispatch_names_resolvable_agent
+  run_test "Test 13: prompt-file options exist in the mapped command" \
+    test13_prompt_option_sync
 
   finish
 }
