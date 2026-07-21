@@ -37,9 +37,9 @@ If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it b
 
 Repeat for N iterations (default 3, or until evaluation shows no remaining issues):
 
-### Steps A and B — Test and Evaluate (parallel)
+### Step A — Test (via hve-prompt-tester subagent)
 
-Spawn the `hve-prompt-tester` and `hve-prompt-evaluator` subagents in parallel (two Agent tool calls in one response). Both read the current draft: there is no write conflict at this step. Wait for both to complete, then read both output logs before running the Updater.
+Spawn the `hve-prompt-tester` subagent and wait for it to complete before evaluating — the evaluator reads the test execution log the tester writes.
 
 **hve-prompt-tester** receives:
 - The draft prompt/agent file path
@@ -47,12 +47,18 @@ Spawn the `hve-prompt-tester` and `hve-prompt-evaluator` subagents in parallel (
 - The sandbox path for test execution logs
 - Instructions to execute the prompt literally, no interpretation beyond what's written
 
+### Step B — Evaluate (via hve-prompt-evaluator subagent)
+
+After the tester completes, spawn the `hve-prompt-evaluator` subagent.
+
 **hve-prompt-evaluator** receives:
+- The test execution log path written by the tester in Step A
 - The draft prompt/agent file path
 - The intended behavior description
 - Quality criteria: clarity, completeness, actionability, Claude Code format compliance, absence of Copilot-isms
+- Template integrity: every template blank is genuinely obtainable in-session or carries an explicit N/A branch (per CLAUDE.md Template Blanks)
 
-After both subagents complete, read both output logs. Combine their findings before passing to the Updater.
+Once the evaluator returns, read both logs — the tester's execution log from Step A and the evaluator's findings from Step B. Combine their findings before passing to the Updater.
 
 ### Step C — Update (via hve-prompt-updater subagent)
 

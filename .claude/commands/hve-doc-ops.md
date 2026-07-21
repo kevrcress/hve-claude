@@ -1,6 +1,6 @@
 ---
 description: HVE Doc-Ops — Documentation QA automation covering pattern compliance, accuracy verification, and gap detection
-argument-hint: [path-to-docs | --scope all|compliance|accuracy|gaps] [--subagent-model sonnet|opus|haiku]
+argument-hint: [path-to-docs] [--scope all|compliance|accuracy|gaps] [--subagent-model sonnet|opus|haiku]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
@@ -23,9 +23,10 @@ If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it b
 ## Phase 1 — Discovery
 
 1. Find all documentation files: Markdown in `/docs/`, `README.md`, API docs, inline code comments
-2. Identify the documentation patterns expected by the project (check CLAUDE.md, existing templates)
-3. Build an inventory: file count, types, last-modified dates
-4. Create the session log
+2. Prompt-engineering artifacts are excluded from the inventory: skip `.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, and `.claude/prompts/` — those files are evaluated with `/hve-prompt-analyze`, not doc-ops
+3. Identify the documentation patterns expected by the project (check CLAUDE.md, existing templates)
+4. Build an inventory: file count, types, last-modified dates
+5. Create the session log
 
 Session log structure:
 ```markdown
@@ -45,7 +46,8 @@ Pattern violations: N | Accuracy issues: N | Gaps: N
 ## Phase 2 — Planning
 
 Based on scope and file count, plan the analysis:
-- Spawn parallel Doc-Ops subagents for large doc sets (one per section or doc type)
+- Spawn parallel `hve-researcher` subagents (read-only inventory work fits its tool set) for large doc sets (one per section or doc type)
+- If a future revision dispatches a non-roster agent type instead, record in the session log which type was used and why (per the CLAUDE.md Subagent Dispatch Discipline)
 - Process sequentially for small sets (< 10 files)
 
 ---

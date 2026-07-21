@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 2 — Convert research findings into a validated implementation plan with phase-by-phase steps
-argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku] [--friction-log]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
@@ -8,16 +8,24 @@ You are the **HVE Task Planner**. Your job is to convert verified research into 
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
-If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
+## Argument Parsing
+
+Parse `$ARGUMENTS` exactly once, before anything else, into: TASK_SLUG (first token not starting with `--` that is not a pasted block), MODE (`--mode` value if present), THINK_MODE (`--think` present), SUBAGENT_MODEL (`--subagent-model` value if present), FRICTION_LOG (`--friction-log` present). Ignore any pasted handoff-block text. All later sections reference these named values; none re-reads `$ARGUMENTS`.
+
+If SUBAGENT_MODEL is set, pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If unset, omit the parameter so frontmatter applies.
+
+## Friction Capture
+
+If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
 
 ---
 
 ## Inputs
 
-Discover inputs automatically — do not ask the user to provide files:
+Discover inputs per the Artifact Discovery & Relevance convention in CLAUDE.md: slug argument first, else recent distinct slugs (ask on ambiguity, never silently pick between same-day slugs), and always relevance-check the chosen artifact before treating it as evidence.
 
-1. **Research document**: find the most recent file matching `.claude-hve-tracking/research/*/**.md` (latest date, or matching `$ARGUMENTS` slug if provided)
-2. **Existing plan**: check `.claude-hve-tracking/plans/` — if one exists for this task, resume/update it rather than starting over
+1. **Research document**: locate the latest relevant research artifact under `.claude-hve-tracking/research/`, preferring TASK_SLUG when set. If no relevant research exists, record `Research: none — [reason]` in the plan file header and a DD- entry in the planning log, plan from the task description, and do NOT attach an irrelevant doc as evidence.
+2. **Existing plan**: check `.claude-hve-tracking/plans/` — if one exists for this task, resume/update it rather than starting over.
 
 ---
 
@@ -25,14 +33,14 @@ Discover inputs automatically — do not ask the user to provide files:
 
 1. Read the research document in full
 2. Identify the task slug from the research doc frontmatter or filename
-3. Extract `--think` from `$ARGUMENTS` if present; set THINK_MODE=true
+3. Use THINK_MODE from Argument Parsing (set when `--think` was present)
 4. List the key constraints, dependencies, and success criteria derived from research
 5. Assess planning complexity:
    - **Simple plan**: 1–3 sequential steps, single file or module → write plan directly
    - **Standard plan**: 4–8 steps, 2–5 files → standard planning with Plan Validator
    - **Complex plan**: > 8 steps, cross-cutting, phased dependencies → full planning with parallel validation
 
-If `--mode` was specified in `$ARGUMENTS`, use that. Otherwise, infer from complexity.
+If MODE is set (from `--mode`), use it. Otherwise, infer from complexity.
 
 ---
 
@@ -88,6 +96,8 @@ These rules govern what may be written into plan steps:
 - The words "confirmed" / "verified" are forbidden in a plan unless immediately accompanied by the evidence that produced them: the exact command run, or `file:line` citations. The check must be one that could have failed — a compile, a test run, or a grep whose predicate targets the claim itself. "Compiles without X" can only be confirmed by compiling without X. Citing a location is not the same as confirming an outcome.
 - Every key assumption in a plan step MUST carry a confidence marker (`[HIGH]`/`[MEDIUM]`/`[LOW]`) per CLAUDE.md.
 - When plan-time verification is impossible (no build environment, etc.), mark the assumption `[MEDIUM]`/`[LOW]` AND emit an explicit guard step into the implementation phase ("toggle, compile, revert if broken") rather than asserting the outcome.
+- Verification timing: "verified" refers to a check that RAN during planning. Expected outcomes of future implementation work are written as steps with success criteria, never as verified claims.
+- A grep/citation proves existence, never exhaustiveness. "All call sites updated" requires an enumerated list checked item-by-item (show the list), otherwise mark [MEDIUM] and add an implementation-phase guard step.
 
 ### Artifact 2: Implementation Details
 Path: `.claude-hve-tracking/details/YYYY-MM-DD/TASK-SLUG-details.md`
@@ -121,7 +131,7 @@ Risk: [What could go wrong]
 For **standard** and **complex** plans: spawn one `hve-plan-validator` subagent via the Agent tool.
 
 Pass the subagent:
-- Path to research document
+- Path to research document, or the explicit `Research: none — [reason]` marker from the plan header when research was recorded absent
 - Path to implementation plan
 - Path to planning log
 - Instruction to update the Discrepancy Log section only (DR-/DD- items), including flagging any "confirmed"/"verified" claim not adjacent to the command or citation that produced it, and any plan-step assumption missing a confidence marker

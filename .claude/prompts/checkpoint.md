@@ -2,11 +2,9 @@
 
 > Invoke with `/hve-memory [topic-slug]` to save session context for future conversations.
 
-## Modes
+## What it does
 
-- **Save** (default): Captures current state, decisions, open questions, and next steps
-- **Continue**: Read `.claude-hve-tracking/memory/YYYY-MM-DD/topic.md` to resume from a previous session
-- **Update**: Refresh the current memory file mid-session with new state
+Save is the only operation: the command captures current state, decisions, open questions, and next steps to a memory file. It then prints the exact instruction to paste into the next session to resume — continuing is that printed instruction, not a selectable mode. There is no update path; re-running the command writes a fresh memory file.
 
 ## When to use
 
@@ -23,6 +21,8 @@
 - Next steps (ordered)
 - Key file locations
 - Tracking artifact paths
+
+Also write the most non-obvious decisions and patterns to the Claude Code native memory store for this project (`~/.claude/projects/<project-slug>/memory/`). The store is per-project, not global: entries written here surface only in future sessions on this same project.
 
 ## To resume
 

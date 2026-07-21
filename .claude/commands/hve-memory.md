@@ -32,6 +32,19 @@ Scan the current conversation for:
 
 ---
 
+## Locating tracking artifacts
+
+Populate the Tracking Artifacts block via the CLAUDE.md Artifact Discovery & Relevance convention, never newest-match-wins:
+
+1. A topic-slug argument wins.
+2. Otherwise collect distinct slugs from artifacts dated within the last 7 days; a single candidate wins.
+3. Multiple candidates: prefer the slug matching the current git branch; otherwise list them and ask.
+4. Relevance-check the chosen artifacts against this session's actual work; an artifact about a different task is treated as absent.
+
+Record `none` for any artifact type that has no relevant file.
+
+---
+
 ## Phase 2 — Save
 
 Write a memory document:
@@ -71,7 +84,7 @@ Task slug: [if applicable]
 [Anything else that would help a future session understand where things stand]
 ```
 
-Also write to the Claude Code native memory system (this persists across projects): save the most non-obvious decisions and patterns as memory entries that would help in future work on this project.
+Also write the most non-obvious decisions and patterns to the Claude Code native memory store for this project (`~/.claude/projects/<project-slug>/memory/`). The store is per-project, not global: entries written here surface only in future sessions on this same project.
 
 ---
 

@@ -53,6 +53,11 @@ Assess the draft against all of these:
 - No `/prompt-name` invocation syntax
 - No references to GitHub Copilot Chat or agent selector UI
 
+### Template Integrity
+- Is every template blank fillable from information available in-session?
+- Does every blank that might be unfillable carry an explicit N/A branch (example: `Tests: N/A - no test runner in repo`)?
+- Flag as Major any blank that would force a fabricated value or stall the phase.
+
 ---
 
 ## Output
@@ -67,7 +72,7 @@ Test log: [test summary path]
 
 ## Findings
 
-### PE-001 [CLARITY|COMPLETENESS|ACTIONABILITY|FORMAT|COPILOT-ISM] [SEVERITY]
+### PE-001 [CLARITY|COMPLETENESS|ACTIONABILITY|FORMAT|COPILOT-ISM|TEMPLATE] [SEVERITY]
 Issue: [what the problem is]
 Evidence: [specific text from the draft that demonstrates the issue]
 Impact: [what goes wrong if unfixed]
@@ -75,7 +80,7 @@ Fix: [specific rewrite or addition]
 
 ## Quality Score
 Clarity: Pass/Fail | Completeness: Pass/Fail | Actionability: Pass/Fail
-Format: Pass/Fail | No Copilot-isms: Pass/Fail
+Format: Pass/Fail | No Copilot-isms: Pass/Fail | Template integrity: Pass/Fail
 
 ## Verdict
 No issues remaining: Yes/No

@@ -2,6 +2,7 @@
 # ignore only the noisy, regenerable parts.
 .claude-hve-tracking/**/subagents/
 .claude-hve-tracking/sandbox/
+.claude-hve-tracking/reviews/pr/**/diff.patch
 
 # OS
 .DS_Store

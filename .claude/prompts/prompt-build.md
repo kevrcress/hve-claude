@@ -19,6 +19,15 @@
 6. Present final draft to user for approval
 7. Write to final location on confirmation
 
+## Options
+
+- `--iterations N` — number of test-evaluate-update cycles (default: 3)
+- `--subagent-model sonnet|opus|haiku` — override each subagent's frontmatter model
+
+## Output
+
+Drafts and test execution logs live in the sandbox: `.claude-hve-tracking/sandbox/YYYY-MM-DD-topic-run-N/`. The final artifact is written to its `.claude/` destination only after user approval.
+
 ## Related commands
 
 - `/hve-prompt-analyze <file>` — evaluate an existing artifact without rebuilding

@@ -41,6 +41,10 @@ If `--mode` was provided, override the classification with these behaviors:
 
 Tell the user the classification (or the override). If **Simple** or `--mode lightweight`, ask whether to proceed directly or still run the full loop.
 
+**Simple direct path**: when the user confirms direct implementation, the loop below is skipped but the record is not. Implement in this session, still creating and updating the changes log and running the test gate. Use the changes-log template from `/hve-implement`: `Started:`/`Completed:` obtained via `date -u +%Y-%m-%dT%H:%M:%SZ` (never a timestamp you did not obtain), and a test line that is either a count read from real runner output or an explicit `Tests: N/A — no test runner detected in repo`. A Simple task produces a smaller artifact, never no artifact. Report the changes-log path in the completion summary.
+
+Before editing, capture the baseline: run the FULL suite once and record `## Test Baseline` in the changes log (total passed/failed plus the names of already-failing tests). Re-run the full suite after implementing — never only the files you touched, since a scoped run cannot see regressions elsewhere and catching those is the entire purpose of the gate. The gate triggers on net-new failures against that baseline; pre-existing failures are noted, not blocking.
+
 If THINK_MODE is true, propagate `--think` to the plan phase invocation. If the task is classified as Challenging or `--mode full` is set, set THINK_MODE=true even if `--think` was not explicitly passed.
 
 ---
@@ -99,6 +103,8 @@ Execute the implementation protocol from `/hve-implement` inline:
 3. Run tests after each phase
 4. Run security hygiene checks after all phases
 5. Write the changes log
+
+**Concurrent writes**: when phase implementors run in parallel, each agent owns exactly one `### Phase N:` section of the shared changes log and updates it only via targeted Edit calls anchored on its own heading. Whole-file Write of the changes log is forbidden once more than one agent may hold it — last-writer-wins destroys sibling sections silently.
 
 Mark Implement complete in the todo list.
 

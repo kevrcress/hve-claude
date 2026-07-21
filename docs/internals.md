@@ -22,9 +22,10 @@ follow a strict response format and write durable artifacts to disk.
 | `hve-phase-implementor` | Executes one plan phase: writes code, updates changes log | All tools | Inherit |
 | `hve-rpi-validator` | Verifies a completed implementation phase matches what the plan required | Read, Write, Glob, Grep | Haiku |
 | `hve-implementation-validator` | 11-dimension quality check including automated security hygiene | Read, Write, Glob, Grep, Bash | Sonnet |
-| `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / format / no-Copilot criteria | Read, Write, Glob, Grep | Sonnet |
+| `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / actionability / format / no-Copilot / Template Integrity criteria (the last checks every template blank is fillable in-session or carries an N/A branch) | Read, Write, Glob, Grep | Sonnet |
 | `hve-prompt-tester` | Executes a draft prompt or agent definition literally against test scenarios | All tools | Inherit |
 | `hve-prompt-updater` | Rewrites a draft prompt based on evaluator findings | All tools | Inherit |
+| `hve-pr-reviewer` | Reviews a diff against one or two assigned quality dimensions, returning severity-graded, dimension-prefixed findings | Read, Write, Glob, Grep | Sonnet |
 
 Model values mirror each agent's `model:` frontmatter in `.claude/agents/` — that frontmatter is the source of truth; update this table when it changes.
 
@@ -45,7 +46,7 @@ unbounded spawning chains and keeps each subagent's scope fixed and auditable.
 
 ## `hve-implementation-validator` dimensions
 
-The quality validator always runs these 10 checks:
+The quality validator always runs these 11 checks:
 
 1. **Architecture Conformance**: layering, module boundaries, directory placement
 2. **Design Principles**: Single Responsibility, Open/Closed, interface segregation
@@ -61,3 +62,7 @@ The quality validator always runs these 10 checks:
    `git diff HEAD --name-only` for credential-like filenames; flags new
    unrecognized dependencies
 10. **Overall Quality**: readability, naming clarity, appropriate complexity
+11. **Documentation Integrity**: for each modified file, greps living docs (tracked
+    `.md` outside `.claude-hve-tracking/`) for citations of it and confirms the cited
+    symbols still exist; flags dead references and new bare `file:line` citations in
+    living docs as Minor. Dated tracking artifacts are snapshots and are exempt.

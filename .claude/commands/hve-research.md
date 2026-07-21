@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 1 — Research a task by dispatching parallel investigator subagents and producing a consolidated findings document
-argument-hint: <task-description> [--mode lightweight|standard|full] [--subagent-model sonnet|opus|haiku]
+argument-hint: <task-description> [--mode lightweight|standard|full] [--subagent-model sonnet|opus|haiku] [--friction-log]
 allowed-tools: Read, Write, Glob, Grep, Agent
 ---
 
@@ -10,12 +10,14 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
+If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
+
 ---
 
 ## Inputs
 
 - Task description: `$ARGUMENTS` (strip any `--mode` flag before using as topic)
-- Mode: `lightweight` (1 subagent), `standard` (2–3 subagents, default), `full` (3–5 subagents)
+- Mode: `--mode` overrides the difficulty assessment when explicitly passed (`lightweight` = 1 subagent, `standard` = 2–3, `full` = 3–5). With no flag, the Phase 0 difficulty table alone decides the count.
 - Existing research: check `.claude-hve-tracking/research/` for prior work on this topic
 
 ---
@@ -66,6 +68,10 @@ Each subagent receives:
 
 Also, for tasks involving external libraries, APIs, or documentation: instruct each relevant subagent to use WebFetch to retrieve official documentation (max 3 URLs per question; extract only the relevant section; summarize before returning).
 
+For GitHub-hosted content fetch raw URLs (`raw.githubusercontent.com/...`), not the HTML UI. The default cap is 3 URLs per question; when the research SUBJECT is an external repo or documentation set, the cap applies per question, and the parent may dispatch ONE bounded follow-up round to close evidence gaps a subagent explicitly flagged. Follow-up rounds beyond one require asking the user.
+
+**Tool boundary.** This command's allowed-tools are `Read, Write, Glob, Grep, Agent` — no Bash. Git-history questions (blame, log, diff across commits) cannot be answered by running git here, and the read-only `hve-researcher` subagent has no Bash either, so never delegate a shell-dependent question to it. In this phase, git-history evidence is limited to what Glob and Grep can obtain from the working tree; anything requiring git commands is flagged as an open question for a later phase that has Bash. Do not add Bash to this command to work around this — the research phase stays read-only by design.
+
 Wait for all subagents to complete.
 
 ---
@@ -74,8 +80,8 @@ Wait for all subagents to complete.
 
 After all subagents return:
 
-1. Read each subagent's output file from `.claude-hve-tracking/research/subagents/`
-2. Apply **context discipline**: do not paste large file contents into your working context — read the summary lines only
+1. Read each subagent's output file from `.claude-hve-tracking/research/subagents/` IN FULL — these artifacts are already condensed; they are your evidence base, not noise to skim
+2. Apply **context discipline** to the layer BELOW them: do not re-open the source files the subagent artifacts cite; trust their `file:line` citations
 3. Synthesize a consolidated research document at:
    `.claude-hve-tracking/research/YYYY-MM-DD/TASK-SLUG.md`
 

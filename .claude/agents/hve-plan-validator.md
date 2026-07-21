@@ -15,7 +15,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 ## Your Assignment
 
 You will receive from the parent:
-- Path to the research document
+- Path to the research document, or the explicit `Research: none — [reason]` marker when research was recorded absent at planning time
 - Path to the implementation plan
 - Path to the planning log (where you update the DR-/DD- section)
 
@@ -30,6 +30,8 @@ You will receive from the parent:
 3. Read the implementation plan in full
 4. For each requirement: does the plan have at least one step addressing it?
 5. Flag unaddressed requirements as `DR-` (Discrepancy from Research) items
+
+**Research-absent branch**: If the parent reports research as absent (plan header reads `Research: none — [reason]`), skip requirement extraction. Record in the output: "Validated against the plan alone; research was recorded absent at planning time." Do not manufacture requirements the research never stated. Note the absence in the DR-/DD- log and validate the plan for internal consistency only (Steps 2–3, skipping the research-based checks).
 
 ### Step 2 — Discrepancy Validation
 

@@ -14,6 +14,7 @@
 - `--scope compliance` — pattern checks only
 - `--scope accuracy` — cross-reference with code only
 - `--scope gaps` — gap detection only
+- `--subagent-model sonnet|opus|haiku` — override each subagent's frontmatter model
 
 ## Excludes
 
