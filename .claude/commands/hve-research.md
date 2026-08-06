@@ -44,7 +44,7 @@ If **Simple**: answer the research questions directly without subagents, write t
 Before spawning subagents, identify the key unknowns:
 
 1. Read any existing research in `.claude-hve-tracking/research/` for this topic
-2. Use Glob and Grep to do a quick orientation of the codebase (entry points, relevant modules, config files)
+2. Use Glob and Grep to do a quick orientation of the codebase (entry points, relevant modules, config files). If no standalone Grep tool is available in this session, fall back to Glob plus targeted Read calls — never add Bash to route around this; the research phase stays read-only by design regardless of what the harness happens to expose.
 3. List 3–7 specific research questions — things that must be known before a plan can be created
 4. Group questions by theme; each theme becomes one subagent assignment
 

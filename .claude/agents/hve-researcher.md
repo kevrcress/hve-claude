@@ -27,7 +27,7 @@ You will receive from the parent:
 ### Step 1 — Orient
 
 1. Use Glob to find files matching the path hints provided
-2. Use Grep to search for key symbols, function names, or patterns relevant to the question
+2. Use Grep to search for key symbols, function names, or patterns relevant to the question. If no standalone Grep tool is available in this session, fall back to Glob (broad filename/pattern matching) plus targeted Read calls for content search — do not reach for Bash to work around this; this agent stays read-only by design regardless of what the harness happens to expose.
 3. Read the most relevant 2–4 files; do not read everything — prioritize signal over coverage
 
 ### Step 2 — Investigate

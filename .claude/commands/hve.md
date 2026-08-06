@@ -82,7 +82,7 @@ Wait for confirmation before continuing.
 Execute the planning protocol from `/hve-plan` inline:
 
 1. Read the research document
-2. If THINK_MODE is true, invoke `/think` before drafting the plan to reason through task complexity, risk surface, and phase ordering.
+2. If THINK_MODE is true, perform an extended reasoning pass (interleaved/extended thinking) on task complexity, risk surface, and phase ordering before drafting the plan. No `/think` command exists in Claude Code — describe the behavior, don't invoke it as a slash command.
 3. Create the implementation plan, details, and planning log
 4. Spawn `hve-plan-validator` for standard/complex plans; wait for it; apply fixes
 5. Present the plan summary to the user
