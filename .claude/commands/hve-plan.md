@@ -46,7 +46,7 @@ If MODE is set (from `--mode`), use it. Otherwise, infer from complexity.
 
 ## Phase 2 — Planning
 
-If THINK_MODE is true, begin this phase by invoking `/think` to reason through task complexity, risk surface, and phase ordering before drafting any artifacts.
+If THINK_MODE is true, begin this phase with an extended reasoning pass (interleaved/extended thinking) on task complexity, risk surface, and phase ordering before drafting any artifacts. No `/think` command exists in Claude Code — describe the behavior, don't invoke it as a slash command.
 
 Create three artifacts in parallel:
 
