@@ -27,9 +27,10 @@ If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it b
    - Agent definition (`.claude/agents/`)
    - Instruction file (`.claude/instructions/`)
    - Reusable prompt (`.claude/prompts/`)
-2. Read existing similar artifacts for pattern reference
-3. Create the sandbox directory: `.claude-hve-tracking/sandbox/YYYY-MM-DD-TOPIC-run-01/`
-4. Draft an initial version of the artifact
+2. Read `.claude/instructions/writing-style.md` and `.claude/instructions/markdown.md` before drafting. Every artifact this command produces is Markdown prose, so both govern it regardless of which language the artifact discusses
+3. Read existing similar artifacts for pattern reference
+4. Create the sandbox directory: `.claude-hve-tracking/sandbox/YYYY-MM-DD-TOPIC-run-01/`
+5. Draft an initial version of the artifact
 
 ---
 
@@ -56,7 +57,7 @@ After the tester completes, spawn the `hve-prompt-evaluator` subagent.
 - The draft prompt/agent file path
 - The intended behavior description
 - Quality criteria: clarity, completeness, actionability, Claude Code format compliance, absence of Copilot-isms
-- Template integrity: every template blank is genuinely obtainable in-session or carries an explicit N/A branch (per CLAUDE.md Template Blanks)
+- Template integrity: every template blank is genuinely obtainable in-session or carries an explicit N/A branch, per CLAUDE.md's `Template Blanks` section
 
 Once the evaluator returns, read both logs — the tester's execution log from Step A and the evaluator's findings from Step B. Combine their findings before passing to the Updater.
 

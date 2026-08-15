@@ -40,8 +40,9 @@ copy its hve-* commands and agents into my .claude/ folder, copy its
 If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, prepend the wrapped block before my existing content.
 Never touch anything outside the markers or below '## Your Project'. Add the
-.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
-delete the temp clone and show me what changed.
+.claude-hve-tracking subagents and sandbox paths to my .gitignore, along with
+the credential patterns .env, .env.*, *.pem, *.key, *.p12, and *.pfx, then delete
+temp clone and show me what changed.
 ```
 2. Paste this to add your project context:
 ```
@@ -119,10 +120,10 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 | Command | Purpose |
 |---|---|
 | `/hve <task>` | Full RPI loop in one conversation with user checkpoints between every phase. Accepts `--mode lightweight\|standard\|full` to override difficulty classification: `lightweight` skips subagents and implements directly; `standard` runs the full loop with 1–2 researchers; `full` uses maximum parallel dispatch (multiple researchers, parallel implementors, parallel review validators). Pass `--think` to activate extended reasoning during planning (auto-enabled for `--mode full` and Challenging tasks). |
-| `/hve-research <task>` | Research phase only, spawns parallel investigators, writes findings |
-| `/hve-plan` | Plan phase only, reads latest research artifact, writes implementation plan. Pass `--think` to activate extended reasoning. |
-| `/hve-implement` | Implement phase only, reads latest plan, dispatches implementors per phase |
-| `/hve-review` | Review phase only, validates changes against plan, runs quality checks. Pass `--think` to activate extended reasoning during verdict synthesis. |
+| `/hve-research <task>` | Research phase only, spawns parallel investigators, writes findings. `--mode` overrides the difficulty assessment and caps subagent dispatch: `lightweight` 1 researcher, `standard` 3, `full` 5. |
+| `/hve-plan` | Plan phase only, reads latest research artifact, writes implementation plan. `--mode` overrides the inferred planning complexity: `lightweight` writes the plan directly, `standard` adds the Plan Validator, `full` uses parallel validation. Pass `--think` to activate extended reasoning. |
+| `/hve-implement` | Implement phase only, reads latest plan, dispatches implementors per phase. `--mode lightweight` implements directly with no subagents; `--mode standard` dispatches phase implementors one at a time; `--mode full` dispatches independent phases in parallel. |
+| `/hve-review` | Review phase only, validates changes against plan, runs quality checks. `--mode full` runs the RPI and quality validators in parallel; `--mode lightweight` and `--mode standard` run them in sequence. Pass `--think` to activate extended reasoning during verdict synthesis. |
 
 > **`/hve` vs standalone phase commands**, `/hve` runs all four phases in one conversation, convenient for most tasks. Context accumulates across phases, though. For large or multi-day tasks, run each phase command in a fresh conversation to keep each phase lean; the standalone commands auto-discover the previous phase's artifact automatically. See [docs/workflow.md](docs/workflow.md#faq) for detail.
 
@@ -130,10 +131,19 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 
 | Command | Purpose |
 |---|---|
-| `/hve-pr-review` | Senior-level code review across 8 quality dimensions (functional, design, idiomatic, reuse, performance, reliability, security, docs). Supports `--dimension` to focus on one area. Pass `--compact` to run 4 paired subagents instead of 8 for a faster, lower-cost review. |
+| `/hve-pr-review` | Senior-level code review across 8 quality dimensions (functional, design, idiomatic, reuse, performance, reliability, security, docs). `--dimension all` (default) runs all 8 reviewers; `--dimension security` runs the security reviewer alone; any other single `--dimension <x>` runs that reviewer plus the security reviewer, which never gets filtered out. Pass `--compact` to run 4 paired subagents instead of 8 for a faster, lower-cost review. |
 | `/hve-challenge` | Adversarial questioning of any current plan or implementation, acts as an uninformed skeptic to surface hidden assumptions |
-| `/hve-doc-ops` | Documentation QA: pattern compliance, accuracy verification, gap detection. Supports `--scope` to target a specific area. |
+| `/hve-doc-ops` | Documentation QA: pattern compliance, accuracy verification, gap detection. `--scope all` (default) runs every check; `--scope compliance`, `accuracy`, or `gaps` runs that check alone. A path argument narrows which docs are examined. |
 | `/hve-memory` | Saves current session context, decisions, and open questions to `.claude-hve-tracking/memory/` for future conversations |
+
+### Flags every dispatching command accepts
+
+Two flags are not listed per-command above because they work the same way everywhere:
+
+| Flag | Effect |
+|---|---|
+| `--subagent-model <sonnet\|opus\|haiku>` | Overrides each subagent's frontmatter model for one run. Example: `/hve-plan --subagent-model sonnet`. See the Model Selection section of CLAUDE.md for how this interacts with the session model. |
+| `--friction-log` | Records friction encountered during the phase (ambiguous instructions, tooling gaps, wasted steps) to `.claude-hve-tracking/friction/`. Off by default. Accepted by `/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, and `/hve-challenge`. |
 
 ### Prompt engineering commands
 
@@ -174,7 +184,8 @@ These commands are for extending HVE itself, building new slash commands, agent 
 /hve-pr-review --compact                # faster review with 4 paired subagents
 /hve-challenge                          # challenge the latest plan
 /hve-doc-ops                            # full documentation QA
-/hve-doc-ops --scope src/auth/          # scoped to one directory
+/hve-doc-ops docs/                      # limited to one directory
+/hve-doc-ops --scope gaps               # gap detection only
 /hve-memory                             # save session context before closing
 
 # Prompt engineering
@@ -232,6 +243,8 @@ To keep the entire tracking folder private instead, replace those rules with:
 ```
 .claude-hve-tracking/
 ```
+
+The installer also writes the credential patterns `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, and `*.pfx`. Those are unrelated to the tracking folder and are not replaced by the rule above.
 
 ---
 

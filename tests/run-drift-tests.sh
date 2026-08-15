@@ -18,10 +18,12 @@
 #      security checklist are present
 #   5. --subagent-model      — the boilerplate paragraph is byte-identical
 #      across every command that carries it
-#   6. --friction-log        — the flag block is byte-identical across the
-#      six dispatching commands
-#   7. Response protocol     — the full-protocol agents carry all six
-#      invariant lines (structural greps, not byte-diff)
+#   6. (retired)             — the --friction-log block was deduplicated to a
+#      single CLAUDE.md carrier; its uniqueness is now one spec row in
+#      test 10. The number is left vacant so tests 7-13 keep their labels.
+#   7. Response protocol     — every agent's `## Response Format` section
+#      carries all six invariant lines of the Subagent Response Protocol
+#      (structural greps over that section only, not byte-diff)
 #   8. Instructions table    — CLAUDE.md Instructions Reference and
 #      .claude/instructions/*.md agree in both directions
 #   9. Agent roster refs     — every `hve-*` agent named in a command file
@@ -37,6 +39,10 @@
 #  13. Prompt option sync    — every option token in an Arguments/Options/
 #      Modes section of a .claude/prompts/ file resolves to a real option of
 #      its mapped command (argument-hint or a body code span)
+#  14. Reference resolution  — every ``per CLAUDE.md's `Section` section``
+#      pointer under .claude/ resolves to a real CLAUDE.md heading
+#  15. Behavioral presence   — every artifact-discovering command carries a
+#      discovery reference (carrier floor, not equality)
 #
 set -euo pipefail
 
@@ -51,15 +57,17 @@ readonly GITIGNORE="${REPO_ROOT}/.gitignore"
 readonly VALID_MODELS="haiku sonnet opus inherit"
 
 # Agents that carry the FULL Subagent Response Protocol (6 invariant lines).
-# The three prompt-builder sandbox agents (hve-prompt-evaluator,
-# hve-prompt-tester, hve-prompt-updater) intentionally use a reduced,
-# sandbox-local Response Format (no 3-question cap; the updater has no
-# 5-item checklist), so they are out of scope for the structural check
-# below. This explicit list is the discovery idiom — no agent file names
-# the protocol as a greppable string.
+# This is EVERY agent in .claude/agents/. The three prompt-builder sandbox
+# agents (hve-prompt-evaluator, hve-prompt-tester, hve-prompt-updater) were
+# previously excluded on the grounds that their reduced Response Format was
+# intentional; the 2026-08-10 full-repo review found it was drift, not
+# intent (II-01, II-02, II-03), so they are in scope as of the Phase 10
+# remediation. There is no longer a licensed reduced format: an agent that
+# omits a protocol part fails this test. This explicit list is the discovery
+# idiom — no agent file names the protocol as a greppable string.
 readonly FULL_PROTOCOL_AGENTS="hve-researcher hve-phase-implementor \
 hve-plan-validator hve-rpi-validator hve-implementation-validator \
-hve-pr-reviewer"
+hve-pr-reviewer hve-prompt-evaluator hve-prompt-tester hve-prompt-updater"
 
 # Source the assertion library (sets ASSERT_LOG).
 # shellcheck source=tests/lib/assert.sh
@@ -280,7 +288,7 @@ test3_claudemd_prose_sync() {
 # ---------------------------------------------------------------------------
 test4_gitignore_hygiene() {
   local pattern
-  for pattern in ".env" ".env.*" "*.pem" "*.key" "*.p12"; do
+  for pattern in ".env" ".env.*" "*.pem" "*.key" "*.p12" "*.pfx"; do
     assert_contains "${GITIGNORE}" "${pattern}" \
       "test4: .gitignore contains '${pattern}'"
   done
@@ -343,59 +351,39 @@ test5_subagent_model_boilerplate() {
 }
 
 # ---------------------------------------------------------------------------
-# Test 6 — friction_flag_boilerplate
-# The `--friction-log` paragraph is duplicated verbatim across exactly six
-# commands (research, plan, implement, review, pr-review, challenge). Assert
-# the carrier count is 6 and every occurrence is byte-identical to the first.
+# Test 6 — RETIRED (RL-03 / RO-03, 2026-08-15)
+#
+# This test asserted that the `--friction-log` paragraph was byte-identical
+# across six command files. That duplication is exactly what RL-03 removed:
+# the paragraph is now canonical in CLAUDE.md and each command carries a
+# one-line pointer to it. The assertion inverted from "6 identical copies"
+# to "exactly 1 carrier", which is the shape `CANONICAL_BLOCK_SPECS` already
+# expresses — and whose corpus already includes CLAUDE.md, where the sole
+# carrier now lives. The bespoke function was duplicated logic of test 10, so
+# it was folded into the spec table (row `friction_capture`) rather than
+# rewritten. Presence of the pointer in each command is covered by test 14
+# (it resolves) and, for the discovery pointer, test 15 (it is there at all).
+#
+# The test number is left vacant so tests 7-13 keep their existing labels.
 # ---------------------------------------------------------------------------
-readonly FRICTION_FLAG_PREFIX='If `--friction-log`'
-readonly FRICTION_EXPECTED_COUNT=6
-
-test6_friction_flag_boilerplate() {
-  local file stem line canonical="" canonical_file=""
-  local -a carriers=()
-  for file in "${COMMANDS_DIR}"/*.md; do
-    if grep -qF -- "${FRICTION_FLAG_PREFIX}" "${file}"; then
-      carriers+=("${file}")
-    fi
-  done
-
-  if (( ${#carriers[@]} == FRICTION_EXPECTED_COUNT )); then
-    _ok_inline "test6: carrier count" \
-      "${#carriers[@]} commands carry the --friction-log block (expected ${FRICTION_EXPECTED_COUNT})"
-  else
-    _fail_inline "test6: carrier count" \
-      "expected ${FRICTION_EXPECTED_COUNT} commands carrying the --friction-log block, got ${#carriers[@]}"
-  fi
-
-  for file in "${carriers[@]}"; do
-    stem="$(basename "${file}" .md)"
-    line="$(extract_line "${file}" "${FRICTION_FLAG_PREFIX}")"
-    if [[ -z "${canonical}" ]]; then
-      canonical="${line}"
-      canonical_file="${stem}"
-      _ok_inline "test6: ${stem} is canonical" "reference occurrence"
-      continue
-    fi
-    if [[ "${line}" == "${canonical}" ]]; then
-      _ok_inline "test6: ${stem} matches canonical" \
-        "byte-identical to ${canonical_file}"
-    else
-      _fail_inline "test6: ${stem} matches canonical" \
-        "--friction-log block differs from ${canonical_file}"
-    fi
-  done
-}
 
 # ---------------------------------------------------------------------------
 # Test 7 — response_protocol_structure
 # Each full-protocol agent must carry all six invariant lines of the
 # Subagent Response Protocol. Structural greps (not byte-diff), because
-# agents vary the status vocabulary (Status/Quality/Verdict) and the exact
+# agents vary the status vocabulary (Status/Quality/Validation) and the exact
 # wording of each item. See FULL_PROTOCOL_AGENTS for the in-scope set.
+#
+# The greps run against the `## Response Format` SECTION ONLY, not the whole
+# file. Whole-file matching made two parts vacuous: `hve-researcher.md`
+# carries "Up to 3 questions" inside its output template and
+# `hve-prompt-updater.md` carried "Up to 3 deferred findings", so deleting the
+# clarifying-questions part from the Response Format still passed. Section
+# anchoring plus the tightened question and checklist patterns is what makes a
+# missing part fail mechanically (Phase 10, Step 10.5).
 # ---------------------------------------------------------------------------
 test7_response_protocol_structure() {
-  local stem file
+  local stem file section
   for stem in ${FULL_PROTOCOL_AGENTS}; do
     file="${AGENTS_DIR}/${stem}.md"
     if [[ ! -f "${file}" ]]; then
@@ -404,33 +392,53 @@ test7_response_protocol_structure() {
       continue
     fi
 
-    _grep_invariant "${file}" "${stem}" "artifact-path line" \
+    section="$(response_format_section "${file}")"
+    if [[ -z "${section}" ]]; then
+      _fail_inline "test7: ${stem} Response Format section" \
+        "no '## Response Format' section found in ${stem}.md"
+      continue
+    fi
+
+    _grep_invariant "${section}" "${stem}" "artifact-path line" \
       'One line: `?(Written|Updated):'
-    _grep_invariant "${file}" "${stem}" "status line" \
-      '(Status:|Quality:|Verdict:)'
-    _grep_invariant "${file}" "${stem}" "7-bullet cap" \
+    _grep_invariant "${section}" "${stem}" "status line" \
+      '(Status|Quality|Validation):'
+    _grep_invariant "${section}" "${stem}" "7-bullet cap" \
       'Up to \**7\** bullet'
-    _grep_invariant "${file}" "${stem}" "5-item checklist cap" \
-      'Up to \**5\**'
-    _grep_invariant "${file}" "${stem}" "3-question cap" \
-      'Up to \**3\**'
-    _grep_invariant "${file}" "${stem}" "Full detail line" \
+    _grep_invariant "${section}" "${stem}" "5-item checklist cap" \
+      'Up to \**5\** checklist item'
+    _grep_invariant "${section}" "${stem}" "3-question cap" \
+      'Up to \**3\** clarifying question'
+    _grep_invariant "${section}" "${stem}" "Full detail line" \
       'Full detail'
   done
 }
 
-# _grep_invariant <file> <stem> <label> <ere>
-# Assert <file> contains at least one line matching <ere>.
-_grep_invariant() {
+# response_format_section <file>
+# Print the body of <file>'s `## Response Format` section: every line after
+# the heading up to (not including) the next level-2 heading. Empty output
+# means the section is absent, which test 7 treats as a failure.
+response_format_section() {
   local file="${1}"
+  awk '
+    /^## Response Format[[:space:]]*$/ { inside = 1; next }
+    inside && /^## / { exit }
+    inside { print }
+  ' "${file}"
+}
+
+# _grep_invariant <section-text> <stem> <label> <ere>
+# Assert <section-text> contains at least one line matching <ere>.
+_grep_invariant() {
+  local section="${1}"
   local stem="${2}"
   local label="${3}"
   local ere="${4}"
-  if grep -qE "${ere}" "${file}"; then
+  if grep -qE "${ere}" <<<"${section}"; then
     _ok_inline "test7: ${stem} ${label}" "present"
   else
     _fail_inline "test7: ${stem} ${label}" \
-      "no line matching /${ere}/ in ${stem}.md"
+      "no line matching /${ere}/ in ${stem}.md Response Format section"
   fi
 }
 
@@ -540,6 +548,12 @@ test9_agent_roster_references() {
 #   mode=present   — carrier count only; use when the same guarantee is stated
 #                    inside different surrounding sentences, so byte-identity
 #                    would fail on legitimate variation
+#
+# A spec with expected_carrier_count=1 is a UNIQUENESS assertion, not a
+# duplication one: the block was deduplicated to a single CLAUDE.md carrier
+# and every other file points at it by name. Re-introducing a copy anywhere in
+# the corpus raises the count and fails the row. Those rows are the RL-cluster
+# replacements (RL-03 through RL-08); their pointers are checked by test 14.
 # Corpus: .claude/commands/*.md, .claude/agents/*.md, .claude/prompts/*.md,
 #         CLAUDE.md
 # .claude/prompts/ is in the corpus because the paste-to-run prompt files carry
@@ -548,8 +562,11 @@ test9_agent_roster_references() {
 # corpus those copies can diverge silently.
 # ---------------------------------------------------------------------------
 readonly -a CANONICAL_BLOCK_SPECS=(
-  'discovery_stub|3|identical|Discover inputs per the Artifact Discovery & Relevance convention'
-  'concurrent_writes|4|identical|**Concurrent writes**'
+  'discovery_stub|1|identical|Phase commands discover their input artifacts from'
+  'concurrent_writes|1|identical|**Concurrent writes**'
+  'friction_capture|1|identical|accept an optional `--friction-log` flag'
+  'security_checklist|1|identical|- **Secret exposure**: grep changed files for'
+  'shell_stays_in_parent|1|identical|**Shell stays in the parent.**'
   'timestamp_started|2|identical|Started: [run `date -u'
   'timestamp_completed|2|identical|Completed: [same command at completion'
   'testcount_passed|2|identical|- `Tests: X passed, Y failed`'
@@ -917,6 +934,174 @@ test13_prompt_option_sync() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 14 — reference_resolution
+#
+# Deduplicating shared prose into CLAUDE.md replaces one failure mode (copies
+# drift apart) with another (a pointer outlives the section it names). Nothing
+# else in this suite catches a dangling pointer, so every reference written in
+# the fixed construction
+#
+#     per CLAUDE.md's `Section Name` section
+#
+# must resolve to a real `##`/`###` heading in CLAUDE.md. The backticks are
+# what make extraction a matter of matching a delimiter rather than parsing
+# prose, which is why the construction is fixed rather than free-form.
+#
+# Heading comparison is a literal string equality against the parsed heading
+# list, not a regex match, so section names containing regex metacharacters
+# ("Artifact Discovery & Relevance") need no escaping.
+# ---------------------------------------------------------------------------
+readonly REFERENCE_PATTERN="per CLAUDE\.md's \`[^\`]+\` section"
+readonly REFERENCE_OPEN="per CLAUDE.md's \`"
+readonly REFERENCE_CLOSE="\` section"
+
+# claude_md_headings — prints every CLAUDE.md heading of level 2 or deeper,
+# heading text only, one per line.
+claude_md_headings() {
+  awk '/^##+[[:space:]]/ {
+    sub(/^#+[[:space:]]+/, "")
+    print
+  }' "${CLAUDE_MD}"
+}
+
+test14_reference_resolution() {
+  local -a headings=()
+  local heading match section found
+
+  while IFS= read -r heading; do
+    [[ -n "${heading}" ]] && headings+=("${heading}")
+  done < <(claude_md_headings)
+
+  if (( ${#headings[@]} == 0 )); then
+    _fail_inline "test14: CLAUDE.md headings parse" \
+      "no '## ' headings extracted from ${CLAUDE_MD}"
+    return
+  fi
+
+  local -a matches=()
+  while IFS= read -r match; do
+    [[ -n "${match}" ]] && matches+=("${match}")
+  done < <(grep -hoE -- "${REFERENCE_PATTERN}" \
+    "${COMMANDS_DIR}"/*.md "${AGENTS_DIR}"/*.md "${PROMPTS_DIR}"/*.md \
+    2>/dev/null | sort -u)
+
+  if (( ${#matches[@]} == 0 )); then
+    _fail_inline "test14: pointers present" \
+      "no \`per CLAUDE.md's <Section> section\` pointers found under .claude/"
+    return
+  fi
+  _ok_inline "test14: pointers present" \
+    "${#matches[@]} distinct section pointer(s) under .claude/"
+
+  for match in "${matches[@]}"; do
+    section="${match#"${REFERENCE_OPEN}"}"
+    section="${section%"${REFERENCE_CLOSE}"}"
+    found=0
+    for heading in "${headings[@]}"; do
+      if [[ "${heading}" == "${section}" ]]; then
+        found=1
+        break
+      fi
+    done
+    if (( found == 1 )); then
+      _ok_inline "test14: '${section}' resolves" "matches a CLAUDE.md heading"
+    else
+      _fail_inline "test14: '${section}' resolves" \
+        "pointers name '${section}' but CLAUDE.md has no such heading"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Test 15 — behavioral_presence
+#
+# Every other test in this suite checks that duplicated text agrees with
+# itself. None checks that a documented behavior is actually present in the
+# command that needs it — the gap RO-03 named. Test 15 asserts presence of the
+# behavior, not consistency of its wording: each command that discovers
+# tracking artifacts must carry the discovery pointer, so a command cannot
+# silently ship without the branch-tiebreak and ask-on-ambiguity rule (the
+# FC-01 defect in hve-implement).
+#
+# The carrier count is a FLOOR, not an equality. A seventh discovering command
+# added later is a legitimate addition, not a drift regression, and must not
+# red the suite; a command that loses its pointer still fails on its own row.
+#
+# ASSERTION 2 asserts the other half of the discovery convention: research and
+# details are RECONSTRUCTIBLE inputs, so a command that consumes one must be
+# able to proceed without it by recording the skip, never by hard-stopping and
+# never by silently continuing. The mechanical proxy is the recorded-skip
+# token the convention itself prescribes — `<Input>: none — [reason]` — which
+# is the artifact a later phase reads to learn the input was absent by design.
+# A command that drops the branch loses the token, so the row goes red.
+# Carrier count is a floor here too, for the same reason as assertion 1.
+# ---------------------------------------------------------------------------
+readonly DISCOVERY_REFERENCE="per CLAUDE.md's \`Artifact Discovery & Relevance\` section"
+readonly DISCOVERING_COMMANDS="hve-plan hve-implement hve-review hve-challenge \
+hve-memory"
+readonly DISCOVERY_CARRIER_FLOOR=5
+
+readonly RECORD_SKIP_MARKER=": none — [reason]"
+readonly RECONSTRUCTIBLE_CONSUMERS="hve-plan hve-implement hve-review"
+readonly RECORD_SKIP_CARRIER_FLOOR=3
+
+test15_behavioral_presence() {
+  local stem file
+  local discovery_carriers=0
+
+  for stem in ${DISCOVERING_COMMANDS}; do
+    file="${COMMANDS_DIR}/${stem}.md"
+    if [[ ! -f "${file}" ]]; then
+      _fail_inline "test15: ${stem} present" \
+        "expected command file ${file} but not found"
+      continue
+    fi
+    if grep -qF -- "${DISCOVERY_REFERENCE}" "${file}"; then
+      _ok_inline "test15: ${stem} discovery reference" "present"
+      discovery_carriers=$(( discovery_carriers + 1 ))
+    else
+      _fail_inline "test15: ${stem} discovery reference" \
+        "${stem}.md discovers tracking artifacts but carries no \`${DISCOVERY_REFERENCE}\` pointer"
+    fi
+  done
+
+  if (( discovery_carriers >= DISCOVERY_CARRIER_FLOOR )); then
+    _ok_inline "test15: discovery carrier floor" \
+      "${discovery_carriers} command(s) carry the pointer (floor ${DISCOVERY_CARRIER_FLOOR})"
+  else
+    _fail_inline "test15: discovery carrier floor" \
+      "expected >= ${DISCOVERY_CARRIER_FLOOR} carriers, got ${discovery_carriers}"
+  fi
+
+  # Assertion 2 — reconstructible-input consumers carry a record-skip branch.
+  local skip_carriers=0
+
+  for stem in ${RECONSTRUCTIBLE_CONSUMERS}; do
+    file="${COMMANDS_DIR}/${stem}.md"
+    if [[ ! -f "${file}" ]]; then
+      _fail_inline "test15: ${stem} present" \
+        "expected command file ${file} but not found"
+      continue
+    fi
+    if grep -qF -- "${RECORD_SKIP_MARKER}" "${file}"; then
+      _ok_inline "test15: ${stem} record-skip branch" "present"
+      skip_carriers=$(( skip_carriers + 1 ))
+    else
+      _fail_inline "test15: ${stem} record-skip branch" \
+        "${stem}.md consumes a reconstructible input but carries no \`<Input>${RECORD_SKIP_MARKER}\` record-skip branch"
+    fi
+  done
+
+  if (( skip_carriers >= RECORD_SKIP_CARRIER_FLOOR )); then
+    _ok_inline "test15: record-skip carrier floor" \
+      "${skip_carriers} command(s) carry the branch (floor ${RECORD_SKIP_CARRIER_FLOOR})"
+  else
+    _fail_inline "test15: record-skip carrier floor" \
+      "expected >= ${RECORD_SKIP_CARRIER_FLOOR} carriers, got ${skip_carriers}"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -941,8 +1126,7 @@ main() {
   run_test "Test 4: .gitignore security hygiene" test4_gitignore_hygiene
   run_test "Test 5: --subagent-model boilerplate drift" \
     test5_subagent_model_boilerplate
-  run_test "Test 6: --friction-log boilerplate drift" \
-    test6_friction_flag_boilerplate
+  # Test 6 is retired; see the RETIRED banner above.
   run_test "Test 7: Subagent Response Protocol structure" \
     test7_response_protocol_structure
   run_test "Test 8: CLAUDE.md Instructions Reference table sync" \
@@ -957,6 +1141,10 @@ main() {
     test12_dispatch_names_resolvable_agent
   run_test "Test 13: prompt-file options exist in the mapped command" \
     test13_prompt_option_sync
+  run_test "Test 14: CLAUDE.md section references resolve" \
+    test14_reference_resolution
+  run_test "Test 15: documented behaviors present in their consumers" \
+    test15_behavioral_presence
 
   finish
 }

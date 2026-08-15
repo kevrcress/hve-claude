@@ -238,6 +238,17 @@ if [ "$GLOBAL" -eq 0 ]; then
   fi
   add_ignore '.claude-hve-tracking/**/subagents/'
   add_ignore '.claude-hve-tracking/sandbox/'
+  # The header is written outside add_ignore, so it needs its own guard or it
+  # duplicates on every re-run.
+  if ! grep -qF "# HVE security hygiene" "$GITIGNORE" 2>/dev/null; then
+    printf '\n# HVE security hygiene: never commit credentials\n' >> "$GITIGNORE"
+  fi
+  add_ignore '.env'
+  add_ignore '.env.*'
+  add_ignore '*.pem'
+  add_ignore '*.key'
+  add_ignore '*.p12'
+  add_ignore '*.pfx'
   echo "  ✓ .gitignore rules"
 else
   echo "  - skipped .gitignore (global mode; rules are per-project)"
@@ -248,9 +259,19 @@ echo "Done. Next:"
 if [ "$GLOBAL" -eq 1 ]; then
   echo "  1. HVE commands now work in every project; .claude-hve-tracking/ is created"
   echo "     on first use in each project."
-  echo "  2. Add these lines to each project's .gitignore where you use /hve:"
+  echo "  2. Add these lines to each project's .gitignore where you use /hve"
+  echo "     (this is exactly what a project-mode install writes):"
+  echo "       # HVE tracking: commit durable artifacts, ignore regenerable noise"
   echo "       .claude-hve-tracking/**/subagents/"
   echo "       .claude-hve-tracking/sandbox/"
+  echo
+  echo "       # HVE security hygiene: never commit credentials"
+  echo "       .env"
+  echo "       .env.*"
+  echo "       *.pem"
+  echo "       *.key"
+  echo "       *.p12"
+  echo "       *.pfx"
   echo "  3. Avoid also installing HVE per-project: duplicate copies of the commands"
   echo "     shadow each other and show twice in the command list."
 else

@@ -42,7 +42,7 @@ Assess the draft against all of these:
 
 ### Claude Code Format Compliance
 - Does it use correct frontmatter fields (`description`, `argument-hint`, `allowed-tools`, `model`, `color`)?
-- Does it follow the HVE subagent response format (7-finding max, checklist, full-detail pointer)?
+- Does its Response Format carry every part required per CLAUDE.md's `Subagent Response Protocol` section?
 - Does it avoid prose that should be structured steps?
 
 ### Absence of Copilot-Isms
@@ -83,7 +83,7 @@ Clarity: Pass/Fail | Completeness: Pass/Fail | Actionability: Pass/Fail
 Format: Pass/Fail | No Copilot-isms: Pass/Fail | Template integrity: Pass/Fail
 
 ## Verdict
-No issues remaining: Yes/No
+Pass (no Critical or Major findings remain) | Fail: N critical, N major
 ```
 
 ---
@@ -91,10 +91,13 @@ No issues remaining: Yes/No
 ## Response Format
 
 1. One line: `Written: [evaluation path]`
-2. One line: `Verdict: No issues remaining: Yes` | `No: N critical, N major`
+2. One line: `Status: Pass` (no Critical or Major findings remain) | `Fail: N critical, N major`
 3. Up to 7 bullet-point findings (≤ 240 chars; Critical first)
-4. Up to 5 recommended checks for next evaluation round
-5. One line: `Full detail: re-read [evaluation path]`
+4. Up to 5 checklist items for recommended checks in the next evaluation round
+5. Up to 3 clarifying questions (only if blocking)
+6. One line: `Full detail: re-read [evaluation path]`
+
+You are a validator, so the status vocabulary is Pass / Fail, not Complete / Blocked. A draft you could not evaluate at all reports `Fail` with the reason as the first finding.
 
 ---
 

@@ -10,7 +10,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
-If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
+Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 
 **Branch selection.** BRANCH is the first whitespace-delimited token of `$ARGUMENTS` that matches a name in `git branch --list`. Anything else in `$ARGUMENTS` (pasted handoff blocks, flags, prose) is ignored for branch selection. If no token matches, fall back to `git branch --show-current`. Sanitize the resulting name for the output path by replacing every `/` with `-` (e.g. `feature/x` → `feature-x`); this sanitized form is `BRANCH-NAME` throughout.
 
@@ -19,7 +19,7 @@ If `--friction-log` is present in the arguments, strip it before other parsing a
 ## Inputs
 
 - Branch: selected per **Branch selection** above (falls back to the current branch)
-- Dimension filter: `--dimension all` (default) or a specific dimension
+- Dimension filter: `--dimension all` (default) or a single dimension. A filtered run is subject to the coverage floor, per CLAUDE.md's `Security Hygiene` section; the reviewer set it produces is specified in **Phase 2**.
 - Output: `.claude-hve-tracking/reviews/pr/BRANCH-NAME/YYYY-MM-DD-review.md`
 
 ---
@@ -51,6 +51,7 @@ Branch: [branch]
 Base: main
 Files changed: N
 Commits: N
+Coverage: [dimensions reviewed] | Not covered: [dimensions skipped, or `none`]
 
 ## Executive Summary
 [2–3 sentences: what the PR does, overall quality assessment]
@@ -82,11 +83,23 @@ Spawn **parallel `hve-pr-reviewer` subagents** using the Agent tool. Dispatch ea
 | Security and Compliance | SC- |
 | Documentation and Operations | DO- |
 
-Format: `FC-001 [SEVERITY]` (severity is Critical / Major / Minor per CLAUDE.md). Compact-mode pairs use both prefixes, one per section. `IV-` is reserved for `/hve-review` implementation validation and is never used here.
+Format: `FC-001 [SEVERITY]` (severity is Critical / Major / Minor per CLAUDE.md's `Severity Grading` section). Compact-mode pairs use both prefixes, one per section. `IV-` is reserved for `/hve-review` implementation validation and is never used here.
+
+### Reviewer set
+
+`--dimension` selects which reviewers run, subject to the coverage floor, per CLAUDE.md's `Security Hygiene` section:
+
+| Invocation | Reviewers dispatched |
+|---|---|
+| `--dimension all` (default) | All 8, one per dimension; 4 paired subagents under `--compact` |
+| `--dimension security` | Security and Compliance only, dispatched exactly once |
+| `--dimension <x>` (any other single dimension) | The reviewer for `<x>` **plus** the Security and Compliance reviewer |
+
+`--compact` pairs dimensions only under `--dimension all`; a single-dimension run dispatches at most two reviewers, so `--compact` changes nothing there. Record the dispatched set and the omitted dimensions on the review file's `Coverage:` line in Phase 3.
 
 ### Default mode (no `--compact` flag)
 
-Spawn all 8 subagents in parallel for `--dimension all`, one per dimension:
+Spawn all 8 subagents in parallel for `--dimension all`, one per dimension. Under a single-dimension invocation, dispatch only the reviewers named in **Reviewer set** above, using that dimension's description from this list:
 
 1. **Functional Correctness** — Does the implementation do what the PR description says? Are there logic errors, edge cases, off-by-ones? Are error paths handled?
 
@@ -100,7 +113,7 @@ Spawn all 8 subagents in parallel for `--dimension all`, one per dimension:
 
 6. **Reliability and Observability** — Are errors logged appropriately? Is there sufficient instrumentation? Are retry/timeout/backoff patterns used where needed?
 
-7. **Security and Compliance** — Run the full security checklist from CLAUDE.md: secret exposure, .gitignore hygiene, input validation, SQL injection, XSS, dependency audit.
+7. **Security and Compliance** — Run every check in the credential checklist, per CLAUDE.md's `Security Hygiene` section, then review input validation, SQL injection, XSS, and dependency audit.
 
 8. **Documentation and Operations** — Are public APIs documented? Are README or operational docs updated? Are migration steps noted if schema changes exist?
 
@@ -142,10 +155,12 @@ After all subagent reviews are in:
 1. Consolidate all findings into the review document, organized by severity (Critical first)
 2. De-duplicate findings that multiple subagents identified
 3. Tally: Critical / Major / Minor counts
-4. Determine overall verdict:
+4. Fill the `Coverage:` header line from the **Reviewer set** actually dispatched: name every dimension that ran, and every dimension that did not. A `--dimension all` run records all 8 as covered and `Not covered: none`.
+5. Determine overall verdict. Every threshold below counts findings from the covered dimensions only:
    - **✅ Approve** — no Critical, ≤ 2 Major findings
    - **⚠️ Request Changes** — any Critical, or > 2 Major findings
-   - **🚫 Block** — security Critical or data integrity risk
+   - **🚫 Block** — security Critical or data integrity risk. This rule is unconditional: the Security and Compliance reviewer runs on every invocation.
+6. On a filtered run, suffix the verdict with the covered set, for example `✅ Approve (security + performance only; 6 dimensions not covered)`. On a `--dimension all` run, the verdict carries no suffix.
 
 ---
 
@@ -154,7 +169,8 @@ After all subagent reviews are in:
 Present the review to the user:
 - Executive summary
 - Top 10 findings (Critical and Major first)
-- Overall verdict with reasoning
+- The `Coverage:` line: dimensions reviewed and dimensions not reviewed
+- Overall verdict with reasoning, carrying the covered-set suffix on a filtered run
 - Pointer to the full review doc
 
 ```

@@ -16,7 +16,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 You will receive from the parent:
 - The plan phase content (steps, success criteria, dependencies)
 - The implementation details doc path (or relevant section)
-- The relevant `.claude/instructions/` file path for the language (e.g., `.claude/instructions/python.md`)
+- The relevant `.claude/instructions/` file path for the language (e.g., `.claude/instructions/python.md`). When the language has no such file, apply the fallback per CLAUDE.md's `Instructions Reference` section
 - The changes log path to update
 - The workspace root
 
@@ -28,7 +28,7 @@ You will receive from the parent:
 
 1. Read the plan phase in full: steps, success criteria, success conditions
 2. Read the implementation details doc (or relevant section)
-3. Read the relevant `.claude/instructions/` file for the language being implemented
+3. Read the relevant `.claude/instructions/` file for the language being implemented. When no file covers that language, apply the fallback per CLAUDE.md's `Instructions Reference` section
 4. Use Glob and Grep to find existing implementations of the pattern you're about to build (reuse before inventing)
 5. Read the 2–4 most relevant existing files for context on conventions and patterns
 
@@ -45,7 +45,7 @@ For each step:
    - [x] Step N.M: [description] — `file:line`
    ```
 
-**Concurrent writes**: when phase implementors run in parallel, each agent owns exactly one `### Phase N:` section of the shared changes log and updates it only via targeted Edit calls anchored on its own heading. Whole-file Write of the changes log is forbidden once more than one agent may hold it — last-writer-wins destroys sibling sections silently.
+Concurrent writes to the shared changes log follow the ownership rule, per CLAUDE.md's `Concurrent Changes-Log Writes` section.
 
 If you encounter an unexpected blocker (missing file, conflicting pattern, ambiguous requirement):
 - Try to resolve it using existing code context
@@ -67,7 +67,7 @@ After all steps in the phase are complete:
 1. Re-read the phase success criteria
 2. Verify each criterion is met (read the files you modified; spot-check key logic)
 3. Run a quick self-review: does the code follow existing patterns? Are there obvious bugs?
-4. Re-read your own earlier claims in the changes log. If later work falsified any of them, annotate the stale claim in place (`superseded — see Correction YYYY-MM-DD`) and append a dated Correction entry, per the CLAUDE.md corrections convention. Never silently rewrite. Do not report Complete while your own record contradicts itself.
+4. Re-read your own earlier claims in the changes log. If later work falsified any of them, annotate the stale claim in place (`superseded — see Correction YYYY-MM-DD`) and append a dated Correction entry, per CLAUDE.md's `Corrections in Tracking Artifacts` section. Never silently rewrite. Do not report Complete while your own record contradicts itself.
 
 ### Step 4 — Report
 
@@ -129,7 +129,7 @@ After updating the changes log, respond to the parent with ONLY:
 ## Constraints
 
 - Follow existing code patterns — search before writing new abstractions
-- Read the `.claude/instructions/` file for the language before writing code
+- Read the `.claude/instructions/` file for the language before writing code; when none exists, apply the fallback per CLAUDE.md's `Instructions Reference` section
 - Update the changes log after every completed step, not just at the end
 - Do not exceed the scope of the assigned phase
 - Do not refactor code outside the steps defined in the plan

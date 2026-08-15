@@ -10,7 +10,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 ## Friction Capture
 
-If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
+Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 
 ---
 
@@ -22,7 +22,7 @@ The Challenger's value comes from not sharing the implementor's assumptions. You
 
 ## Phase 1 — Scope Discovery
 
-Discover inputs per the Artifact Discovery & Relevance convention in CLAUDE.md: slug argument first, else recent distinct slugs (ask on ambiguity, never silently pick between same-day slugs), and always relevance-check the chosen artifact before treating it as evidence.
+Discover inputs per CLAUDE.md's `Artifact Discovery & Relevance` section.
 
 1. Determine what to challenge: `$ARGUMENTS` specifies a topic slug or `--focus` area
 2. Find relevant artifacts in `.claude-hve-tracking/`:

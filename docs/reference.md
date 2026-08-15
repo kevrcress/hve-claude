@@ -26,6 +26,8 @@ prompts copied into your project.
 │   └── YYYY-MM-DD/kebab-slug.md
 ├── doc-ops/
 │   └── YYYY-MM-DD-session.md
+├── friction/
+│   └── YYYY-MM-DD-phase-slug.md                 # Optional --friction-log notes
 └── sandbox/                                     # Prompt builder runs (gitignored)
     └── YYYY-MM-DD-topic-run-N/
 ```
@@ -60,6 +62,8 @@ The files below are included out of the box (ported from the MS repo):
 | `rust.md` | Rust idioms, error handling, ownership patterns |
 | `rust-tests.md` | `#[cfg(test)]`, integration test layout, cargo test |
 | `terraform.md` | HCL style, module conventions, variable naming |
+| `javascript.md` | ES modules, `const`/`let`, async patterns, strict equality |
+| `typescript.md` | Compiler strictness, public API types, narrowing over assertions |
 | `markdown.md` | Document structure, heading hierarchy, table formatting |
 | `git-commit-messages.md` | Conventional commits, scope, subject line rules |
 | `writing-style.md` | Prose clarity, active voice, technical writing conventions |

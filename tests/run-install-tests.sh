@@ -487,6 +487,80 @@ test5b_global_existing_claude_md() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 6: .gitignore credential rules (SC-01)
+# Covers three cases: fresh install writes all six patterns as whole lines,
+# a re-run adds no duplicates, and a target with some patterns already listed
+# gains only the missing ones.
+# ---------------------------------------------------------------------------
+
+# _assert_line_count <file> <line> <expected> <label>
+# Whole-line count check. assert_contains is substring-based, which cannot
+# distinguish `.env` from `.env.*`, so credential rules need an exact match.
+_assert_line_count() {
+  local file="${1}"
+  local line="${2}"
+  local expected="${3}"
+  local label="${4}"
+  local actual
+  actual="$(grep -cxF "${line}" "${file}" 2>/dev/null)" || actual=0
+  if (( actual == expected )); then
+    _ok_inline "${label}" "'${line}' x${actual}"
+  else
+    _fail_inline "${label}" \
+      "expected '${line}' x${expected} in ${file}, got x${actual}"
+  fi
+}
+
+test6_gitignore_credentials() {
+  local credential_rules=('.env' '.env.*' '*.pem' '*.key' '*.p12' '*.pfx')
+  local rule
+
+  # Case 1 — fresh install writes all six patterns as whole lines.
+  local fresh_dir="${WORK_DIR}/test6-fresh"
+  mkdir -p "${fresh_dir}"
+  "${INSTALL_SH}" "${fresh_dir}" > /dev/null 2>&1
+
+  for rule in "${credential_rules[@]}"; do
+    _assert_line_count "${fresh_dir}/.gitignore" "${rule}" 1 \
+      "test6: fresh install writes credential rule"
+  done
+  assert_contains "${fresh_dir}/.gitignore" \
+    "# HVE security hygiene: never commit credentials" \
+    "test6: fresh install writes the security-hygiene header"
+
+  # Case 2 — a second install adds no duplicates, header included.
+  "${INSTALL_SH}" "${fresh_dir}" > /dev/null 2>&1
+
+  for rule in "${credential_rules[@]}"; do
+    _assert_line_count "${fresh_dir}/.gitignore" "${rule}" 1 \
+      "test6: re-run keeps exactly one credential rule"
+  done
+  local header_count
+  header_count="$(grep -cF "# HVE security hygiene" \
+    "${fresh_dir}/.gitignore" 2>/dev/null)" || header_count=0
+  if (( header_count == 1 )); then
+    _ok_inline "test6: re-run keeps exactly one hygiene header" "count=1"
+  else
+    _fail_inline "test6: re-run keeps exactly one hygiene header" \
+      "expected 1, got ${header_count}"
+  fi
+
+  # Case 3 — a target that already lists .env and *.key gains only the three
+  # missing patterns and keeps its own unrelated rules untouched.
+  local seeded_dir="${WORK_DIR}/test6-seeded"
+  mkdir -p "${seeded_dir}"
+  printf 'node_modules/\n.env\n*.key\n' > "${seeded_dir}/.gitignore"
+  "${INSTALL_SH}" "${seeded_dir}" > /dev/null 2>&1
+
+  for rule in "${credential_rules[@]}"; do
+    _assert_line_count "${seeded_dir}/.gitignore" "${rule}" 1 \
+      "test6: seeded target ends with exactly one of each rule"
+  done
+  _assert_line_count "${seeded_dir}/.gitignore" "node_modules/" 1 \
+    "test6: seeded target keeps its own pre-existing rule"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -503,6 +577,7 @@ main() {
   run_test "Test 5: Global install (--global)" test5_global_install
   run_test "Test 5b: Global upgrade (existing ~/.claude/CLAUDE.md)" \
     test5b_global_existing_claude_md
+  run_test "Test 6: .gitignore credential rules" test6_gitignore_credentials
 
   finish
 }
