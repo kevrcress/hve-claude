@@ -43,6 +43,11 @@
 #      pointer under .claude/ resolves to a real CLAUDE.md heading
 #  15. Behavioral presence   — every artifact-discovering command carries a
 #      discovery reference (carrier floor, not equality)
+#  16. Credential surfaces   — the six credential patterns restated in
+#      install.sh (writes and global-mode echo), the install suite's own
+#      array, README.md, and docs/installation.md all agree with CLAUDE.md's
+#      Security Hygiene bullet, which is the source of truth. Covers the
+#      copies that live outside test 10's canonical-block corpus.
 #
 set -euo pipefail
 
@@ -1102,6 +1107,113 @@ test15_behavioral_presence() {
 }
 
 # ---------------------------------------------------------------------------
+# Test 16 — credential-pattern surfaces agree with CLAUDE.md
+#
+# The six credential patterns are restated literally in ten places across
+# install.sh, the docs, and the test suites. Test 4 checks only that the repo
+# .gitignore carries them; canonical_block_corpus() (test 10) never walks
+# README.md, docs/, or install.sh, so every copy outside .claude/ was
+# previously unguarded. CLAUDE.md's Security Hygiene bullet is the source of
+# truth: this test parses the set from there and holds every other surface to
+# it, in both directions where the surface is machine-extractable.
+# ---------------------------------------------------------------------------
+
+# Surfaces that restate the patterns as prose. Presence-checked only: the
+# wording around them varies, so an exact set comparison is not available.
+readonly CREDENTIAL_PROSE_SURFACES="README.md docs/installation.md"
+
+# extract_canonical_credentials — prints the canonical set, one per line,
+# parsed from CLAUDE.md's `.gitignore hygiene` bullet.
+extract_canonical_credentials() {
+  grep -F '.gitignore hygiene' "${CLAUDE_MD}" \
+    | grep -oE '`[^`]+`' \
+    | tr -d '`' \
+    | grep -v 'gitignore hygiene' || true
+}
+
+# _assert_credential_set label expected actual
+# Compares two newline-separated pattern lists as sorted sets.
+_assert_credential_set() {
+  local label="${1}" expected="${2}" actual="${3}"
+  local exp_sorted act_sorted
+  exp_sorted="$(printf '%s\n' "${expected}" | sort)"
+  act_sorted="$(printf '%s\n' "${actual}" | sort)"
+  if [[ "${exp_sorted}" == "${act_sorted}" ]]; then
+    _ok_inline "${label}" "matches CLAUDE.md's $(printf '%s\n' "${expected}" | grep -c .) pattern(s)"
+  else
+    # Flatten via tr, never an unquoted expansion: the patterns are globs
+    # (`*.pem`, `*.key`), so word-splitting them would pathname-expand each
+    # one against the working directory and print whatever happened to match.
+    _fail_inline "${label}" \
+      "drifted from CLAUDE.md — expected [$(printf '%s' "${exp_sorted}" | tr '\n' ' ')], got [$(printf '%s' "${act_sorted}" | tr '\n' ' ')]"
+  fi
+}
+
+test16_credential_surface_sync() {
+  local canonical canonical_count pattern surface file
+  canonical="$(extract_canonical_credentials)"
+  canonical_count="$(printf '%s\n' "${canonical}" | grep -c . || true)"
+
+  if (( canonical_count == 0 )); then
+    _fail_inline "test16: canonical set parses" \
+      "no patterns extracted from ${CLAUDE_MD} '.gitignore hygiene' bullet"
+    return
+  fi
+  _ok_inline "test16: canonical set parses" \
+    "${canonical_count} pattern(s) from CLAUDE.md"
+
+  # install.sh writes the rules through add_ignore. Exact set comparison.
+  local installer_written
+  installer_written="$(grep -oE "add_ignore '[^']+'" "${REPO_ROOT}/install.sh" \
+    | sed "s/add_ignore '//; s/'\$//" \
+    | grep -v 'claude-hve-tracking' || true)"
+  _assert_credential_set "test16: install.sh add_ignore set" \
+    "${canonical}" "${installer_written}"
+
+  # install.sh also echoes the rules for the user in --global mode. That block
+  # is plain text, so nothing but this test keeps it in step with the writes.
+  local installer_echoed
+  installer_echoed="$(grep -oE 'echo "       [^"]+"' "${REPO_ROOT}/install.sh" \
+    | sed 's/echo "       //; s/"$//' \
+    | grep -vE '^#| ' \
+    | grep -v 'claude-hve-tracking' || true)"
+  _assert_credential_set "test16: install.sh global-mode echo set" \
+    "${canonical}" "${installer_echoed}"
+
+  # The install suite asserts against its own hardcoded array; if that array
+  # drifts, the suite passes while testing the wrong thing.
+  local suite_array
+  suite_array="$(grep -oE "credential_rules=\([^)]*\)" "${REPO_ROOT}/tests/run-install-tests.sh" \
+    | sed "s/credential_rules=(//; s/)\$//" \
+    | tr -d "'" \
+    | tr ' ' '\n' \
+    | grep -v '^$' || true)"
+  _assert_credential_set "test16: run-install-tests.sh credential_rules array" \
+    "${canonical}" "${suite_array}"
+
+  # Prose surfaces: presence only.
+  for surface in ${CREDENTIAL_PROSE_SURFACES}; do
+    file="${REPO_ROOT}/${surface}"
+    if [[ ! -f "${file}" ]]; then
+      _fail_inline "test16: ${surface} present" "expected ${file} but not found"
+      continue
+    fi
+    local missing=""
+    while IFS= read -r pattern; do
+      [[ -z "${pattern}" ]] && continue
+      grep -qF -- "${pattern}" "${file}" || missing="${missing} ${pattern}"
+    done <<< "${canonical}"
+    if [[ -z "${missing}" ]]; then
+      _ok_inline "test16: ${surface} names every pattern" \
+        "all ${canonical_count} present"
+    else
+      _fail_inline "test16: ${surface} names every pattern" \
+        "missing:${missing}"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
@@ -1145,6 +1257,8 @@ main() {
     test14_reference_resolution
   run_test "Test 15: documented behaviors present in their consumers" \
     test15_behavioral_presence
+  run_test "Test 16: credential-pattern surfaces agree with CLAUDE.md" \
+    test16_credential_surface_sync
 
   finish
 }

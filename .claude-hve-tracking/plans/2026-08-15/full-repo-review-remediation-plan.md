@@ -323,3 +323,53 @@ Cross-check: 39 review findings (FC 2, DA 1, II 7, RL 8, PS 7, RO 3, SC 5, DO 6)
 - **Expected intentional deltas**: Phase 1 adds install assertions; Phase 5 changes drift counts as tests 6 and 10 invert and tests 14 and 15 are added; Phase 9 extends test 15 with its second assertion; Phase 10 may extend test 7. Every delta is recorded in the changes log with the reason. An unexplained delta is treated as a regression.
 - **One intentional cross-phase test dependency**: test 15 ships in halves (assertion 1 in Step 5.10, assertion 2 in Step 9.4) precisely so no phase boundary is crossed with a known-red assertion. Any other test that cannot pass in the phase that writes it is a planning defect, not a precedent.
 - **`install.sh` is never verified by diff reading**: Phases 1 and 11 both run the installer into a scratch target directory and assert against the produced files.
+
+---
+
+## Requirements added after Review (2026-08-15)
+
+Source: `/hve-pr-review` on branch `fix/full-repo-review-remediation`, artifact
+`.claude-hve-tracking/reviews/pr/fix-full-repo-review-remediation/2026-08-15-review.md`
+(0 Critical, 6 Major, 18 Minor). User scoped this pass to the Majors only; Minors are
+deferred, not closed.
+
+### Phase 12 — Major review findings
+
+- [ ] **12.1 (RO-001)** `.claude/commands/hve-pr-review.md` — handle a reviewer returning
+  `Blocked` (contract at `.claude/agents/hve-pr-reviewer.md:109`). A blocked reviewer is
+  recorded as NOT covered, and a blocked Security reviewer forbids an Approve verdict.
+  Today `Coverage:` is filled from the set dispatched, so a blocked security run reads as
+  Approve. Success: the word `Blocked` appears in the Phase 3 consolidation rules and the
+  verdict rules; no path yields Approve with a blocked security reviewer.
+- [ ] **12.2 (RL-004 / DA-002)** Credential-pattern list has 7 copies outside any drift
+  guard (`README.md` x2, `docs/installation.md` x4, `install.sh` global-mode echo block).
+  `canonical_block_corpus()` (`tests/run-drift-tests.sh:582-589`) covers only
+  `.claude/{commands,agents,prompts}` and `CLAUDE.md`. Success: a drift test fails if any
+  surface drifts from the canonical six patterns.
+- [ ] **12.3 (II-001)** `.claude-hve-tracking/changes/2026-08-15/full-repo-review-remediation-changes.md:997`
+  asserts `*.pfx` was "deliberately NOT added"; the Post-Review Remediation section at :932
+  reversed it. Annotate the stale claim per CLAUDE.md's `Corrections in Tracking Artifacts`
+  section. Success: stale claim carries `(superseded — see Correction 2026-08-15)`.
+- [ ] **12.4 (DO-003)** `CONTRIBUTING.md:24` says "Covers 7 `install.sh` scenarios" (now 8),
+  and never mentions `tests/run-drift-tests.sh` at all. Success: count corrected, drift
+  suite documented with what it guards and how to run it.
+- [ ] **12.5 (DO-002 / FC-003)** `README.md:139-146` claims `--subagent-model` and
+  `--friction-log` "work the same way everywhere"; the two flags have different command
+  sets and `/hve-challenge` + `/hve-memory` accept neither `--subagent-model` nor the Agent
+  tool. Success: `--subagent-model` row scoped to its actual command set; "everywhere"
+  framing dropped.
+
+### Deferred by user decision (2026-08-15)
+
+- **FC-002** — `/hve-plan` documents a parallel-validation path that does not exist
+  (`hve-plan.md:41` and `:131` contradict; `CLAUDE.md:44` and `README.md:124` echo the false
+  claim). User chose **defer and log as a feature** rather than reword or build. The false
+  claim remains in three shipped docs until the feature lands. Recorded so review does not
+  rediscover it as new.
+- **18 Minor findings** — listed in the review artifact; not in scope for this pass.
+
+### Testing
+
+Gate unchanged: `./tests/run-drift-tests.sh` and `./tests/run-install-tests.sh` both green.
+Baseline entering Phase 12 is 249 drift / 69 install, verified by execution 2026-08-15.
+Step 12.2 is expected to raise the drift count; record the delta and the reason.

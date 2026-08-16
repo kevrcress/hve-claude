@@ -136,13 +136,14 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 | `/hve-doc-ops` | Documentation QA: pattern compliance, accuracy verification, gap detection. `--scope all` (default) runs every check; `--scope compliance`, `accuracy`, or `gaps` runs that check alone. A path argument narrows which docs are examined. |
 | `/hve-memory` | Saves current session context, decisions, and open questions to `.claude-hve-tracking/memory/` for future conversations |
 
-### Flags every dispatching command accepts
+### Cross-cutting flags
 
-Two flags are not listed per-command above because they work the same way everywhere:
+Two flags are not listed per-command above because each works the same way wherever it is
+accepted. They do not share the same command set, so each row names its own:
 
 | Flag | Effect |
 |---|---|
-| `--subagent-model <sonnet\|opus\|haiku>` | Overrides each subagent's frontmatter model for one run. Example: `/hve-plan --subagent-model sonnet`. See the Model Selection section of CLAUDE.md for how this interacts with the session model. |
+| `--subagent-model <sonnet\|opus\|haiku>` | Overrides each subagent's frontmatter model for one run. Example: `/hve-plan --subagent-model sonnet`. See the Model Selection section of CLAUDE.md for how this interacts with the session model. Accepted by the commands that dispatch subagents: `/hve`, `/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, `/hve-doc-ops`, and `/hve-prompt-builder`. The other commands run no subagents, so the flag has no effect there. |
 | `--friction-log` | Records friction encountered during the phase (ambiguous instructions, tooling gaps, wasted steps) to `.claude-hve-tracking/friction/`. Off by default. Accepted by `/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, and `/hve-challenge`. |
 
 ### Prompt engineering commands

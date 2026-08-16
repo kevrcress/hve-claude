@@ -146,6 +146,12 @@ Each compact subagent receives the same inputs as a standard subagent: the diff.
 
 Wait for all subagents to complete.
 
+**Blocked reviewers.** A reviewer returns either `Status: Complete` or `Blocked: [summary]`, per
+`hve-pr-reviewer.md`'s Response Format. A reviewer that returned `Blocked`, returned nothing, or
+wrote no output file **did not cover its dimension**, and dispatching it is not evidence that it
+ran. Re-dispatch it once. If it blocks again, record the dimension as not covered and carry the
+block reason into Phase 3; never silently count a blocked dimension as reviewed.
+
 ---
 
 ## Phase 3 — Collaborate
@@ -155,11 +161,12 @@ After all subagent reviews are in:
 1. Consolidate all findings into the review document, organized by severity (Critical first)
 2. De-duplicate findings that multiple subagents identified
 3. Tally: Critical / Major / Minor counts
-4. Fill the `Coverage:` header line from the **Reviewer set** actually dispatched: name every dimension that ran, and every dimension that did not. A `--dimension all` run records all 8 as covered and `Not covered: none`.
+4. Fill the `Coverage:` header line from the reviewers that **returned `Complete`**, not from the set dispatched: name every dimension that was actually covered, and every dimension that was not. A dimension whose reviewer blocked is listed under `Not covered:` with its block reason. A `--dimension all` run in which all 8 returned Complete records all 8 as covered and `Not covered: none`.
 5. Determine overall verdict. Every threshold below counts findings from the covered dimensions only:
-   - **✅ Approve** — no Critical, ≤ 2 Major findings
+   - **✅ Approve** — no Critical, ≤ 2 Major findings, **and** the Security and Compliance dimension was covered
    - **⚠️ Request Changes** — any Critical, or > 2 Major findings
    - **🚫 Block** — security Critical or data integrity risk. This rule is unconditional: the Security and Compliance reviewer runs on every invocation.
+   - If the Security and Compliance reviewer blocked, the run has **no security coverage** and cannot Approve. Report `⚠️ Request Changes (security dimension blocked: [reason])` and say plainly that the security floor was not met. An unreviewed dimension is not a clean one.
 6. On a filtered run, suffix the verdict with the covered set, for example `✅ Approve (security + performance only; 6 dimensions not covered)`. On a `--dimension all` run, the verdict carries no suffix.
 
 ---

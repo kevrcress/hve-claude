@@ -998,9 +998,19 @@ Phase 4 validator raised independently.
 
 Not defects in this implementation; recorded so review can rule on them rather than rediscover them.
 
-- **DD-008 leftover, `*.pfx`**: deliberately NOT added. The plan and the verified Phase 1 patch
-  both specify exactly five patterns; widening the installer's write set is a feature decision,
-  not remediation. All three lists agree on the current five.
+- **DD-008 leftover, `*.pfx`**: deliberately NOT added (superseded — see Correction 2026-08-15).
+  The plan and the verified Phase 1 patch both specify exactly five patterns; widening the
+  installer's write set is a feature decision, not remediation. All three lists agree on the
+  current five.
+
+  **Correction (2026-08-15):** falsified by the Post-Review Remediation section above, which
+  widened the credential set to six patterns including `*.pfx` on the user's explicit decision.
+  This bullet should have said that `*.pfx` was carried to review as an open question and then
+  closed by adding it to all surfaces in one pass. The claim "All three lists agree on the
+  current five" is now false: `CLAUDE.md:295`, `install.sh:251`, `install.sh:274`, and
+  `tests/run-drift-tests.sh:291` all list six. Learned during `/hve-pr-review` on 2026-08-15
+  (finding II-001), which flagged that this section contradicts the one above it without an
+  annotation, contrary to CLAUDE.md's `Corrections in Tracking Artifacts` section.
 - **DR-401, `hve-phase-implementor.md` has no `tools:` key**: Phase 4's success criterion said
   "all 9 agents declare `tools:`"; the result is 8 of 9. Left deliberately (DD-401) — that agent
   runs test suites so it genuinely needs Bash, its all-tools grant is documented, and no review
@@ -1015,3 +1025,73 @@ Not defects in this implementation; recorded so review can rule on them rather t
   recorded as parent-added in its phase section with a DD- entry. They are same-file, same-defect-
   class extensions surfaced by the phase before them, not scope creep — but review should confirm
   that judgment rather than assume it.
+
+---
+
+## Phase 12: Major review findings (2026-08-15)
+
+Source: `/hve-pr-review` on this branch, artifact
+`.claude-hve-tracking/reviews/pr/fix-full-repo-review-remediation/2026-08-15-review.md`
+(0 Critical, 6 Major, 18 Minor). User scoped this pass to Majors only and deferred FC-002.
+Requirements recorded in the plan under `## Requirements added after Review (2026-08-15)`.
+
+**Status:** Complete
+**Started:** 2026-08-15
+**Completed:** 2026-08-15
+
+### Steps
+
+- **12.1 (RO-001)** `.claude/commands/hve-pr-review.md` — added Blocked-reviewer handling.
+  Phase 2 gained a `**Blocked reviewers.**` paragraph: a reviewer returning `Blocked`,
+  returning nothing, or writing no output file did not cover its dimension; re-dispatch once,
+  then record as not covered. Phase 3 step 4 now fills `Coverage:` from reviewers that
+  **returned Complete**, not from the set dispatched. Step 5 gained the Approve precondition
+  that Security and Compliance was actually covered, plus an explicit branch for a blocked
+  security reviewer. Closes the hole where a blocked security dispatch read as ✅ Approve.
+- **12.2 (RL-004 / DA-002)** `tests/run-drift-tests.sh` — added test 16. Parses the canonical
+  credential set from CLAUDE.md's `.gitignore hygiene` bullet, then holds five surfaces to it:
+  exact set comparison for `install.sh`'s `add_ignore` calls, `install.sh`'s global-mode echo
+  block, and `run-install-tests.sh`'s own `credential_rules` array; presence check for
+  `README.md` and `docs/installation.md`. Covers the copies that live outside test 10's
+  `canonical_block_corpus()`.
+- **12.3 (II-001)** changes log line 1001 — annotated the stale DD-008 `*.pfx` claim
+  `(superseded — see Correction 2026-08-15)` and appended a dated Correction entry, per
+  CLAUDE.md's `Corrections in Tracking Artifacts` section.
+- **12.4 (DO-003)** `CONTRIBUTING.md` — install-scenario count 7 → 8 with the credential-rules
+  scenario named; added a "Running the drift tests" section covering what the suite guards and
+  when to run it. The primary regression gate was previously undocumented for contributors.
+- **12.5 (DO-002 / FC-003)** `README.md` — retitled "Flags every dispatching command accepts"
+  to "Cross-cutting flags", dropped the false "work the same way everywhere" framing, and
+  scoped the `--subagent-model` row to its eight actual commands.
+
+### Test evidence
+
+Drift **249 → 255 passed, 0 failed** (+6 from test 16). Install **69 passed, 0 failed**
+(unchanged). Both counts obtained by execution, not inference.
+
+Test 16 was negative-control verified four ways before being accepted, since a new test that
+has never failed is not yet evidence of anything:
+1. Extra 7th pattern in `add_ignore` → set comparison failed as expected
+2. Dropped `*.p12` from the global-mode echo block → echo-set comparison failed
+3. Removed `*.pfx` from README prose → presence check failed
+4. Widened CLAUDE.md's canonical bullet to 7 patterns → all five dependent surfaces failed
+   simultaneously, confirming CLAUDE.md is genuinely the source of truth and not an
+   independently-drifting sixth copy
+
+`shellcheck` on the new code surfaced SC2086: the failure-message builder expanded the pattern
+list unquoted, so globs like `*.pem` would pathname-expand against the working directory and
+print whatever files happened to match. Fixed by flattening through `tr` with the expansion
+quoted. Verified by planting decoy `decoy.pem` and `decoy.key` files in the repo root and
+confirming the failure message printed the literal patterns rather than the filenames.
+
+### Deferred by user decision
+
+- **FC-002** — `/hve-plan` documents a parallel-validation path that does not exist
+  (`.claude/commands/hve-plan.md:41` promises "parallel validation"; `:131` dispatches exactly
+  one validator for every mode; `CLAUDE.md:44` and `README.md:124` echo the false claim). User
+  chose to defer and log as a feature rather than reword or build. **The false claim remains in
+  three shipped docs.** This is a known, accepted open item, not an oversight.
+- **18 Minor findings** — enumerated in the review artifact; not in scope for this pass.
+
+Because FC-002 is deferred, the review verdict does not fully clear: 5 of 6 Major findings are
+closed and one remains open by decision.
