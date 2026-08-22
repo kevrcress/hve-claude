@@ -22,8 +22,9 @@ copy its hve-* commands and agents into my .claude/ folder, copy its
 If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, prepend the wrapped block before my existing content.
 Never touch anything outside the markers or below '## Your Project'. Add the
-.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
-delete the temp clone and show me what changed.
+.claude-hve-tracking subagents and sandbox paths to my .gitignore, along with
+the credential patterns .env, .env.*, *.pem, *.key, *.p12, and *.pfx, then delete
+temp clone and show me what changed.
 ```
 
 Works on any OS. Claude uses its own file tools, no shell execution required.
@@ -83,6 +84,14 @@ Follow these steps on any OS (Mac, Windows, Linux):
    # HVE tracking: commit durable artifacts, ignore regenerable noise
    .claude-hve-tracking/**/subagents/
    .claude-hve-tracking/sandbox/
+
+   # HVE security hygiene: never commit credentials
+   .env
+   .env.*
+   *.pem
+   *.key
+   *.p12
+   *.pfx
    ```
 
 Re-installing to get updates: repeat steps 1–7, all steps are idempotent.
@@ -94,7 +103,7 @@ Re-installing to get updates: repeat steps 1–7, all steps are idempotent.
 
 For each old folder: copy any files that don't already exist in the new location, then for each file in the old folder, if it matches the installed version byte-for-byte, delete it; if it differs (local customization), leave it and migrate manually. Remove the old folder with `rmdir` once empty, never `rm -rf`.
 
-HVE instruction files: `bash.md`, `csharp.md`, `csharp-tests.md`, `python.md`, `python-tests.md`, `python-uv.md`, `rust.md`, `rust-tests.md`, `terraform.md`, `markdown.md`, `git-commit-messages.md`, `writing-style.md`.
+HVE instruction files: `bash.md`, `csharp.md`, `csharp-tests.md`, `python.md`, `python-tests.md`, `python-uv.md`, `rust.md`, `rust-tests.md`, `terraform.md`, `javascript.md`, `typescript.md`, `markdown.md`, `git-commit-messages.md`, `writing-style.md`.
 
 HVE prompt files: `checkpoint.md`, `doc-ops.md`, `prompt-build.md`, `pull-request.md`, `rpi.md`, `task-challenge.md`.
 
@@ -145,9 +154,9 @@ If that CLAUDE.md already has those markers, replace the content between
 them. If it has no markers, prepend the wrapped block before the existing
 content. If it does not exist, create it with the block followed by a
 '## Your Global Context' heading. Do not modify any .gitignore, but remind
-me to add .claude-hve-tracking/**/subagents/ and .claude-hve-tracking/sandbox/
-to the .gitignore of each project where I use HVE. Delete the temp clone and
-show me what changed.
+me to add .claude-hve-tracking/**/subagents/, .claude-hve-tracking/sandbox/,
+.env, .env.*, *.pem, *.key, *.p12, and *.pfx to the .gitignore of each project where
+I use HVE. Delete the temp clone and show me what changed.
 ```
 
 Re-paste the same prompt later to update; the markers keep it idempotent.
@@ -171,11 +180,20 @@ What differs from a project install:
 - The HVE block merges into `~/.claude/CLAUDE.md` (wrapped in the same update
   markers), not into a project `CLAUDE.md`.
 - **No `.gitignore` changes are made** (those are per-project). Add these lines to
-  the `.gitignore` of each project where you use HVE:
+  the `.gitignore` of each project where you use HVE. This is exactly what a
+  project-mode install writes:
   ```
   # HVE tracking: commit durable artifacts, ignore regenerable noise
   .claude-hve-tracking/**/subagents/
   .claude-hve-tracking/sandbox/
+
+  # HVE security hygiene: never commit credentials
+  .env
+  .env.*
+  *.pem
+  *.key
+  *.p12
+  *.pfx
   ```
 
 Manual alternative: follow the Option B manual steps, substituting `~/.claude/`

@@ -64,8 +64,8 @@ Run each phase in sequence. Use the TodoWrite tool to display live progress:
 
 Execute the research protocol from `/hve-research` inline (do not call the slash command — follow the same steps):
 
-1. Define research questions (3–7 specific unknowns)
-2. Spawn `hve-researcher` subagents in parallel (one per research theme), passing each an output path under `.claude-hve-tracking/research/subagents/YYYY-MM-DD/TASK-SLUG-THEME.md`
+1. Define research questions (3–7 specific unknowns), then group them into themes. **The Phase 0 classification caps the theme count**: Medium at most 2 themes, Medium-Hard at most 3, Challenging at most 5. A `--mode` override sets the classification per the table above, so it sets the cap too. Merge narrower questions into a broader theme rather than adding a theme
+2. Spawn `hve-researcher` subagents in parallel — one per theme, never one per question, and never more than the cap — passing each an output path under `.claude-hve-tracking/research/subagents/YYYY-MM-DD/TASK-SLUG-THEME.md`
 3. Wait for all to complete
 4. Read each subagent's file from `subagents/YYYY-MM-DD/`
 5. Consolidate findings to `.claude-hve-tracking/research/YYYY-MM-DD/TASK-SLUG.md`
@@ -104,7 +104,7 @@ Execute the implementation protocol from `/hve-implement` inline:
 4. Run security hygiene checks after all phases
 5. Write the changes log
 
-**Concurrent writes**: when phase implementors run in parallel, each agent owns exactly one `### Phase N:` section of the shared changes log and updates it only via targeted Edit calls anchored on its own heading. Whole-file Write of the changes log is forbidden once more than one agent may hold it — last-writer-wins destroys sibling sections silently.
+Concurrent writes to the shared changes log follow the ownership rule, per CLAUDE.md's `Concurrent Changes-Log Writes` section.
 
 Mark Implement complete in the todo list.
 

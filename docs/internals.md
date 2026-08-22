@@ -5,8 +5,9 @@ for contributors, prompt engineers, and anyone who wants to understand the
 machinery.
 
 The conventions that govern every subagent (the response protocol, confidence
-markers, citation format, severity grading, the five operating principles, and the
-handoff block format) live in [CLAUDE.md](../CLAUDE.md), which is the single
+markers, citation format, severity grading, the five operating principles, the
+handoff block format, untrusted-input handling, and the concurrent
+changes-log-write rule) live in [CLAUDE.md](../CLAUDE.md), which is the single
 source of truth installed into every project. This document covers the pieces that
 aren't in CLAUDE.md: the subagent roster and the quality-validator dimensions.
 
@@ -23,8 +24,8 @@ follow a strict response format and write durable artifacts to disk.
 | `hve-rpi-validator` | Verifies a completed implementation phase matches what the plan required | Read, Write, Glob, Grep | Haiku |
 | `hve-implementation-validator` | 11-dimension quality check including automated security hygiene | Read, Write, Glob, Grep, Bash | Sonnet |
 | `hve-prompt-evaluator` | Rates draft prompts against clarity / completeness / actionability / format / no-Copilot / Template Integrity criteria (the last checks every template blank is fillable in-session or carries an N/A branch) | Read, Write, Glob, Grep | Sonnet |
-| `hve-prompt-tester` | Executes a draft prompt or agent definition literally against test scenarios | All tools | Inherit |
-| `hve-prompt-updater` | Rewrites a draft prompt based on evaluator findings | All tools | Inherit |
+| `hve-prompt-tester` | Executes a draft prompt or agent definition literally against test scenarios | Read, Write, Glob, Grep | Inherit |
+| `hve-prompt-updater` | Rewrites a draft prompt based on evaluator findings | Read, Write, Edit, Glob, Grep | Inherit |
 | `hve-pr-reviewer` | Reviews a diff against one or two assigned quality dimensions, returning severity-graded, dimension-prefixed findings | Read, Write, Glob, Grep | Sonnet |
 
 Model values mirror each agent's `model:` frontmatter in `.claude/agents/` — that frontmatter is the source of truth; update this table when it changes.
@@ -46,7 +47,9 @@ unbounded spawning chains and keeps each subagent's scope fixed and auditable.
 
 ## `hve-implementation-validator` dimensions
 
-The quality validator always runs these 11 checks:
+The quality validator covers these 11 checks. A `full-quality` scope runs all of
+them; a narrower scope runs the dimensions it names plus dimension 9, which is
+additive and never filtered out:
 
 1. **Architecture Conformance**: layering, module boundaries, directory placement
 2. **Design Principles**: Single Responsibility, Open/Closed, interface segregation
@@ -56,11 +59,10 @@ The quality validator always runs these 11 checks:
 6. **Refactoring Opportunities**: simplifications, patterns that replace verbose code
 7. **Error Handling**: propagation, no silent swallowing, safe user-facing errors
 8. **Test Coverage**: edge cases, new branches covered
-9. **Security Posture** (always runs): greps changed files for `PRIVATE KEY`,
-   `api_key =`, `password =`, `Bearer `, `-----BEGIN`, AWS/GCP key prefixes;
-   verifies `.env`/`.pem`/`.key` are in `.gitignore`; checks
-   `git diff HEAD --name-only` for credential-like filenames; flags new
-   unrecognized dependencies
+9. **Security Posture** (runs under every scope): the credential checklist defined
+   in the Security Hygiene section of [CLAUDE.md](../CLAUDE.md), covering secret
+   greps over changed files, `.gitignore` hygiene, committed-credential detection,
+   and new-dependency flagging
 10. **Overall Quality**: readability, naming clarity, appropriate complexity
 11. **Documentation Integrity**: for each modified file, greps living docs (tracked
     `.md` outside `.claude-hve-tracking/`) for citations of it and confirms the cited

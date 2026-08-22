@@ -34,12 +34,7 @@ Scan the current conversation for:
 
 ## Locating tracking artifacts
 
-Populate the Tracking Artifacts block via the CLAUDE.md Artifact Discovery & Relevance convention, never newest-match-wins:
-
-1. A topic-slug argument wins.
-2. Otherwise collect distinct slugs from artifacts dated within the last 7 days; a single candidate wins.
-3. Multiple candidates: prefer the slug matching the current git branch; otherwise list them and ask.
-4. Relevance-check the chosen artifacts against this session's actual work; an artifact about a different task is treated as absent.
+Populate the Tracking Artifacts block per CLAUDE.md's `Artifact Discovery & Relevance` section, never newest-match-wins; this command's slug argument is `topic-slug`.
 
 Record `none` for any artifact type that has no relevant file.
 

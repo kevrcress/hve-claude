@@ -10,25 +10,25 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
-If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
+Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 
 ---
 
 ## Argument Parsing
 
-Parse `$ARGUMENTS` exactly once, before anything else, into: TASK_SLUG (first token not starting with `--` that is not a pasted block), MODE (`--mode` value if present), THINK_MODE (`--think` present), SUBAGENT_MODEL (`--subagent-model` value if present), FRICTION_LOG (`--friction-log` present). Ignore any pasted handoff-block text. All later sections reference these named values; none re-reads `$ARGUMENTS`.
+Parse `$ARGUMENTS` once, before any phase work begins, into: TASK_SLUG (first token not starting with `--` that is not a pasted block), MODE (`--mode` value if present), SUBAGENT_MODEL (`--subagent-model` value if present), FRICTION_LOG (`--friction-log` present). Any flag-strip instruction elsewhere in this file belongs to this one parse and is not a separate read of `$ARGUMENTS`. Ignore any pasted handoff-block text. Every other section uses these named values; none re-reads `$ARGUMENTS`.
 
 ---
 
 ## Inputs
 
-Discover inputs automatically:
+Discover inputs per CLAUDE.md's `Artifact Discovery & Relevance` section:
 
 1. **Plan**: find the most recent `.claude-hve-tracking/plans/*/TASK-SLUG-plan.md` (latest date, or matching `$ARGUMENTS` slug)
-2. **Details**: find the corresponding `.claude-hve-tracking/details/*/TASK-SLUG-details.md`
-3. **Changes log**: check `.claude-hve-tracking/changes/` — resume if one exists for this task
+2. **Details**: find the corresponding `.claude-hve-tracking/details/*/TASK-SLUG-details.md`. Details are a RECONSTRUCTIBLE input: if none exists, or the only candidate is topically irrelevant to the plan, record `Details: none — [reason]` in the changes log header and a `DD-` entry, implement from the plan alone, and do NOT pass an irrelevant doc to subagents as evidence. A recorded skip is legitimate; an unrecorded one is not.
+3. **Changes log**: check `.claude-hve-tracking/changes/` — resume if one exists for this task. On resume, the earlier sections are another session's record: never silently rewrite a claim they contain. When this session's work falsifies one, annotate and correct it per CLAUDE.md's `Corrections in Tracking Artifacts` section.
 
-**Cold start (no plan)**: the plan is an UNRECONSTRUCTIBLE input (see the CLAUDE.md Artifact Discovery & Relevance convention) — you cannot invent it here. If no plan matching TASK_SLUG or the discovery convention exists, STOP and tell the user to run `/hve-plan` first. The only alternative is to confirm with the user a lightweight direct implementation without a plan; if they agree, record `Plan: none` in the changes log plus a `DD-` entry noting the user authorized proceeding without a plan. Never proceed on a plan that exists but is topically irrelevant to the requested task — a wrong plan is worse than no plan; STOP and surface the mismatch.
+**Cold start (no plan)**: the plan is an UNRECONSTRUCTIBLE input, per CLAUDE.md's `Artifact Discovery & Relevance` section — you cannot invent it here. If no plan matching TASK_SLUG or the discovery convention exists, STOP and tell the user to run `/hve-plan` first. The only alternative is to confirm with the user a lightweight direct implementation without a plan; if they agree, record `Plan: none` in the changes log plus a `DD-` entry noting the user authorized proceeding without a plan. Never proceed on a plan that exists but is topically irrelevant to the requested task — a wrong plan is worse than no plan; STOP and surface the mismatch.
 
 Before starting, read the plan in full. Confirm all plan phases and their dependencies.
 
@@ -39,7 +39,7 @@ Before starting, read the plan in full. Confirm all plan phases and their depend
 1. Read the plan and details documents
 2. Build a dependency graph of plan phases (which phases must complete before others can start)
 3. Identify which phases can run in parallel (no dependencies between them)
-4. Read the relevant `.claude/instructions/` file for the primary language involved (e.g., `.claude/instructions/python.md`) — instruct subagents to do the same
+4. Read the relevant `.claude/instructions/` file for the primary language involved (e.g., `.claude/instructions/python.md`) — instruct subagents to do the same. When no file covers that language, apply the fallback per CLAUDE.md's `Instructions Reference` section
 5. Create the changes log file if it doesn't exist:
    `.claude-hve-tracking/changes/YYYY-MM-DD/TASK-SLUG-changes.md`
 
@@ -79,13 +79,26 @@ Completed: [same command at completion; if no clock is obtainable, write `N/A �
 
 The Discrepancies & Decisions and Corrections subsections are omit-if-empty — the heading only appears when there is content.
 
+**What fills `#### Corrections`**: a later phase, a resumed run, or a test result proving an earlier entry in this log wrong. That is the trigger — when it fires, annotate the stale claim in place and append the dated entry per CLAUDE.md's `Corrections in Tracking Artifacts` section. Phase 3 below will not mark the log Complete while it contradicts itself, so an unfired trigger on a contradicted claim is a defect, not a clean log.
+
 6. Capture the test baseline BEFORE any phase runs: detect the runner (see Testing below); if one exists, run it once and record in the changes log under `## Test Baseline`: total passed/failed and the names of already-failing tests. The per-phase test gate triggers on net-new failures relative to this baseline; pre-existing failures are noted, not blocking. If the plan explicitly changes a behavior contract, rewriting the covering tests is in-scope — log it as a DD- decision citing the plan step; it is not a regression.
 
 ---
 
 ## Phase 2 — Iterative Execution
 
-**Simple carve-out**: if the plan is Simple grade (per the CLAUDE.md difficulty table including the risk-override footnote: < 50 lines, single file, clear requirements, no elevated-risk surface), do NOT spawn subagents. Implement directly in this session, still creating and updating the changes log and running the test gate. Subagent dispatch applies from Medium upward.
+**Dispatch gate**: If MODE is set (from `--mode`), use it. Otherwise, infer from the plan's difficulty grade.
+
+| MODE | Effect |
+|---|---|
+| `lightweight` | Take the Simple carve-out below, whatever the plan's grade |
+| `standard` | Dispatch one `hve-phase-implementor` at a time, in dependency order |
+| `full` | Dispatch implementors for independent phases in parallel (see Parallel execution below) |
+| unset | Grade-driven, unchanged: Simple takes the carve-out, Medium and up dispatch implementors |
+
+`--mode lightweight` changes only who writes the code. It never suppresses the changes log, the per-phase test gate, or the security hygiene checks. Record the mode used, or the grade it was inferred from, in the changes log.
+
+**Simple carve-out**: if the plan is Simple grade — graded against the difficulty table and its risk-override footnote, per CLAUDE.md's `The RPI Methodology` section — do NOT spawn subagents. Implement directly in this session, still creating and updating the changes log and running the test gate. Subagent dispatch applies from Medium upward.
 
 > "Steps" means plan checklist bullets (Step N.M items), not plan phases.
 
@@ -99,14 +112,14 @@ For each plan phase (respecting dependencies):
    - The changes log path to update
    - The workspace root
 3. Wait for the subagent to complete
-4. Read the changes log — verify the subagent updated it correctly
-5. Update the phase status in the changes log
+4. Read ONLY the `### Phase N:` section this subagent just wrote — verify that one section is filled in correctly (status, timestamps, files modified, steps, test line). Do not re-read the sections earlier phases own; each was verified when it landed, and re-reading all of them per phase is O(N²) reads across an N-phase plan
+5. Update the phase status in that same section
 6. If the subagent returns a DR- discrepancy or a STOP: stop and surface to the user ONLY when the discrepancy is (a) unresolved, (b) functionality-affecting, or (c) beyond latitude the plan explicitly granted. Adaptations the plan pre-authorized ("adjust naming to match codebase", "pick either approach") proceed with a logged DD- entry and no halt. Do not auto-advance past anything meeting (a)–(c).
 7. Run tests after each phase completes (see Testing below)
 
-**Parallel execution**: if phases have no dependencies on each other, spawn their subagents in parallel via the Agent tool.
+**Parallel execution**: if phases have no dependencies on each other, spawn their subagents in parallel via the Agent tool. `--mode standard` suppresses this: dispatch one phase at a time in dependency order.
 
-**Concurrent writes**: when phase implementors run in parallel, each agent owns exactly one `### Phase N:` section of the shared changes log and updates it only via targeted Edit calls anchored on its own heading. Whole-file Write of the changes log is forbidden once more than one agent may hold it — last-writer-wins destroys sibling sections silently.
+Concurrent writes to the shared changes log follow the ownership rule, per CLAUDE.md's `Concurrent Changes-Log Writes` section.
 
 **Context discipline**: after each subagent returns, read only the changes log update — do not re-read the full plan or details doc. Trust the subagent's written output.
 
@@ -139,9 +152,7 @@ After all phases complete:
 1. Update the overall changes log status to `Complete` (or `Needs Review` if issues remain)
 2. Run a final test pass and record the result
 3. Run the security hygiene checks:
-   - `git diff HEAD --name-only` — check for committed credential files
-   - Grep changed files for secret patterns: `PRIVATE KEY|api_key\s*=|password\s*=|-----BEGIN|Bearer `
-   - Verify `.env`, `*.pem`, `*.key` are in `.gitignore`
+   - Run every check in the credential checklist, per CLAUDE.md's `Security Hygiene` section
    - Record findings in changes log under `## Security Hygiene Check`
 4. Present a summary to the user:
    - Phases completed

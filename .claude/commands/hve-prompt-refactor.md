@@ -44,7 +44,7 @@ Apply these improvements:
 - GitHub Copilot Chat UI references → remove
 
 ### Enforce HVE Conventions
-- Subagent response format: 7-finding cap, checklist, full-detail pointer
+- Subagent Response Format: every part required per CLAUDE.md's `Subagent Response Protocol` section
 - Confidence markers: `[HIGH]`, `[MEDIUM]`, `[LOW]`
 - Citation format: `file:line` plain paths
 - Handoff Block for phase commands
@@ -56,11 +56,12 @@ Apply these improvements:
 ## Protocol
 
 1. Read the file in full
-2. Identify all issues using the refactoring scope above
-3. Present a summary of planned changes to the user
-4. Ask: "Should I apply these changes?"
-5. On confirmation: apply changes using Edit (prefer incremental edits over full rewrites)
-6. Report what was changed
+2. Read `.claude/instructions/writing-style.md` and `.claude/instructions/markdown.md`. The target is always Markdown prose, so both govern the refactor
+3. Identify all issues using the refactoring scope above
+4. Present a summary of planned changes to the user
+5. Ask: "Should I apply these changes?"
+6. On confirmation: apply changes using Edit (prefer incremental edits over full rewrites)
+7. Report what was changed
 
 If `--goal` was specified, prioritize changes that address that goal.
 

@@ -24,7 +24,7 @@ If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it b
 
 1. Find all documentation files: Markdown in `/docs/`, `README.md`, API docs, inline code comments
 2. Prompt-engineering artifacts are excluded from the inventory: skip `.claude/commands/`, `.claude/agents/`, `.claude/instructions/`, and `.claude/prompts/` — those files are evaluated with `/hve-prompt-analyze`, not doc-ops
-3. Identify the documentation patterns expected by the project (check CLAUDE.md, existing templates)
+3. Identify the documentation patterns expected by the project: read `.claude/instructions/markdown.md` and `.claude/instructions/writing-style.md`, which define the baseline every finding is graded against, then check CLAUDE.md and existing templates for project-specific additions
 4. Build an inventory: file count, types, last-modified dates
 5. Create the session log
 
@@ -46,9 +46,12 @@ Pattern violations: N | Accuracy issues: N | Gaps: N
 ## Phase 2 — Planning
 
 Based on scope and file count, plan the analysis:
-- Spawn parallel `hve-researcher` subagents (read-only inventory work fits its tool set) for large doc sets (one per section or doc type)
-- If a future revision dispatches a non-roster agent type instead, record in the session log which type was used and why (per the CLAUDE.md Subagent Dispatch Discipline)
-- Process sequentially for small sets (< 10 files)
+- Process sequentially for small sets (< 10 files) — no subagents
+- For doc sets of 10 files or more, spawn parallel `hve-researcher` subagents (read-only inventory work fits its tool set), one per section or doc type, **capped at 8** — the same hard fan-out cap `/hve-pr-review` applies to its eight dimensions
+- The cap is binding, so batch instead of exceeding it: when the natural section/doc-type split yields more than 8 groups, sort the groups by file count descending, give the 7 largest one subagent each, and hand every remaining group to the eighth subagent as a single batch
+- Give each subagent an explicit file list so no two subagents read the same file
+- Record the subagent count and any batching applied in the session log
+- If a future revision dispatches a non-roster agent type instead, record in the session log which type was used and why, per CLAUDE.md's `Subagent Dispatch Discipline` section
 
 ---
 

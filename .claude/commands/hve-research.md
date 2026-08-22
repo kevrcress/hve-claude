@@ -10,7 +10,7 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
-If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
+Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 
 ---
 
@@ -26,7 +26,7 @@ If `--friction-log` is present in the arguments, strip it before other parsing a
 
 Before dispatching subagents, classify the task:
 
-| Level | Signals | Subagent count |
+| Level | Signals | Subagent count (upper number is a hard cap) |
 |---|---|---|
 | Simple | Single file, < 50 lines, clear requirements | Skip subagents; answer directly |
 | Medium | 2–5 files, known patterns | 1–2 subagents |
@@ -34,6 +34,8 @@ Before dispatching subagents, classify the task:
 | Challenging | New patterns, high risk, unclear requirements | 3–5 subagents |
 
 Tell the user the classification before proceeding. If `--mode` was specified, use that instead.
+
+**The upper number in that column is the binding cap on Phase 2 dispatch**, not a suggestion: Medium never spawns more than 2 subagents, Medium-Hard never more than 3, Challenging never more than 5. When `--mode` was passed, its own cap applies instead: `lightweight` 1, `standard` 3, `full` 5. Record the cap you are working under before defining research questions. Exceeding it requires asking the user first.
 
 If **Simple**: answer the research questions directly without subagents, write the findings doc, emit the Handoff Block, and stop.
 
@@ -46,7 +48,7 @@ Before spawning subagents, identify the key unknowns:
 1. Read any existing research in `.claude-hve-tracking/research/` for this topic
 2. Use Glob and Grep to do a quick orientation of the codebase (entry points, relevant modules, config files). If no standalone Grep tool is available in this session, fall back to Glob plus targeted Read calls — never add Bash to route around this; the research phase stays read-only by design regardless of what the harness happens to expose.
 3. List 3–7 specific research questions — things that must be known before a plan can be created
-4. Group questions by theme; each theme becomes one subagent assignment
+4. Group those questions into themes, and keep the theme count at or under the Phase 0 cap. Each theme becomes exactly one subagent assignment, so the number of themes IS the number of subagents. When the questions suggest more themes than the cap allows, merge the narrower ones into a broader theme; never add a theme to fit a question, and never dispatch one subagent per question
 
 Example research questions:
 - Where is the current authentication middleware and how does it work?
@@ -58,7 +60,7 @@ Example research questions:
 
 ## Phase 2 — Parallel Investigation
 
-Spawn one `hve-researcher` subagent per research theme using the **Agent tool**, in parallel.
+Spawn one `hve-researcher` subagent per research theme using the **Agent tool**, in parallel. The Phase 1 theme count is the dispatch count, and it is already capped by the Phase 0 tier (or by `--mode`). If you are about to spawn more subagents than that cap, the grouping in Phase 1 is wrong — regroup rather than dispatch.
 
 Each subagent receives:
 - The specific research question(s) for its theme

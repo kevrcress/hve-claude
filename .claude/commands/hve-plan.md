@@ -10,22 +10,22 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
 ## Argument Parsing
 
-Parse `$ARGUMENTS` exactly once, before anything else, into: TASK_SLUG (first token not starting with `--` that is not a pasted block), MODE (`--mode` value if present), THINK_MODE (`--think` present), SUBAGENT_MODEL (`--subagent-model` value if present), FRICTION_LOG (`--friction-log` present). Ignore any pasted handoff-block text. All later sections reference these named values; none re-reads `$ARGUMENTS`.
+Parse `$ARGUMENTS` once, before any phase work begins, into: TASK_SLUG (first token not starting with `--` that is not a pasted block), MODE (`--mode` value if present), THINK_MODE (`--think` present), SUBAGENT_MODEL (`--subagent-model` value if present), FRICTION_LOG (`--friction-log` present). Any flag-strip instruction elsewhere in this file belongs to this one parse and is not a separate read of `$ARGUMENTS`. Ignore any pasted handoff-block text. Every other section uses these named values; none re-reads `$ARGUMENTS`.
 
 If SUBAGENT_MODEL is set, pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If unset, omit the parameter so frontmatter applies.
 
 ## Friction Capture
 
-If `--friction-log` is present in the arguments, strip it before other parsing and enable friction capture for this session: whenever the process definition itself causes friction (an instruction that cannot be followed literally, a template blank with no obtainable value, a contradiction between files, wasted dispatch), append a dated entry to `.claude-hve-tracking/friction/YYYY-MM-DD-PHASE-SLUG.md` at the moment it happens (create the file on first entry). Entries record: what the text said, what happened, and the smallest fix. Friction capture never blocks the phase; if absent, no friction file is created.
+Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 
 ---
 
 ## Inputs
 
-Discover inputs per the Artifact Discovery & Relevance convention in CLAUDE.md: slug argument first, else recent distinct slugs (ask on ambiguity, never silently pick between same-day slugs), and always relevance-check the chosen artifact before treating it as evidence.
+Discover inputs per CLAUDE.md's `Artifact Discovery & Relevance` section.
 
 1. **Research document**: locate the latest relevant research artifact under `.claude-hve-tracking/research/`, preferring TASK_SLUG when set. If no relevant research exists, record `Research: none — [reason]` in the plan file header and a DD- entry in the planning log, plan from the task description, and do NOT attach an irrelevant doc as evidence.
-2. **Existing plan**: check `.claude-hve-tracking/plans/` — if one exists for this task, resume/update it rather than starting over.
+2. **Existing plan**: check `.claude-hve-tracking/plans/` — if one exists for this task, resume/update it rather than starting over. Resuming edits another session's record: when replanning falsifies a claim the existing plan or its log already states, annotate and correct it per CLAUDE.md's `Corrections in Tracking Artifacts` section rather than overwriting the claim.
 
 ---
 
@@ -94,7 +94,7 @@ Steps:
 These rules govern what may be written into plan steps:
 
 - The words "confirmed" / "verified" are forbidden in a plan unless immediately accompanied by the evidence that produced them: the exact command run, or `file:line` citations. The check must be one that could have failed — a compile, a test run, or a grep whose predicate targets the claim itself. "Compiles without X" can only be confirmed by compiling without X. Citing a location is not the same as confirming an outcome.
-- Every key assumption in a plan step MUST carry a confidence marker (`[HIGH]`/`[MEDIUM]`/`[LOW]`) per CLAUDE.md.
+- Every key assumption in a plan step MUST carry a confidence marker (`[HIGH]`/`[MEDIUM]`/`[LOW]`) per CLAUDE.md's `Confidence Markers` section.
 - When plan-time verification is impossible (no build environment, etc.), mark the assumption `[MEDIUM]`/`[LOW]` AND emit an explicit guard step into the implementation phase ("toggle, compile, revert if broken") rather than asserting the outcome.
 - Verification timing: "verified" refers to a check that RAN during planning. Expected outcomes of future implementation work are written as steps with success criteria, never as verified claims.
 - A grep/citation proves existence, never exhaustiveness. "All call sites updated" requires an enumerated list checked item-by-item (show the list), otherwise mark [MEDIUM] and add an implementation-phase guard step.

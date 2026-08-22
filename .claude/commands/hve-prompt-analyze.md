@@ -50,7 +50,7 @@ Assess the artifact against these quality dimensions:
 
 ### Claude Code Format Compliance
 - Correct frontmatter for the artifact type
-- Follows HVE subagent response format (for agents: 7-finding cap, checklist, full-detail pointer)
+- For agents, the Response Format carries every part required per CLAUDE.md's `Subagent Response Protocol` section
 - Steps are specific and sequential where order matters
 
 ### Absence of Copilot-Isms

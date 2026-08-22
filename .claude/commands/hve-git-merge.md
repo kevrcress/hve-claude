@@ -52,7 +52,7 @@ git rebase --onto NEW_BASE OLD_BASE BRANCH
 If conflicts occur:
 
 1. Show conflicted files: `git diff --name-only --diff-filter=U`
-2. For each conflicted file, show the conflict markers: `git diff FILENAME`
+2. For each conflicted file, show the conflict markers capped at 100 lines: `git diff FILENAME | head -100` — the same cap this repo uses for test output. When the output is truncated, say so and offer to show a named hunk or line range rather than dumping the remainder
 3. Ask the user how to resolve (keep ours, keep theirs, merge manually)
 4. After resolution: `git add FILENAME` and continue (`git merge --continue` or `git rebase --continue`)
 5. If `--conflict-stop` is set: pause and present a summary before continuing to the next conflict

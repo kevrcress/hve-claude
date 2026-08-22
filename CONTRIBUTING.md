@@ -21,10 +21,31 @@ No network connection required. Run from the repo root:
 ./tests/run-install-tests.sh
 ```
 
-Covers 7 `install.sh` scenarios: new install, prepend case, clean upgrade, old
-em-dash marker upgrade, diverged upgrade, global install (`--global`), and
-global upgrade over an existing `~/.claude/CLAUDE.md`. All tests should print
-`[ OK ]`.
+Covers 8 `install.sh` scenarios: new install, prepend case, clean upgrade, old
+em-dash marker upgrade, diverged upgrade, global install (`--global`), global
+upgrade over an existing `~/.claude/CLAUDE.md`, and `.gitignore` credential
+rules (fresh write, re-run idempotency, and a pre-seeded target). All tests
+should print `[ OK ]`.
+
+## Running the drift tests
+
+```bash
+./tests/run-drift-tests.sh
+```
+
+This is the primary regression gate: it guards the consistency rules that hold
+the prompt files together, none of which a compiler would catch. It checks that
+documented commands and flags actually exist in the command files, that agent
+frontmatter models match what the prose claims, that canonical convention blocks
+live in exactly one file with every pointer to them resolving to a real CLAUDE.md
+heading, that the credential patterns agree across `.gitignore`, `install.sh`,
+and the docs, and that each agent's Response Format follows the Subagent Response
+Protocol.
+
+Both suites run offline and take a few seconds. Run them before opening a PR and
+after any edit to `.claude/`, `CLAUDE.md`, `README.md`, `docs/`, or `install.sh`.
+If a count changes, that delta is either intentional (say so in the PR) or a
+regression; never accept one silently.
 
 ## Running the prompt tests
 

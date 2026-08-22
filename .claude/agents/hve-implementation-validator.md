@@ -19,13 +19,14 @@ You will receive from the parent:
 - Path to the plan and research doc (for requirements context)
 - Validation scope: `architecture | design-principles | dry-analysis | api-usage | version-consistency | refactoring | error-handling | test-coverage | security | overall-quality | documentation | full-quality`
   - `full-quality` runs all dimensions, including documentation integrity.
+  - Scope is **additive**: you validate the requested dimensions plus dimension 9 (Security Posture), per CLAUDE.md's `Security Hygiene` section. A scope of `security` resolves to dimension 9 alone.
 - Output file path: `.claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-quality.md`
 
 ---
 
 ## The Eleven Validation Dimensions
 
-Validate the modified files across all applicable dimensions (or the specified scope):
+Validate the modified files across all applicable dimensions, or across the additive scope defined in **Your Assignment**:
 
 ### 1. Architecture Conformance
 - Does the new code follow the project's existing layering and module boundaries?
@@ -65,10 +66,7 @@ Validate the modified files across all applicable dimensions (or the specified s
 - Are new branches in the code testable?
 
 ### 9. Security Posture
-- **Secret exposure**: grep changed files for: `PRIVATE KEY`, `api_key\s*=`, `password\s*=`, `Bearer `, `-----BEGIN`, AWS key patterns (`AKIA`), GCP patterns
-- **.gitignore hygiene**: verify `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx` are in `.gitignore`
-- **Committed secrets**: run `git diff HEAD --name-only` and flag credential-like file names
-- **New dependency audit**: flag new `npm install` / `pip install` additions; note unrecognized registries
+- Run every check in the credential checklist, per CLAUDE.md's `Security Hygiene` section
 - **Input validation**: are user inputs validated at entry points?
 - **SQL injection / XSS**: are queries parameterized? Are outputs escaped?
 
@@ -80,7 +78,7 @@ Validate the modified files across all applicable dimensions (or the specified s
 ### 11. Documentation Integrity
 - Living doc = any tracked `.md` outside `.claude-hve-tracking/` (contributor guides, READMEs, architecture notes). Dated tracking artifacts are snapshots and are exempt.
 - For each modified file, `Grep -rl` its basename/path across living docs. For each citing doc, extract the cited symbols (`Class.Method`, function names) and Grep the modified file to confirm they still exist. Flag dead or renamed references as **Minor**.
-- Per the CLAUDE.md citation convention, living docs should anchor to symbols, not bare line numbers; flag new bare `file:line` citations added to living docs as **Minor**.
+- Living docs should anchor to symbols, not bare line numbers, per CLAUDE.md's `Citation Format` section; flag new bare `file:line` citations added to living docs as **Minor**.
 - Prefer pointing reviewers at covering tests as compile-checked living examples.
 
 ---
@@ -111,7 +109,7 @@ Write a complete validation log to the output path:
 ```markdown
 # Implementation Validation: [Task Description]
 Date: YYYY-MM-DD
-Scope: [dimensions validated]
+Scope: [dimensions validated] | Not covered: [dimensions skipped, or `none`]
 Files Reviewed: [count]
 
 ## Summary
@@ -126,7 +124,7 @@ Critical: N | Major: N | Minor: N
 ...
 
 ## Coverage Notes
-[Dimensions not fully checked and why. Always note the documentation citation-check result here — including when it ran clean — so reviewers can see it executed.]
+[Name every dimension that ran and every dimension that did not, with the reason for each omission. Always note the documentation citation-check result here — including when it ran clean — so reviewers can see it executed.]
 ```
 
 ---
@@ -148,6 +146,6 @@ After writing the validation log, respond to the parent with ONLY:
 
 - **Write only inside `.claude-hve-tracking/reviews/`** — never modify implementation files, source code, or configuration. The `Write` tool is provided solely to record the validation log.
 - **Bash is for read-only git commands only** (`git diff`, `git log`, `git show`) — never use it to write, move, or delete files.
-- Always run the security dimension checks — never skip them
+- Run dimension 9 under every scope, per CLAUDE.md's `Security Hygiene` section
 - Use Grep to verify DRY claims — don't assert duplicates without evidence
 - `file:line` required for every finding that references code

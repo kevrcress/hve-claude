@@ -41,7 +41,7 @@ Check for:
 - **Assumption risk**: plan steps that assume things not verified in research (mark `[LOW]` confidence)
 - **Dependency errors**: steps ordered incorrectly given their dependencies
 - **Unearned verification claims**: any "confirmed"/"verified" not immediately adjacent to the evidence that produced it (the exact command run, or `file:line` citation). The cited check must be one that could have failed — a compile, a test run, or a grep whose predicate targets the claim itself. Emit as `DD-` with severity scaled to what the unverified claim gates.
-- **Missing confidence markers**: every key assumption in a plan step MUST carry `[HIGH]`/`[MEDIUM]`/`[LOW]` (CLAUDE.md). Flag each assumption lacking a marker as a `DD-` item.
+- **Missing confidence markers**: every key assumption in a plan step MUST carry `[HIGH]`/`[MEDIUM]`/`[LOW]`, per CLAUDE.md's `Confidence Markers` section. Flag each assumption lacking a marker as a `DD-` item.
 
 For each discrepancy, create a DR- or DD- entry.
 
