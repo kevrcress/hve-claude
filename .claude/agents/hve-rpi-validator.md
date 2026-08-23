@@ -1,7 +1,7 @@
 ---
 name: hve-rpi-validator
 description: Use this agent when an hve-review command needs to validate that the changes log for a specific plan phase actually matches what the plan required, with evidence from the modified files.
-model: haiku
+model: inherit
 color: magenta
 tools: Read, Write, Glob, Grep
 ---

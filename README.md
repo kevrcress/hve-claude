@@ -19,7 +19,7 @@ HVE separates the phases by role:
 - **Implementor** writes code against a verified plan (no research or planning pressure)
 - **Reviewer** validates changes against the plan and runs quality checks (no implementation pressure)
 
-The result: higher-quality output, leaner context windows, lower cost (Haiku for mechanical validation, Sonnet for quality review, your session model where judgment matters), and artifacts on disk that survive session boundaries.
+The result: higher-quality output, leaner context windows, cost and capability that track the session model you pick (every subagent inherits it, nothing is pinned to a fixed tier), and artifacts on disk that survive session boundaries.
 
 ---
 
@@ -63,7 +63,7 @@ That's it. Claude researches, plans, implements, and reviews, pausing for your a
 
 - [Claude Code](https://claude.ai/code), desktop app, VS Code/JetBrains extension, or CLI
 - **Sonnet or Opus** recommended for implementation phases (configurable)
-- **Haiku** used automatically for mechanical validation subagents and **Sonnet** for quality-review subagents (cost optimization, no configuration needed); researchers follow the session model
+- Every subagent runs on the **session model** (`model: inherit`, no configuration needed); nothing is pinned to a fixed tier, so validators and reviewers scale up or down with whatever model you run
 
 ---
 
@@ -259,7 +259,7 @@ The installer also writes the credential patterns `.env`, `.env.*`, `*.pem`, `*.
 | Quality gates | Ad hoc or none | Plan validation, per-phase RPI validation, 11-dimension review |
 | Parallel investigation | Sequential | Multiple researchers run in parallel per research question |
 | Security | Manual | Automatic security hygiene scan in every review |
-| Cost | Expensive (large context, expensive model throughout) | Haiku for mechanical validation, Sonnet for quality review; session model only where judgment matters (research, implementation) |
+| Cost | Expensive (large context, expensive model throughout) | Leaner per-phase context; every subagent inherits the session model, so you control cost by choosing the model |
 | Commit messages | Manual | `/hve-git-commit` generates conventional messages from changes log |
 | PR reviews | Manual or generic | `/hve-pr-review` runs 8 specialized reviewers in parallel |
 
