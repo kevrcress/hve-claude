@@ -143,7 +143,7 @@ accepted. They do not share the same command set, so each row names its own:
 
 | Flag | Effect |
 |---|---|
-| `--subagent-model <sonnet\|opus\|haiku>` | Overrides each subagent's frontmatter model for one run. Example: `/hve-plan --subagent-model sonnet`. See the Model Selection section of CLAUDE.md for how this interacts with the session model. Accepted by the commands that dispatch subagents: `/hve`, `/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, `/hve-doc-ops`, and `/hve-prompt-builder`. The other commands run no subagents, so the flag has no effect there. |
+| `--subagent-model <sonnet\|opus\|haiku\|fable>` | Overrides each subagent's frontmatter model for one run. Example: `/hve-plan --subagent-model sonnet`. See the Model Selection section of CLAUDE.md for how this interacts with the session model. Accepted by the commands that dispatch subagents: `/hve`, `/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, `/hve-doc-ops`, and `/hve-prompt-builder`. The other commands run no subagents, so the flag has no effect there. |
 | `--friction-log` | Records friction encountered during the phase (ambiguous instructions, tooling gaps, wasted steps) to `.claude-hve-tracking/friction/`. Off by default. Accepted by `/hve-research`, `/hve-plan`, `/hve-implement`, `/hve-review`, `/hve-pr-review`, and `/hve-challenge`. |
 
 ### Prompt engineering commands

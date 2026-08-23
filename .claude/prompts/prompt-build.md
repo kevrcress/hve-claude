@@ -22,7 +22,7 @@
 ## Options
 
 - `--iterations N` — number of test-evaluate-update cycles (default: 3)
-- `--subagent-model sonnet|opus|haiku` — override each subagent's frontmatter model
+- `--subagent-model sonnet|opus|haiku|fable` — override each subagent's frontmatter model
 
 ## Output
 

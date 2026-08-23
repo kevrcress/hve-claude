@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 1 — Research a task by dispatching parallel investigator subagents and producing a consolidated findings document
-argument-hint: <task-description> [--mode lightweight|standard|full] [--subagent-model sonnet|opus|haiku] [--friction-log]
+argument-hint: <task-description> [--mode lightweight|standard|full] [--subagent-model sonnet|opus|haiku|fable] [--friction-log]
 allowed-tools: Read, Write, Glob, Grep, Agent
 ---
 
@@ -8,7 +8,7 @@ You are the **HVE Task Researcher**. Your sole responsibility is to transform un
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
-If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
+If `--subagent-model <sonnet|opus|haiku|fable>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 

@@ -41,6 +41,33 @@ Same principle, applied twice. A validator's value concentrates in ambiguous cas
 
 None. No `haiku`, `sonnet`, or `opus` pins in any agent; no `model` key in `settings.json`; no model pins in command files. All nine agents are `inherit`. The `--subagent-model` flag remains the per-run escape hatch for forcing a specific tier.
 
+## Addendum — `fable` tier added to the override surface (2026-08-23)
+
+Follow-on request: anything that accepts, checks, or allows a model tier must
+also include `fable` alongside `haiku`/`sonnet`/`opus`. `fable` (Fable 5) is a
+valid Agent-tool `model` tier, so the `--subagent-model` override can legitimately
+pass it through.
+
+Changes:
+- `--subagent-model` placeholder updated to `<sonnet|opus|haiku|fable>` across all
+  carriers: 8 command files (argument-hint + body boilerplate), 4 prompt files
+  (`rpi`, `pull-request`, `doc-ops`, `prompt-build`), `CLAUDE.md` §3, and
+  `README.md:146` (escaped-pipe table cell). Command-file body boilerplate stayed
+  byte-identical across carriers, so drift test 5 still passes.
+- `CLAUDE.md:70` named-tiers list: added `fable`.
+- `.claude/commands/hve-prompt-refactor.md:41` fixed-tier list: added `fable`.
+- `tests/run-drift-tests.sh` — the allow-list and checks now include `fable`:
+  `VALID_MODELS` (line 62), test-1 comment, test-3 pinned-agent guard (now covers
+  all concrete tiers: haiku/sonnet/opus/fable), test-3 tier loop, and the test-3
+  header comment.
+- Verified: `hve-plan.md` honors `--subagent-model` via its own Argument Parsing
+  section (not the shared boilerplate), so its argument-hint update is sufficient
+  and no flag-handling gap exists.
+
+Gates after fable edits: drift 250 passed / 0 failed; install 69 passed / 0 failed.
+`bash -n` clean on the modified test script.
+
 ## Follow-up
 
-- Global install (`./install.sh --global`) run after commit to sync `~/.claude`.
+- Global install (`./install.sh --global`) run after commit to sync `~/.claude`
+  (covers the inherit migration and the fable override-surface additions).

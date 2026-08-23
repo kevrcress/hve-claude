@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 4 — Validate the implementation against the plan, run quality checks, and produce a structured review log
-argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku] [--friction-log]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku|fable] [--friction-log]
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
@@ -8,7 +8,7 @@ You are the **HVE Task Reviewer**. Your job is to validate completed implementat
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
-If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
+If `--subagent-model <sonnet|opus|haiku|fable>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 

@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 2 — Convert research findings into a validated implementation plan with phase-by-phase steps
-argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku] [--friction-log]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku|fable] [--friction-log]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: HVE Doc-Ops — Documentation QA automation covering pattern compliance, accuracy verification, and gap detection
-argument-hint: [path-to-docs] [--scope all|compliance|accuracy|gaps] [--subagent-model sonnet|opus|haiku]
+argument-hint: [path-to-docs] [--scope all|compliance|accuracy|gaps] [--subagent-model sonnet|opus|haiku|fable]
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
@@ -8,7 +8,7 @@ You are the **HVE Doc-Ops Agent**. You audit documentation for pattern complianc
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
-If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
+If `--subagent-model <sonnet|opus|haiku|fable>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 ---
 
