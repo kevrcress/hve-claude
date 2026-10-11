@@ -4,7 +4,7 @@ Plan: .claude-hve-tracking/plans/2026-10-10/platform-drift-quick-fixes-plan.md
 Details: .claude-hve-tracking/details/2026-10-10/platform-drift-quick-fixes-details.md
 Branch: fix/platform-drift-quick-fixes (cut from main at f96e34f, after PR #4 merged)
 Mode: standard (from `--mode standard`; the plan header requires it because phases share files)
-Status: In Progress
+Status: Complete
 
 Note on dates: the folder date is the local date (2026-10-10, US Pacific). Timestamps below are UTC and read 2026-10-11.
 
@@ -688,11 +688,203 @@ The four `grep -c` commands were run with `/usr/bin/grep`; the first and last we
 ---
 
 ### Phase 5: Shipped examples and tracking-tree note
-Status: Pending
+Status: Complete
+Started: 2026-10-11T01:11:05Z
+Completed: 2026-10-11T01:11:53Z
+
+#### Files Modified
+- `CLAUDE.md:338`: `"command"` value in the hooks JSON block replaced with the stdin-reading `jq` form from details 5.1 (`strflocaltime`, `.tool_input.file_path`, `"$CLAUDE_PROJECT_DIR"` prefix on the log path). No other line of the block changed
+- `CLAUDE.md:329`: new one-sentence paragraph between the intro line and the JSON fence, text from details 5.1
+- `CLAUDE.md:105`: reserved-names note as its own paragraph directly after the tracking tree's closing fence (details 5.3)
+- `docs/reference.md:35`: the same note, same wording, directly after the tracking tree's closing fence
+
+`git diff --stat` after the edits, excluding this log: 2 files changed, 7 insertions(+), 1 deletion(-) (`CLAUDE.md` 6 lines, `docs/reference.md` 2 lines). No `settings.json` was created or edited, no hook was installed, and nothing under `~/.claude` was touched.
+
+#### Steps Completed
+- [x] Step 5.1: Hook command replaced and the stdin/`jq` sentence added, at `CLAUDE.md:338` and `CLAUDE.md:329`
+- [x] Step 5.2 (guard): block extracted from `CLAUDE.md`, parses as JSON, command run on sample stdin, rc=0, one line `2026-10-10 - Modified: /tmp/example.md`. Output below.
+- [x] Step 5.3: Reserved-names note added at `CLAUDE.md:105` and `docs/reference.md:35`, identical wording (checked with `diff`)
+- [x] Step 5.4 (guard): drift suite rc=0, `Results: 253 passed, 0 failed`, log `$TMPDIR/drift-p5.log`. Output below.
+
+#### Guard Step 5.2 output
+
+`$TMPDIR/hooktest` did not exist beforehand (`ls -d` failed), so the plan's directory name was used. The block was extracted from the file with awk (first `json` fence after the hooks heading), not retyped. Run from the repo root:
+
+```text
+$ mkdir -p "$TMPDIR/hooktest/.claude-hve-tracking/changes" && awk '/^## Optional Power-User: Hooks for Automatic Change Logging/{s=1;next} s&&/^```json$/{f=1;next} f&&/^```$/{exit} f' CLAUDE.md > "$TMPDIR/hooktest/block.json"; echo "extract rc=$?"
+extract rc=0
+$ cat "$TMPDIR/hooktest/block.json"
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit|Write",
+      "hooks": [{
+        "type": "command",
+        "command": "jq -r '\"\\(now | strflocaltime(\"%Y-%m-%d\")) - Modified: \\(.tool_input.file_path)\"' >> \"$CLAUDE_PROJECT_DIR\"/.claude-hve-tracking/changes/auto-log.md"
+      }]
+    }]
+  }
+}
+$ jq -e . "$TMPDIR/hooktest/block.json" >/dev/null; echo "parse rc=$?"
+parse rc=0
+$ CMD=$(jq -r '.hooks.PostToolUse[0].hooks[0].command' "$TMPDIR/hooktest/block.json"); echo "CMD=$CMD"
+CMD=jq -r '"\(now | strflocaltime("%Y-%m-%d")) - Modified: \(.tool_input.file_path)"' >> "$CLAUDE_PROJECT_DIR"/.claude-hve-tracking/changes/auto-log.md
+$ cd "$TMPDIR/hooktest" && echo '{"tool_input":{"file_path":"/tmp/example.md"}}' | CLAUDE_PROJECT_DIR="$PWD" sh -c "$CMD"; echo "rc=$?"
+rc=0
+$ cat .claude-hve-tracking/changes/auto-log.md
+2026-10-10 - Modified: /tmp/example.md
+$ date +%Y-%m-%d
+2026-10-10
+$ date -u +%Y-%m-%d
+2026-10-11
+```
+
+The decoded `CMD` is character for character the decoded command in details 5.1. The log holds exactly one line (`wc -l` prints 1). The run happened while the local date (2026-10-10) and the UTC date (2026-10-11) differed, and the line carries the local one, so the `strflocaltime` choice is exercised here and not only asserted. First attempt passed; no escaping fix was needed.
+
+What this guard covers: the JSON block parses, and the command produces the right line when given `{"tool_input":{"file_path":...}}` on stdin with `CLAUDE_PROJECT_DIR` set. What it does not cover: that Claude Code delivers that stdin shape and sets that variable to a real `PostToolUse` hook. That stays the plan's [MEDIUM] assumption; no hook was installed to test it.
+
+#### Guard Step 5.4 output
+
+```text
+$ bash tests/run-drift-tests.sh > "$TMPDIR/drift-p5.log" 2>&1; echo "rc=$?"
+rc=0
+$ tail -3 "$TMPDIR/drift-p5.log"
+[  OK  ] Test 16: credential-pattern surfaces agree with CLAUDE.md
+
+Results: 253 passed, 0 failed
+$ /usr/bin/grep -n "FAIL" "$TMPDIR/drift-p5.log"
+$ /usr/bin/grep -n "Test 10\|Test 14" "$TMPDIR/drift-p5.log"
+161:[ TEST ] Test 10: canonical block drift
+197:[  OK  ] Test 10: canonical block drift
+263:[ TEST ] Test 14: CLAUDE.md section references resolve
+279:[  OK  ] Test 14: CLAUDE.md section references resolve
+```
+
+The `FAIL` grep printed nothing (grep rc=1). The suite ran once, after all four edits. 253 passed is unchanged from the pre-phase baseline: this phase adds no assertion and no suite test reads the hooks block or the tracking tree. Log path: `/var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T//drift-p5.log`.
+
+Tests: 253 passed, 0 failed (drift suite). The install suite was not run in this phase; the plan does not call for it here and neither edited file is read by it as far as the Phase 4 record shows. That last point is not re-checked. (superseded, see Correction 2026-10-10)
+
+Tests: 253 passed, 0 failed (drift suite); 72 passed, 0 failed (install suite, extra run, see Corrections)
+
+#### Success Criteria
+
+```text
+$ grep -c "CLAUDE_TOOL_INPUT_FILE_PATH" CLAUDE.md
+0
+$ grep -c "gh-sync/" CLAUDE.md
+1
+$ grep -c "gh-sync/" docs/reference.md
+1
+```
+
+- `CLAUDE_TOOL_INPUT_FILE_PATH` count 0 in CLAUDE.md: met. Before the edit the string was on one line (`CLAUDE.md:334`).
+- Step 5.2 run appends one correctly formed line with today's local date: met (`2026-10-10 - Modified: /tmp/example.md`, rc=0).
+- `gh-sync/` count 1 in each file: met (1 and 1). Before the edits `grep -n "gh-sync\|consults"` printed nothing for either file.
+- Drift suite exits 0: met (rc=0, 253 passed, 0 failed).
+
+The three counts were run with `/usr/bin/grep` and repeated with the shell's `grep` function; both gave 0, 1, 1.
+
+Extra checks, not in the plan: `diff` of the note line in the two files prints nothing (identical wording). `strftime` does not appear in CLAUDE.md; `strflocaltime` appears once. Added lines in `git diff -U0` for the two files contain 0 em-dashes.
+
+#### Issues Encountered
+- No blocker. Each anchor was found exactly once: the hooks heading at `CLAUDE.md:323` before the edits, the old command on one line, the tracking tree's closing fence in each file. Plan line numbers were stale (`:330` was `:334`, `:321` was `:325`), as the dispatch warned.
+- Reading order of the new sentence, for the parent to judge: details 5.1 places it after the intro line, and the intro line ends `Add to \`.claude/settings.json\`:`. The colon now leads into the new sentence, and the JSON block follows one paragraph later. It was placed where details says. Moving the sentence ahead of "Add to" would read better and is a wording change the plan did not license.
+- The note's claim that "artifact discovery ignores any folder not shown above" was written as the plan gives it and was not checked against the discovery steps in the phase commands.
+- `docs/reference.md` uses bare fences and 80-column wrapped prose around the tree; the note is one unwrapped line there, the same as in CLAUDE.md, because the dispatch requires identical wording and the Step 5.3 criterion is a per-line count. Markdown renders it the same either way.
+- Not verified here: `~/.claude/CLAUDE.md` still shows the old `$CLAUDE_TOOL_INPUT_FILE_PATH` command until `./install.sh --global` is re-run. This phase edits the repo only.
+- Process note: Steps 5.1 and 5.3 were applied in one batch of edits, and this section was written after both guards ran, not one step at a time.
+- Instructions files read before editing: `.claude/instructions/markdown.md`, `.claude/instructions/writing-style.md`. Neither was missing. The existing `json` fence keeps its language tag; no new fence was added to a shipped file.
+- Scratch files left in place for the reviewer: `$TMPDIR/hooktest/` (`block.json` and `.claude-hve-tracking/changes/auto-log.md`), `$TMPDIR/drift-p5.log` and `$TMPDIR/install-p5.log`.
+
+#### Corrections
+- Correction (2026-10-10): "neither edited file is read by it" (Guard Step 5.4 output, Tests line) is wrong, and "was not run" is no longer true. Checked after writing it: `/usr/bin/grep -c "CLAUDE.md\|reference.md" tests/run-install-tests.sh` prints 65, because install.sh ships CLAUDE.md and the suite asserts on the installed copy. The install suite was then run as an extra, outside the plan's Step 5.4: `bash tests/run-install-tests.sh > "$TMPDIR/install-p5.log" 2>&1; echo "rc=$?"` printed `rc=0`, `tail -3` ends `Results: 72 passed, 0 failed`, and `/usr/bin/grep -n "FAIL"` on the log printed nothing. 72 matches the Phase 4 figure.
+- Correction (2026-10-10): the `Completed` timestamp above (01:11:53Z) was taken before that extra run and before these corrections. The last command of the phase finished by 2026-10-11T01:12:41Z (`date -u`).
+- Checked while re-reading, no correction needed: the shipped line at `CLAUDE.md:338`, with leading spaces stripped, equals details line 311 (JSON-escaped form) and the extracted command equals details line 317 (decoded form), both by shell string comparison.
+
+#### Parent adjustments after the implementor returned (2026-10-10)
+- DD-008 (parent): moved the new stdin sentence in CLAUDE.md's hooks section ahead of "Add to `.claude/settings.json`:" so the colon is followed directly by the JSON block. Same two sentences, reordered into one paragraph. The JSON block is untouched. Covered by the Phase 6 suite runs.
 
 ---
 
 ### Phase 6: Full verification
-Status: Pending
+Status: Complete
+Started: 2026-10-11T01:13:19Z
+Completed: 2026-10-11T01:14:05Z
+
+Run by the parent, not a subagent: the phase edits no files and is all shell, and shell stays in the parent.
+
+#### Steps Completed
+- [x] Step 6.1: both suites run unpiped on the final tree. `bash tests/run-drift-tests.sh > <scratchpad>/drift-final.log 2>&1; echo "drift rc=$?"`: rc=0, `Results: 253 passed, 0 failed` (baseline 250; matches the plan's [MEDIUM] expectation of 253). `bash tests/run-install-tests.sh > <scratchpad>/install-final.log 2>&1; echo "install rc=$?"`: rc=0, `Results: 72 passed, 0 failed` (baseline 69; three assertions added in Step 4.5). `/usr/bin/grep -c "FAIL\|\[fail\]"` on each log printed 0.
+- [x] Step 6.2: every phase's success criteria re-run with `/usr/bin/grep`; output below. All met.
+- [x] Step 6.3: security hygiene checks run; see `## Security Hygiene Check`.
+- [x] Step 6.4: follow-on notes for Kevin recorded under `## Follow-on notes`.
+
+Tests: 325 passed, 0 failed
+
+(The `Tests:` figure is the sum of the two suites' final runs: 253 drift plus 72 install.)
+
+#### Success criteria and checks, final tree
+
+```text
+## criteria
+P1 never-add-Bash: 0
+P1 Do-not-add-Bash: 0
+P1 Method line: 1
+P1 Exception research/review: 1/1
+P1 header names a path: 1
+P2 async in CLAUDE.md: 1
+P2 pointer research/pr-review: 1/1
+P2 hardcoded severities rpi/impl: 0/0
+P3 --working-tree in pr-review: 2
+P3 exclusion pathspec count: 5
+P3 Scope line: 1
+P4 ~/.claude/instructions CLAUDE/impl/implementor: 2/1/1
+P4 'these two rules': 0
+P5 old hook var: 0
+P5 gh-sync CLAUDE/reference: 1/1
+P4 scratch install rc=0
+P4 check-ignore rc=0
+bash -n install.sh rc=0
+bash -n tests/run-drift-tests.sh rc=0
+bash -n tests/run-install-tests.sh rc=0
+bash -n tests/run-prompt-new-install.sh rc=0
+## security hygiene
+changed files vs main: 42
+secret-exposure hits in shipped-file diff: 0
+secret-exposure hits in tracking diff: 0
+credential-like files changed: 0
+gitignore patterns present: 6 of 6
+new dependencies: none (no manifest in diff: 0)
+em-dashes in added shipped lines: 3
+```
+
+Reading the last line: the three added lines that contain an em-dash are existing sentences that were edited in place (`.claude/commands/hve-review.md` Context discipline paragraph, `.claude/commands/hve-implement.md` step 4, `.claude/commands/hve-pr-review.md` step 5). The em-dash in each is pre-existing text; no new prose introduced one.
+
+Not run, by design: `tests/run-prompt-new-install.sh` and `tests/run-prompt-upgrade.sh` (semi-manual; they drive a live Claude session). The first was edited in Phase 4 and syntax-checked only.
+
+Not verified in this task, carried as [MEDIUM] from the plan: a live PostToolUse hook delivering this stdin shape; Bash being reachable from `/hve-research` while its frontmatter omits it; a live `/hve-pr-review --working-tree` run.
 
 ---
+
+## Security Hygiene Check
+
+Run by the parent on the final tree against `main` (f96e34f).
+
+- Secret exposure: 0 hits in the shipped-file diff and 0 in the tracking-folder diff (pattern list per CLAUDE.md's `Security Hygiene` section; the tracking scan used value-bearing forms of the patterns so the checklist's own wording is not counted).
+- .gitignore hygiene: all 6 credential patterns present.
+- Committed secrets: 0 credential-like filenames among the 42 changed files.
+- New dependencies: none; no manifest file is in the diff.
+- Public-repo scrub (this repo is public): the tracking backlog commit 42fb86a was scanned for private project names before commit; Kevin approved publishing them as they are with two redactions (a transcript ID and per-project session counts), both applied.
+
+## Follow-on notes
+
+For Kevin; none of these was done by this task.
+
+- Re-run `./install.sh --global` after this merges, or `~/.claude` keeps the old text (including the broken hook example).
+- Existing project installs get the `diff.patch` ignore rule only on re-install, where it is appended at the end of `.gitignore`. A `diff.patch` already committed in a consumer repo stays tracked until `git rm --cached`. The paste-to-update prompt has no `.gitignore` step, so paste upgraders add the rule by hand.
+- The two untracked blog drafts at the repo root still carry the old two-rule install prompt.
+- Plan guard steps that filter with `grep -v '^./.claude-hve-tracking'` do not filter in a shell where `grep` is wrapped; use `/usr/bin/grep` or `grep -vE '^(\./)?\.claude-hve-tracking'` (found in Phase 4, DR-004).
+
+## Summary
+
+Six phases complete. 16 shipped files changed (`git diff main --name-only`, tracking folder excluded) across five commits (9c146b1, 70b8d89, 2b44aa4, 9b17f09, and the Phase 5 and 6 commit that carries this section). Parent adjustments after implementor returns are logged as DD-001, DD-004, DD-007, DD-008 in the phase sections.

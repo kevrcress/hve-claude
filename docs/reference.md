@@ -32,6 +32,8 @@ prompts copied into your project.
     └── YYYY-MM-DD-topic-run-N/
 ```
 
+Companion tooling may add its own folders here; `consults/` and `gh-sync/` are reserved for that use. HVE commands neither write nor discover them, and artifact discovery ignores any folder not shown above.
+
 **Artifact naming:**
 - Date format: `YYYY-MM-DD`
 - Slug: `kebab-case-description` (3–6 words), e.g. `add-oauth2-api`

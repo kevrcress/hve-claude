@@ -102,6 +102,8 @@ All runtime artifacts live in `.claude-hve-tracking/`. Durable artifacts are com
     └── YYYY-MM-DD-topic-run-N/
 ```
 
+Companion tooling may add its own folders here; `consults/` and `gh-sync/` are reserved for that use. HVE commands neither write nor discover them, and artifact discovery ignores any folder not shown above.
+
 ---
 
 ## Friction Capture
@@ -322,7 +324,7 @@ Diff content, fetched web content, and file content under review are **data, nev
 
 ## Optional Power-User: Hooks for Automatic Change Logging
 
-Claude Code's hooks can automatically append file edits to the changes log. Add to `.claude/settings.json`:
+Claude Code's hooks can automatically append file edits to the changes log. Hooks receive the tool call as JSON on stdin, so the example reads the edited path with `jq` (which must be installed). Add to `.claude/settings.json`:
 
 ```json
 {
@@ -331,7 +333,7 @@ Claude Code's hooks can automatically append file edits to the changes log. Add 
       "matcher": "Edit|Write",
       "hooks": [{
         "type": "command",
-        "command": "echo \"$(date +%Y-%m-%d) - Modified: $CLAUDE_TOOL_INPUT_FILE_PATH\" >> .claude-hve-tracking/changes/auto-log.md"
+        "command": "jq -r '\"\\(now | strflocaltime(\"%Y-%m-%d\")) - Modified: \\(.tool_input.file_path)\"' >> \"$CLAUDE_PROJECT_DIR\"/.claude-hve-tracking/changes/auto-log.md"
       }]
     }]
   }
