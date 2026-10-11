@@ -41,7 +41,7 @@ Mode:
 **Tracking-folder scan.** Security coverage is a floor, and the exclusion above removes the tracking folder from every reviewer's diff, so the parent scans it. List its changed files for the active mode: `git diff <same base> --name-only -- .claude-hve-tracking`, plus in working-tree mode `git ls-files --others --exclude-standard -- .claude-hve-tracking`, dropping `diff.patch`. Over that list run the Secret exposure grep from CLAUDE.md's `Security Hygiene` section and check the names against the credential patterns in the same section. Pass any hit to the security reviewer as a pre-digested list with file and line. Record the result on the review log's `Scope:` line.
 
 **Empty-diff guard**: an empty review is never an Approve. If the changed-file list from step 2 is empty:
-- and the tracking-folder list is not empty: only tracking artifacts changed. Report that, report the tracking-folder scan result, and stop without dispatching reviewers.
+- and the tracking-folder list is not empty: only tracking artifacts changed. Report that, report the tracking-folder scan result, and stop without dispatching reviewers. In branch mode, before stopping, also run `git status --porcelain`, and when uncommitted or untracked work exists outside the tracking folder, say so and offer working-tree mode (re-run this phase in working-tree mode).
 - in working-tree mode otherwise: there is nothing to review. Say so and stop.
 - in branch mode otherwise: run `git status --porcelain`. If uncommitted or untracked work exists, report that the work is not on the branch diff and ask whether to review the working tree instead (re-run this phase in working-tree mode) or stop. If the tree is clean, there is nothing to review: say so and stop.
 
@@ -152,6 +152,7 @@ Each review subagent receives:
 * The dimension it is reviewing and that dimension's ID prefix (from the table above)
 * Its output path under `.claude-hve-tracking/reviews/pr/BRANCH-NAME/`
 * Instructions to return findings in `<PREFIX>-NNN [SEVERITY]` format (e.g. `FC-001 [MAJOR]`)
+* Security and Compliance reviewer only: the tracking-folder scan result from Phase 1, either the hits as a file-and-line list or the word `clean` when the scan found none. Always pass one of the two, so a missing result is never read as a clean scan. The reviewer reads each cited line and grades each hit as an `SC-` finding. This is the result the review log's `Scope:` line records.
 
 ### Compact mode (`--compact` flag set)
 
@@ -171,7 +172,7 @@ Spawn 4 paired subagents in parallel instead of 8. Each subagent covers two dime
 4. **Pair 4: Security and Compliance + Documentation and Operations**
    Instruction: "Review for security vulnerabilities AND documentation gaps. Report findings in two sections: one headed 'Security and Compliance' (IDs `SC-NNN`) and one headed 'Documentation and Operations' (IDs `DO-NNN`). Use `<PREFIX>-NNN [SEVERITY]` format."
 
-Each compact subagent receives the same inputs as a standard subagent: the diff.patch path (which it Reads itself), changed files, its two output-section prefixes, and the paired dimension instructions above.
+Each compact subagent receives the same inputs as a standard subagent: the diff.patch path (which it Reads itself), changed files, its two output-section prefixes, and the paired dimension instructions above. The Pair 4 subagent, which carries Security and Compliance, also receives the tracking-folder scan result (the file-and-line hit list, or the word `clean`) exactly as the standard Security and Compliance reviewer does, and grades each hit as an `SC-` finding.
 
 Wait for all subagents to complete, per CLAUDE.md's `Subagent Dispatch Discipline` section (the Dispatch is asynchronous rule).
 
