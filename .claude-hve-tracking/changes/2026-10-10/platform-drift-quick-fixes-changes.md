@@ -971,3 +971,234 @@ Other checks, measured:
 ### Observation, not fixed
 
 In the tracking-only outcome (`.claude/commands/hve-pr-review.md:44`) no reviewer is dispatched, so a scan hit there is reported by the parent and never graded as an `SC-` finding, while the `Scope:` template value still reads "N hit(s) passed to security reviewer". This predates the fix pass and is outside its two findings [HIGH]. Left for the owner.
+
+## Review Fixes, round 2 (IV-002, 2026-10-10)
+
+Base: `origin/fix/platform-drift-quick-fixes` @ 0661d621cb4904bf38d9fff8893c2196899e7c3d. Delivered on `wip/pdqf-fix-r2`. Implemented directly from the orchestrator brief, with no HVE phase command and no subagent.
+
+Finding: IV-002 in `.claude-hve-tracking/reviews/rpi/2026-10-10/platform-drift-quick-fixes-grader-review.md` (evidence E2). Run from a subdirectory, the shipped pathspec `-- . ':(exclude).claude-hve-tracking'` narrowed every `/hve-pr-review` command to that subdirectory with no warning.
+
+Owner's decision: `:(top)` pathspecs, not the `cd`. The fenced recipe gets no `cd` line and no redirect target changes.
+
+### What changed
+
+Line numbers are for the delivered tree. Two files changed besides this log.
+
+| Location | Before | After |
+|---|---|---|
+| `.claude/commands/hve-pr-review.md:33` (explaining sentence) | "Run every git command in this phase from the repository root (`cd ...`). Every diff below carries the pathspec `-- . ':(exclude).claude-hve-tracking'`: the tracking folder holds ..." | "Every diff and file list below carries the pathspec `-- ':(top)' ':(top,exclude).claude-hve-tracking'`, and every `git ls-files` call carries `--full-name`. Both are anchored at the top of the working tree, so each command selects the same files and prints the same root-relative paths from any directory. Still run every git command in this phase from the repository root (`cd ...`), because the `diff.patch` path the diff is redirected to is relative to the current directory. The exclusion is there because the tracking folder holds ..." |
+| `.claude/commands/hve-pr-review.md:37` (working-tree mode bullet) | `git ls-files --others --exclude-standard -- . ':(exclude).claude-hve-tracking'` | `git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'` |
+| `.claude/commands/hve-pr-review.md:39` (step 2, three commands) | `--name-only -- . ':(exclude).claude-hve-tracking'` | `--name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'` |
+| `.claude/commands/hve-pr-review.md:41` (tracking-folder scan) | `git diff <same base> --name-only -- .claude-hve-tracking` and `git ls-files --others --exclude-standard -- .claude-hve-tracking` | `git diff <same base> --name-only -- ':(top).claude-hve-tracking'` and `git ls-files --others --exclude-standard --full-name -- ':(top).claude-hve-tracking'` |
+| `.claude/commands/hve-pr-review.md:52` (step 5, branch mode) | `git diff main...HEAD -- . ':(exclude).claude-hve-tracking' > ...` | `git diff main...HEAD -- ':(top)' ':(top,exclude).claude-hve-tracking' > ...` (redirect target untouched) |
+| `.claude/commands/hve-pr-review.md:55` (recipe) | no such line | `TOP=$(git rev-parse --show-toplevel)` |
+| `.claude/commands/hve-pr-review.md:56` (recipe) | `EXCL=':(exclude).claude-hve-tracking'` | `EXCL=':(top,exclude).claude-hve-tracking'` |
+| `.claude/commands/hve-pr-review.md:60` (recipe) | `git diff "$BASE" -- . "$EXCL" > "$OUT"` | `git diff "$BASE" -- ':(top)' "$EXCL" > "$OUT"` |
+| `.claude/commands/hve-pr-review.md:61` (recipe) | `git ls-files --others --exclude-standard -z -- . "$EXCL" \` | `git ls-files --others --exclude-standard --full-name -z -- ':(top)' "$EXCL" ":(exclude)$OUT" \` |
+| `.claude/commands/hve-pr-review.md:62` (recipe) | `git diff --no-index -- /dev/null "$f" >> "$OUT"` | `git -C "$TOP" diff --no-index -- /dev/null "$f" >> "$OUT"` |
+| `.claude/commands/hve-pr-review.md:65` (recipe notes) | no mention of `--full-name` or the self-exclusion | two sentences added: why the loop reads through `git -C "$TOP"`, and why `":(exclude)$OUT"` is relative to the current directory |
+| `.claude/commands/hve-review.md:83` | `git ls-files --others --exclude-standard -- . ':(exclude).claude-hve-tracking'` "from the repository root" | `git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'` "(anchored at the top of the working tree, so it prints the same root-relative list from any directory)" |
+
+Three things go beyond a plain `. ` to `:(top)` swap. Each one was forced by what the fixture showed.
+
+1. `--full-name` on every `git ls-files`. Without it the untracked list is printed relative to the current directory (`new.txt` and `../rootnew.txt` from `sub/`), so the list differs by directory even when the selection is the same.
+2. `git -C "$TOP"` in the recipe loop. The names are now root-relative, so `git diff --no-index` has to read them from the root. This is not a `cd`: the shell's directory and the redirect target do not move.
+3. `":(exclude)$OUT"` on the recipe's `git ls-files`. This is the one pathspec left that is relative to the current directory, and it is so on purpose, because `$OUT` is. With the exclusion anchored at the top, a patch written from `sub/` lands in `sub/.claude-hve-tracking/`, which the top-anchored exclusion does not cover, so the patch listed itself as an untracked file. Control run below: without this token the patch from `sub/` holds 9 headers and contains itself; with it, 8 and it does not. From the root the token is redundant. It does not match the A1 grep, and it is the one place where A1's wording ("no cwd-relative pathspec is left") is not met to the letter. Removing it is a one-token edit if the owner prefers the letter [HIGH: measured].
+
+### Fixture transcript (A2)
+
+Harness: every command was extracted by script from `.claude/commands/hve-pr-review.md` on the delivered tree (inline code spans, and the fenced block with its three-space indent stripped). Substitutions made, and no others: `<same base>` became `main...HEAD` (branch mode) or `"$BASE"` (working-tree mode); one-line working-tree commands were prefixed with `BASE=$(git merge-base main HEAD); ` as the mode bullet instructs; `BRANCH-NAME` was left literal. For the branch-mode diff the harness created the redirect directory first, relative to the current directory, because that step has no `mkdir` of its own. Shell: bash. Git 2.50.1. Each run started with both `reviews` output directories removed. "status+index" compares `git status --porcelain` plus `git ls-files --stage` before and after with `cmp`.
+
+Fixture: `main` with one commit holding seven files and a `.gitignore` with the shipped `diff.patch` rule. Branch `feature/x` adds one commit that edits `root.txt`, `sub/a.txt`, `sub/b.txt`, `deep/nested/n.txt` and the tracked `.claude-hve-tracking/plans/p.md`. Working tree: `staged.txt` staged only, `unstaged.txt` modified, and untracked `rootnew.txt`, `sub/new.txt` and `.claude-hve-tracking/plans/untracked.md`.
+
+Extracted commands:
+
+```text
+1-branch-list: git diff main...HEAD --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'
+2-branch-diff: git diff main...HEAD -- ':(top)' ':(top,exclude).claude-hve-tracking' > .claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+3-wt-list: git diff "$BASE" --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking' + git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'
+5/6-scan: git diff <same base> --name-only -- ':(top).claude-hve-tracking' + git ls-files --others --exclude-standard --full-name -- ':(top).claude-hve-tracking'
+4-wt-recipe:
+TOP=$(git rev-parse --show-toplevel)
+EXCL=':(top,exclude).claude-hve-tracking'
+OUT=.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+mkdir -p "$(dirname "$OUT")"
+BASE=$(git merge-base main HEAD)          # or origin/main
+git diff "$BASE" -- ':(top)' "$EXCL" > "$OUT"
+git ls-files --others --exclude-standard --full-name -z -- ':(top)' "$EXCL" ":(exclude)$OUT" \
+  | while IFS= read -r -d '' f; do git -C "$TOP" diff --no-index -- /dev/null "$f" >> "$OUT"; done
+
+```
+
+Runs:
+
+```text
+fixture: main + feature/x; git status --porcelain:
+M  staged.txt
+ M unstaged.txt
+?? .claude-hve-tracking/plans/untracked.md
+?? rootnew.txt
+?? sub/new.txt
+
+=== 1-branch-list
+--- cwd=<fixture>/. rc=0 stderr_lines=0 status+index before/after: identical
+  deep/nested/n.txt
+  root.txt
+  sub/a.txt
+  sub/b.txt
+missing expected files: none; tracking-folder lines=0
+--- cwd=<fixture>/sub rc=0 stderr_lines=0 status+index before/after: identical
+  deep/nested/n.txt
+  root.txt
+  sub/a.txt
+  sub/b.txt
+missing expected files: none; tracking-folder lines=0
+root vs sub output: IDENTICAL
+
+=== 2-branch-diff
+--- cwd=<fixture>/. rc=0 stderr_lines=0 status+index before/after: identical
+patch on disk: ./.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+  diff --git a/deep/nested/n.txt b/deep/nested/n.txt
+  diff --git a/root.txt b/root.txt
+  diff --git a/sub/a.txt b/sub/a.txt
+  diff --git a/sub/b.txt b/sub/b.txt
+headers=4 claude-hve-tracking_in_patch=0 diff.patch_in_patch=0 STAGEDONLY=0 UNSTAGED=0
+missing expected files: none
+--- cwd=<fixture>/sub rc=0 stderr_lines=0 status+index before/after: CHANGED: > ?? sub/.claude-hve-tracking/ 
+patch on disk: ./sub/.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+  diff --git a/deep/nested/n.txt b/deep/nested/n.txt
+  diff --git a/root.txt b/root.txt
+  diff --git a/sub/a.txt b/sub/a.txt
+  diff --git a/sub/b.txt b/sub/b.txt
+headers=4 claude-hve-tracking_in_patch=0 diff.patch_in_patch=0 STAGEDONLY=0 UNSTAGED=0
+missing expected files: none
+root vs sub header sets: IDENTICAL
+
+=== 3-wt-list
+--- cwd=<fixture>/. rc=0 stderr_lines=0 status+index before/after: identical
+  deep/nested/n.txt
+  root.txt
+  rootnew.txt
+  staged.txt
+  sub/a.txt
+  sub/b.txt
+  sub/new.txt
+  unstaged.txt
+missing expected files: none; tracking-folder lines=0
+--- cwd=<fixture>/sub rc=0 stderr_lines=0 status+index before/after: identical
+  deep/nested/n.txt
+  root.txt
+  rootnew.txt
+  staged.txt
+  sub/a.txt
+  sub/b.txt
+  sub/new.txt
+  unstaged.txt
+missing expected files: none; tracking-folder lines=0
+root vs sub output: IDENTICAL
+
+=== 4-wt-recipe
+--- cwd=<fixture>/. rc=1 stderr_lines=0 status+index before/after: identical
+patch on disk: ./.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+  diff --git a/deep/nested/n.txt b/deep/nested/n.txt
+  diff --git a/root.txt b/root.txt
+  diff --git a/rootnew.txt b/rootnew.txt
+  diff --git a/staged.txt b/staged.txt
+  diff --git a/sub/a.txt b/sub/a.txt
+  diff --git a/sub/b.txt b/sub/b.txt
+  diff --git a/sub/new.txt b/sub/new.txt
+  diff --git a/unstaged.txt b/unstaged.txt
+headers=8 claude-hve-tracking_in_patch=0 diff.patch_in_patch=0 STAGEDONLY=1 UNSTAGED=1
+missing expected files: none
+--- cwd=<fixture>/sub rc=1 stderr_lines=0 status+index before/after: CHANGED: > ?? sub/.claude-hve-tracking/ 
+patch on disk: ./sub/.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+  diff --git a/deep/nested/n.txt b/deep/nested/n.txt
+  diff --git a/root.txt b/root.txt
+  diff --git a/rootnew.txt b/rootnew.txt
+  diff --git a/staged.txt b/staged.txt
+  diff --git a/sub/a.txt b/sub/a.txt
+  diff --git a/sub/b.txt b/sub/b.txt
+  diff --git a/sub/new.txt b/sub/new.txt
+  diff --git a/unstaged.txt b/unstaged.txt
+headers=8 claude-hve-tracking_in_patch=0 diff.patch_in_patch=0 STAGEDONLY=1 UNSTAGED=1
+missing expected files: none
+root vs sub header sets: IDENTICAL
+
+=== 5-scan-branch
+--- cwd=<fixture>/. rc=0 stderr_lines=0 status+index before/after: identical
+  .claude-hve-tracking/plans/p.md
+--- cwd=<fixture>/sub rc=0 stderr_lines=0 status+index before/after: identical
+  .claude-hve-tracking/plans/p.md
+root vs sub output: IDENTICAL
+
+=== 6-scan-wt
+--- cwd=<fixture>/. rc=0 stderr_lines=0 status+index before/after: identical
+  .claude-hve-tracking/plans/p.md
+  .claude-hve-tracking/plans/untracked.md
+--- cwd=<fixture>/sub rc=0 stderr_lines=0 status+index before/after: identical
+  .claude-hve-tracking/plans/p.md
+  .claude-hve-tracking/plans/untracked.md
+root vs sub output: IDENTICAL
+```
+
+Control, the recipe with `":(exclude)$OUT"` removed and nothing else changed:
+
+```text
+--- cwd=<fixture>/. rc=1 stderr_lines=0 status+index before/after: identical
+headers=8 claude-hve-tracking_in_patch=0 diff.patch_in_patch=0 STAGEDONLY=1 UNSTAGED=1
+--- cwd=<fixture>/sub rc=1 stderr_lines=0 status+index before/after: CHANGED: > ?? sub/.claude-hve-tracking/ 
+  diff --git a/sub/.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch b/sub/.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+headers=9 claude-hve-tracking_in_patch=2 diff.patch_in_patch=2 STAGEDONLY=2 UNSTAGED=2
+```
+
+Reading of the transcript:
+
+- All six commands give the same output from the root and from `sub/` (six `IDENTICAL` lines; for the two patches, the same set of `diff --git` headers).
+- Every changed and untracked file outside the tracking folder is present in each list and in the working-tree patch ("missing expected files: none"). The branch-mode list and patch hold the four committed files only, which is what branch mode means.
+- No tracking-folder path appears outside the two scan lists, and neither patch contains itself.
+- The index is untouched in all twelve runs. `git status --porcelain` is byte-identical before and after in ten of them. In the two runs that write a patch from `sub/`, status gains one line, `?? sub/.claude-hve-tracking/`. That is the known limitation below, not an index change.
+- `rc=1` on the working-tree recipe is the documented `git diff --no-index` exit.
+
+### Carrier enumeration (A4)
+
+`git grep -n -E "claude-hve-tracking'|-- \.claude-hve-tracking|--others --exclude-standard" -- . ':!.claude-hve-tracking'` on the delivered tree, ten hits:
+
+| Hit | Verdict |
+|---|---|
+| `.claude/commands/hve-pr-review.md:33` | Converted. Description of the pathspec, now the `:(top)` form. |
+| `.claude/commands/hve-pr-review.md:37` | Converted, `--full-name` added. |
+| `.claude/commands/hve-pr-review.md:39` | Converted, three commands. |
+| `.claude/commands/hve-pr-review.md:41` | Converted, both scan commands, `--full-name` added to the second. |
+| `.claude/commands/hve-pr-review.md:52` | Converted. The path after `>` on the same line is a redirect target, not a pathspec, and is unchanged. |
+| `.claude/commands/hve-pr-review.md:56` | Converted (`EXCL=`). |
+| `.claude/commands/hve-pr-review.md:61` | Converted, `--full-name` added. Carries the deliberate `":(exclude)$OUT"`, see item 3 above. |
+| `.claude/commands/hve-review.md:83` | Converted. It was cwd-relative and leaned on a "from the repository root" clause. The new command is the same string as the untracked-list command at `hve-pr-review.md:37`, which the fixture ran from both directories. The `git diff --name-only <base>` on the same line has no pathspec and was cwd-independent already. |
+| `tests/run-drift-tests.sh:1172` | Not a pathspec. A `grep -v` filter on text. |
+| `tests/run-drift-tests.sh:1182` | Not a pathspec. A `grep -v` filter on text. |
+
+A wider sweep, `git grep -n -E "git (diff|ls-files|log|status|grep|add)[^\`]* -- " -- . ':!.claude-hve-tracking' ':!tests'`, returns seven lines: `hve-pr-review.md:37`, `:39`, `:41`, `:52`, `:60`, `:61` and `hve-review.md:83`. `:60` is the one line the first grep does not catch (it uses `"$EXCL"`), and it is converted. No other file in the repository carries a git pathspec [HIGH].
+
+A1 check on the delivered tree: `grep -n -E -- "-- \. |-- \.claude-hve-tracking|':\(exclude\)" .claude/commands/hve-pr-review.md` prints nothing, rc=1.
+
+### Gates
+
+Both run from the worktree root through the orchestrator's `run-quiet.sh` wrapper, on the tree with the two command files edited.
+
+| Command | Result |
+|---|---|
+| `./tests/run-drift-tests.sh` | 253 passed, 0 failed, rc=0 |
+| `./tests/run-install-tests.sh` | 72 passed, 0 failed, rc=0 |
+
+Both equal the counts recorded for the base in the previous section. No test file changed.
+
+### Known limitation
+
+The redirect target `> .claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch` (and `OUT=` in the recipe) is still relative to the current directory, exactly as on `main`. Run from a subdirectory, the commands now select the right files and the patch has the right content, but the patch is written under that subdirectory: it is not where the reviewers are told to read it, it is not covered by the `.gitignore` rule (which is anchored at the root), and it shows up as untracked work. In branch mode from a subdirectory the redirect also fails unless that directory exists. That is why `hve-pr-review.md:33` still tells the reader to run from the repository root. Changing the redirect targets was out of scope by the owner's decision.
+
+### NOT RUN
+
+- `tests/run-prompt-new-install.sh` and `tests/run-prompt-upgrade.sh`: NOT RUN (semi-manual, and they clone from GitHub).
+- A live `/hve-pr-review` or `/hve-review` session from a subdirectory: NOT RUN. The commands were run by a bash harness on a fixture, not by a model following the prompt.
+- zsh: NOT RUN. The grader's E2 ran the previous recipe under zsh; this round's fixture used bash only.
+- The `origin/main` variants of each command: NOT RUN (the fixture has no remote). They differ from the tested commands only in the revision argument.
+- A git older than 2.50.1: NOT RUN.
