@@ -100,3 +100,9 @@ The challenge document is the deliverable. At the end of each exchange, remind t
 Challenge log updated: .claude-hve-tracking/challenges/YYYY-MM-DD-TOPIC-challenge.md
 Next question: [the question]
 ```
+
+That per-question reminder is not a close. When the session ends, by any of the three conditions above, end the turn with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. Fill the block with actual values:
+
+- `status: done`
+- `artifact: .claude-hve-tracking/challenges/YYYY-MM-DD-TOPIC-challenge.md`
+- `next: /hve-plan` (the phase command the answers send the work back to; when nothing needs to change: `next: none - no changes needed`)

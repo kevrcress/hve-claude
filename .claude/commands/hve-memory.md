@@ -90,12 +90,8 @@ After saving:
 2. Tell the user the exact command to continue in a new session: `Read .claude-hve-tracking/memory/YYYY-MM-DD/TOPIC-SLUG.md to resume this session`
 3. Optionally, list the next 3 steps so the user can orient quickly when they return
 
-```
-╭─────────────────────────────────────────────────────╮
-│  MEMORY SAVED                                       │
-│  File     : .claude-hve-tracking/memory/            │
-│             YYYY-MM-DD/topic-slug.md                │
-│  To resume: Read the memory file above, then        │
-│             continue from Next Steps                │
-╰─────────────────────────────────────────────────────╯
-```
+End every stopping turn of `/hve-memory` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The resume instruction from item 2 goes under **Next step**. Fill the block with actual values:
+
+- `status: done`
+- `artifact: .claude-hve-tracking/memory/YYYY-MM-DD/topic-slug.md`
+- `next: in a new session, read the memory file and continue from its Next Steps`

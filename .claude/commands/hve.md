@@ -45,6 +45,8 @@ Tell the user the classification (or the override). If **Simple** or `--mode lig
 
 Before editing, capture the baseline: run the FULL suite once and record `## Test Baseline` in the changes log (total passed/failed plus the names of already-failing tests). Re-run the full suite after implementing — never only the files you touched, since a scoped run cannot see regressions elsewhere and catching those is the entire purpose of the gate. The gate triggers on net-new failures against that baseline; pre-existing failures are noted, not blocking.
 
+The Simple direct path ends with the same close as the full loop (see Close below).
+
 If THINK_MODE is true, propagate `--think` to the plan phase invocation. If the task is classified as Challenging or `--mode full` is set, set THINK_MODE=true even if `--think` was not explicitly passed.
 
 ---
@@ -126,24 +128,6 @@ Mark Review complete in the todo list.
 
 ---
 
-## Completion
-
-Present the final summary:
-
-```
-## RPI Complete: [Task Description]
-
-Research  : .claude-hve-tracking/research/YYYY-MM-DD/TASK-SLUG.md
-Plan      : .claude-hve-tracking/plans/YYYY-MM-DD/TASK-SLUG-plan.md
-Changes   : .claude-hve-tracking/changes/YYYY-MM-DD/TASK-SLUG-changes.md
-Review    : .claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-review.md
-
-Status    : ✅ Complete | ⚠️ Needs Rework | 🚫 Blocked
-Critical  : N | Major: N | Minor: N
-```
-
-If status is ⚠️ Needs Rework, tell the user which phase to re-run with `/hve-implement` or `/hve-plan`.
-
 ## Discover — Follow-On Items
 
 After a successful review, present 3–5 follow-on items discovered during the RPI loop:
@@ -153,3 +137,20 @@ After a successful review, present 3–5 follow-on items discovered during the R
 - Test coverage opportunities
 
 These are suggestions only — the user decides whether to act on them.
+
+---
+
+## Close
+
+End every stopping turn of `/hve` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The checkpoints between phases are working questions and carry no close. The follow-on items above go under **What I need from you** as suggestions; do not present them a second time. `status` follows the review verdict, one value per run:
+
+- `status: done` when the review verdict is ✅ Complete, and at the end of the Simple direct path
+- `status: needs-rework` when the review verdict is ⚠️ Needs Rework
+- `status: blocked` when the review verdict is 🚫 Blocked
+- `artifact: .claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-review.md` (on the Simple direct path no review ran, so `artifact:` is the changes-log path)
+- `next: /hve-pr-review` on Complete (optional for the user; on the Simple direct path: `next: none - task complete`)
+- `next: /hve-implement` on Needs Rework or Blocked, or `next: /hve-plan` when the plan itself was wrong; **Next step** names the phase to re-run
+- `research: .claude-hve-tracking/research/YYYY-MM-DD/TASK-SLUG.md` (optional key)
+- `plan: .claude-hve-tracking/plans/YYYY-MM-DD/TASK-SLUG-plan.md` (optional key)
+- `changes: .claude-hve-tracking/changes/YYYY-MM-DD/TASK-SLUG-changes.md` (optional key)
+- `findings: N critical, N major, N minor` (optional key; the review tally)

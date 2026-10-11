@@ -47,7 +47,7 @@ Apply these improvements:
 - Subagent Response Format: every part required per CLAUDE.md's `Subagent Response Protocol` section
 - Confidence markers: `[HIGH]`, `[MEDIUM]`, `[LOW]`
 - Citation format: `file:line` plain paths
-- Handoff Block for phase commands
+- Close at the end of every command: the completion summary per CLAUDE.md's `Completion Summary` section and the labeled-line block per CLAUDE.md's `Handoff Block Format` section
 - Template Blanks: every template blank is genuinely obtainable in-session or carries an explicit N/A branch
 - Artifact Discovery & Relevance: slug argument wins, 7-day window, branch-name tiebreak, relevance check before use
 
@@ -66,3 +66,13 @@ Apply these improvements:
 If `--goal` was specified, prioritize changes that address that goal.
 
 Do not change the artifact's intended behavior — only its clarity, structure, and convention compliance.
+
+---
+
+## Close
+
+End every stopping turn of `/hve-prompt-refactor` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The step 7 report is the content of **What I did**. Fill the block with actual values:
+
+- `status: done`
+- `artifact: [refactored file path]`
+- `next: /hve-prompt-analyze [file]`

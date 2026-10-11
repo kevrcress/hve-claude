@@ -161,21 +161,18 @@ After all phases complete:
    - Any open issues or deviations from the plan
    - Security check status
 
-**Wait for user acknowledgment before emitting the Handoff Block.**
+**This summary is a close point: emit the close with `status: awaiting-approval` (see Close below), then wait for user acknowledgment. Once acknowledged, emit the close again with `status: done`.**
 
 ---
 
-## Handoff Block
+## Close
 
-```
-╭─────────────────────────────────────────────────────╮
-│  HANDOFF                                            │
-│  Changes  : .claude-hve-tracking/changes/           │
-│             YYYY-MM-DD/task-slug-changes.md         │
-│  Plan     : .claude-hve-tracking/plans/             │
-│             YYYY-MM-DD/task-slug-plan.md            │
-│  Next     : /hve-review                             │
-│  Tip      : Start a new conversation, then run      │
-│             /hve-review — it finds these auto.      │
-╰─────────────────────────────────────────────────────╝
-```
+End every stopping turn of `/hve-implement` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The Phase 3 summary is an approval gate and a close point, so this command emits the close twice. Fill the block with actual values:
+
+- `status: awaiting-approval` with the Phase 3 summary, before the user acknowledges
+- `status: done` in the turn after the user acknowledges
+- `artifact: .claude-hve-tracking/changes/YYYY-MM-DD/task-slug-changes.md`
+- `next: /hve-review`
+- `plan: .claude-hve-tracking/plans/YYYY-MM-DD/task-slug-plan.md` (optional key; omit it on a run recorded as `Plan: none`)
+
+The Phase 3 summary items (phases completed, files modified, test results, open issues, security check status) are the content of **What I did** and **What I need from you**; do not present them a second time. Under **Next step** after acknowledgment, tell the user to start a new conversation and run `/hve-review`, which finds the changes log and plan automatically.

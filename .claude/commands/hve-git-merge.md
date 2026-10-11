@@ -68,6 +68,12 @@ Report:
 
 **No automatic push.** Tell the user: "Run `git push` when ready."
 
+End every stopping turn of `/hve-git-merge` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The report above is the content of **What I did**. Fill the block with actual values:
+
+- `status: done`
+- `artifact: none - /hve-git-merge writes no tracking artifact`
+- `next: git push when ready`
+
 ---
 
 ## Abort Option

@@ -20,7 +20,7 @@
 ## Resuming
 
 To resume mid-task in a new conversation:
-1. Note the handoff artifact path from the previous session's Handoff Block
+1. Note the handoff artifact path from the `artifact:` line of the previous session's close block
 2. Run the appropriate standalone phase command (`/hve-plan`, `/hve-implement`, `/hve-review`)
 3. The command will discover the existing artifacts automatically
 
