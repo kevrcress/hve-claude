@@ -45,6 +45,8 @@ Mode:
 - in working-tree mode otherwise: there is nothing to review. Say so and stop.
 - in branch mode otherwise: run `git status --porcelain`. If uncommitted or untracked work exists, report that the work is not on the branch diff and ask whether to review the working tree instead (re-run this phase in working-tree mode) or stop. If the tree is clean, there is nothing to review: say so and stop.
 
+Every stop under this guard ends with the close in its no-review form (see **Empty-diff guard stops** in Phase 4): no reviewer ran, no review log was written, and no verdict exists.
+
 In a branch-mode run that proceeds, list untracked files touching reviewed areas as "not covered by this diff".
 
 3. Get the diff stat for the summary: the same diff with `--stat`. In working-tree mode add the count of untracked files.
@@ -216,7 +218,7 @@ Present the review to the user:
 - Overall verdict with reasoning, carrying the covered-set suffix on a filtered run
 - Pointer to the full review doc
 
-End every stopping turn of `/hve-pr-review` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The presentation list above is the content of **What I did**; the `Coverage:` line stays there and is not folded into the block. `status` follows the Phase 3 verdict, one value per run:
+End every stopping turn of `/hve-pr-review` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The presentation list above is the content of **What I did**; the `Coverage:` line stays there and is not folded into the block. On a run that reached Phase 3, `status` follows the Phase 3 verdict, one value per run (a run stopped by the Empty-diff guard has no verdict and uses **Empty-diff guard stops** below):
 
 - `status: done` when the verdict is ✅ Approve
 - `status: needs-rework` when the verdict is ⚠️ Request Changes
@@ -224,7 +226,15 @@ End every stopping turn of `/hve-pr-review` with the close: the completion summa
 - `artifact: .claude-hve-tracking/reviews/pr/BRANCH-NAME/YYYY-MM-DD-review.md`
 - `next: merge when ready` on Approve
 - `next: /hve-pr-review after the findings are fixed` on Request Changes or Block
-- `verdict: ✅ Approve (security + performance only; 6 dimensions not covered)` (optional key in the format, always emitted here: the one verdict that applies, written out, carrying the covered-set suffix on a filtered run and no suffix on a `--dimension all` run)
+- `verdict: ✅ Approve (security + performance only; 6 dimensions not covered)` (optional key in the format, always emitted here: the one verdict that applies, written out, carrying the covered-set suffix on a filtered run and no suffix on a `--dimension all` run; on an Empty-diff guard stop no verdict exists and the line is `verdict: none - no review ran`)
 - `findings: N critical, N major, N minor` (optional key)
 
-Never drop the covered-set suffix from `verdict:`. Without it a partial verdict reads as a whole-change verdict, which CLAUDE.md's `Security Hygiene` section forbids.
+Never drop the covered-set suffix from `verdict:`. Without it a partial verdict reads as a whole-change verdict, which CLAUDE.md's `Security Hygiene` section forbids. The one value that carries no suffix on a filtered run is `verdict: none - no review ran`: no dimension ran, so there is no covered set to state.
+
+**Empty-diff guard stops.** A run that stops at the Phase 1 Empty-diff guard reviewed nothing, so it has no Phase 3 verdict, and its close must never be readable as an Approve. Each of the three guard outcomes that stops (only tracking artifacts changed; nothing to review in working-tree mode; nothing to review in branch mode, whether the tree is clean or the user chose to stop) emits these values in place of the ones above:
+
+- `artifact: none - nothing to review, no review log written`
+- `next: none - nothing to review` (when the guard reported uncommitted or untracked work outside the tracking folder: `next: /hve-pr-review --working-tree`)
+- `verdict: none - no review ran`
+
+`status` on these stops is set by the early-stop rule in CLAUDE.md's `Completion Summary` section: a clean stop, so `done`, which per CLAUDE.md's `Handoff Block Format` section says only that the command finished, not that the change passed. Omit `findings:`. **What I did** states what the guard found, and tracking-folder scan hits go under **What I need from you**.
