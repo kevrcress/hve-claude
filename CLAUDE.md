@@ -201,6 +201,8 @@ The parent agent reads the written artifact for full detail. Chat responses are 
 
 **Shell stays in the parent.** HVE subagents are read-only by design; most have no Bash. The parent session runs all git/shell commands and passes pre-digested results (short excerpts, counts, file lists) into subagent prompts. Never delegate a step requiring command execution to a subagent without checking its tool list; a validator without Bash will silently downgrade to static inference.
 
+**Dispatch is asynchronous.** Subagents may run in the background and report by notification. Wait for every dispatched subagent to finish before consolidating. A completion notification proves only that the agent stopped: read its artifact for the result, and never report a test or gate outcome from the notification alone. A subagent that died, timed out, or returned nothing may still have written its artifact, so check the output path before re-dispatching. An artifact is complete when every section of that agent's output template is present; re-dispatch a read-only agent only when its file is missing or incomplete. For an implementor, never re-dispatch blind: read its changes-log section and resume from the first step not recorded as done.
+
 If you dispatch an agent type not in the HVE roster (`.claude/agents/`), record in the phase artifact which type you used and why. Improvisation is allowed; invisible improvisation is not.
 
 ---

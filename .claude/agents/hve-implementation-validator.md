@@ -117,10 +117,9 @@ Critical: N | Major: N | Minor: N
 
 ## Findings
 
-### IV-001 [ARCHITECTURE] [MAJOR]
-...
+[One block per finding. CATEGORY is the dimension name; SEVERITY is CRITICAL, MAJOR, or MINOR per CLAUDE.md's `Severity Grading` section, graded on that finding's own evidence. Write "No findings." when there are none.]
 
-### IV-002 [SECURITY] [CRITICAL]
+### IV-001 [CATEGORY] [SEVERITY]
 ...
 
 ## Coverage Notes

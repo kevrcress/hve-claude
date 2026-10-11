@@ -101,7 +101,91 @@ Drift suite exits 0: see Guard Step 1.9 output above. All six criteria met. Befo
 ---
 
 ### Phase 2: Subagent dispatch and validator template fixes
-Status: Pending
+Status: Complete
+Started: 2026-10-11T00:54:22Z
+Completed: 2026-10-11T00:55:45Z
+
+#### Files Modified
+- `CLAUDE.md:204`: new **Dispatch is asynchronous.** paragraph in `Subagent Dispatch Discipline`, between the "Shell stays in the parent" paragraph (:202) and the "If you dispatch an agent type" paragraph (now :206). Text verbatim from details 2.1
+- `tests/run-drift-tests.sh:577`: new `CANONICAL_BLOCK_SPECS` row `'dispatch_async|1|identical|**Dispatch is asynchronous.**'`, after the `shell_stays_in_parent` row (:576), same two-space indent and single quotes
+- `.claude/commands/hve-research.md:77`: `Wait for all subagents to complete.` replaced with the pointer sentence (details 2.3)
+- `.claude/commands/hve-pr-review.md:147`: same pointer sentence (details 2.4)
+- `.claude/commands/hve-pr-review.md:149-156`: **Blocked reviewers** paragraph reworded. A reviewer that returned nothing gets its output path checked first; a present and complete file is recorded as file-verified; `Blocked`, or a missing or incomplete file, means the dimension was not covered (details 2.4, F04)
+- `.claude/commands/hve-pr-review.md:167`: Coverage rule (Phase 3 item 4) now counts reviewers that returned `Complete` or were file-verified (details 2.4)
+- `.claude/agents/hve-rpi-validator.md:82`: grading line added under the template's `## Findings` heading (details 2.5)
+- `.claude/agents/hve-rpi-validator.md:84`: `### RV-001 [CRITICAL]` is now `### RV-001 [SEVERITY]`
+- `.claude/agents/hve-implementation-validator.md:120-123`: the two hardcoded example headings (`IV-001 [ARCHITECTURE] [MAJOR]`, `IV-002 [SECURITY] [CRITICAL]`) replaced by the grading line and one generic `### IV-001 [DIMENSION] [SEVERITY]` block (details 2.5)
+
+`git diff --stat -- . ':!.claude-hve-tracking'` after the edits: 6 files changed, 17 insertions(+), 11 deletions(-). Those six are the files the phase names; no other tracked file outside the tracking folder changed. `~/.claude/CLAUDE.md` was not edited (`grep -c "Dispatch is asynchronous" ~/.claude/CLAUDE.md` prints 0).
+
+#### Steps Completed
+- [x] Step 2.1: **Dispatch is asynchronous.** paragraph added, at `CLAUDE.md:204`. Opens with the exact bold form, period inside the bold.
+- [x] Step 2.2: `dispatch_async` row added to `CANONICAL_BLOCK_SPECS`, at `tests/run-drift-tests.sh:577`. `bash -n tests/run-drift-tests.sh` rc=0.
+- [x] Step 2.3: pointer sentence in place, at `.claude/commands/hve-research.md:77`. Plain words, no bold form.
+- [x] Step 2.4: three edits in `.claude/commands/hve-pr-review.md`: pointer sentence at :147, **Blocked reviewers** reworded at :149-156, Coverage rule extended at :167.
+- [x] Step 2.5: `[SEVERITY]` placeholder and grading line at `.claude/agents/hve-rpi-validator.md:82` and :84; generic block at `.claude/agents/hve-implementation-validator.md:120-123`. The IV-002 check came back clean (see Issues Encountered), so one generic block was kept, not two.
+- [x] Step 2.6 (guard): drift suite rc=0, `Results: 252 passed, 0 failed`. Detail below.
+
+#### Guard Step 2.6 output
+
+```text
+$ bash tests/run-drift-tests.sh > "$TMPDIR/drift-p2.log" 2>&1; echo "rc=$?"
+rc=0
+$ tail -3 "$TMPDIR/drift-p2.log"
+[  OK  ] Test 16: credential-pattern surfaces agree with CLAUDE.md
+
+Results: 252 passed, 0 failed
+$ grep -n "dispatch_async\|FAIL" "$TMPDIR/drift-p2.log"
+172:    [pass] test10: dispatch_async carrier count: 1 file(s) carry the block (expected 1)
+173:    [pass] test10: dispatch_async CLAUDE is canonical: reference occurrence
+```
+
+Log path: `/var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T//drift-p2.log` (`$TMPDIR/drift-p2.log`). `grep -c "FAIL"` on the log printed 0. The count rose from the baseline 250 to 252: the new row adds two assertions (carrier count, canonical reference). The suite was run twice, once after the edits and once more after a line re-wrap in `.claude/commands/hve-pr-review.md`; both runs gave rc=0 and 252 passed, 0 failed. The output above is from the second run, which is the state on disk.
+
+Tests: 252 passed, 0 failed
+
+#### Success Criteria
+
+```text
+$ grep -c "Dispatch is asynchronous" CLAUDE.md
+1
+$ grep -c "Dispatch is asynchronous rule" .claude/commands/hve-research.md
+1
+$ grep -c "Dispatch is asynchronous rule" .claude/commands/hve-pr-review.md
+1
+$ grep -cE "\[(CRITICAL|MAJOR)\]" .claude/agents/hve-rpi-validator.md .claude/agents/hve-implementation-validator.md
+.claude/agents/hve-implementation-validator.md:0
+.claude/agents/hve-rpi-validator.md:0
+```
+
+Drift suite exits 0 with the `dispatch_async` row passing: see Guard Step 2.6 output above. All four criteria met.
+
+Extra check for the Test 10 constraint, not in the plan's list:
+
+```text
+$ grep -c '\*\*Dispatch is asynchronous\.\*\*' .claude/commands/hve-research.md .claude/commands/hve-pr-review.md CLAUDE.md
+.claude/commands/hve-research.md:0
+.claude/commands/hve-pr-review.md:0
+CLAUDE.md:1
+```
+
+#### Issues Encountered
+- No blocker. Every anchor in details 2.1, 2.3, 2.4, and 2.5 was found once. Line numbers matched the plan except `.claude/commands/hve-pr-review.md`, where the Coverage rule moved from :164 to :167 because this phase's own rewording of the paragraph above it added three lines.
+- IV-002 check (Step 2.5): `grep -n "IV-00"` on `.claude/agents/hve-implementation-validator.md` before the edit returned :91, :120, :123 only. Nothing after the template refers to `IV-002` by number, so one generic block replaced both examples. `CLAUDE.md:142` still names `IV-002` in the Finding ID format line; that describes the numbering sequence, not this template, and was left alone.
+- Wording: replacement text from the details file was used verbatim. The only liberty is line wrapping: the **Blocked reviewers** paragraph in `.claude/commands/hve-pr-review.md` is hard-wrapped at about 100 columns, so the new sentences were wrapped to match and the unchanged tail of the paragraph (`If it blocks again ... as reviewed.`) was re-flowed across the line breaks. Its words are unchanged.
+- Placement of the grading line in `.claude/agents/hve-rpi-validator.md`: directly under `## Findings` with no blank line between, matching how the same template writes `## Unlisted Changes` followed by its bracketed note.
+- Em-dashes: `git diff -U0` outside the tracking folder, filtered to added lines, contains zero em-dashes.
+- Observed, not changed (outside this phase's anchors): `.claude/agents/hve-implementation-validator.md:91` (the Finding Structure block) writes the heading as `IV-001 [CATEGORY] [SEVERITY]`, while the Output File template now reads `[DIMENSION] [SEVERITY]` as the details file specifies. Two names for the same slot in one file. Minor; a later phase or sweep can align them.
+- Observed, not changed (outside this phase's file list): `.claude/commands/hve.md:69` (`Wait for all to complete`) and `.claude/commands/hve-review.md:97` (`Wait for all validators to complete.`) carry no pointer to the new rule. They are still covered by it through CLAUDE.md, per the plan's Step 2.1 assumption, which stays [MEDIUM]: this phase did not enumerate the opening line of all nine dispatching commands.
+- Not verified here: `~/.claude/CLAUDE.md` does not carry the new paragraph until `./install.sh --global` is re-run. This phase edits the repo-root `CLAUDE.md` only, as instructed.
+- ShellCheck was not run on `tests/run-drift-tests.sh`; the change is one array row copied from its neighbour's shape, and `bash -n` passed.
+- Instructions files read before editing: `.claude/instructions/markdown.md`, `.claude/instructions/writing-style.md`, `.claude/instructions/bash.md`.
+
+#### Discrepancies & Decisions
+- DR-001: the details file (2.5) named the template slot `[DIMENSION]`, but `.claude/agents/hve-implementation-validator.md:91` already calls the same slot `[CATEGORY]`. The implementor applied the details text as written and flagged the mismatch.
+- DD-001 (2026-10-10, parent): renamed the new template heading and grading line to `[CATEGORY]` so the file uses one name. Two-word edit in the same file, made by the parent after the implementor returned; drift suite re-run by the parent afterwards (see the parent test line below).
+
+Parent re-run after DD-001: `bash tests/run-drift-tests.sh > <scratchpad>/drift-p2-parent.log 2>&1`, rc=0, `Results: 252 passed, 0 failed`
 
 ---
 

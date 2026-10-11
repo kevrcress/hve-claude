@@ -79,8 +79,9 @@ Status: Pass | Fail
 | Step N.3: [desc] | Found (deviated) | `file:line` | ⚠️ Deviated |
 
 ## Findings
+[One block per finding. SEVERITY is CRITICAL, MAJOR, or MINOR per CLAUDE.md's `Severity Grading` section, graded on that finding's own evidence. Write "No findings." when there are none.]
 
-### RV-001 [CRITICAL]
+### RV-001 [SEVERITY]
 Plan item: [Step description]
 Evidence: Changes log claims this was done, but `file:line` does not contain the expected modification.
 Impact: [What breaks]

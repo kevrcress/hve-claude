@@ -74,7 +74,7 @@ For GitHub-hosted content fetch raw URLs (`raw.githubusercontent.com/...`), not 
 
 **Tool boundary.** The research phase is read-only. The parent may run read-only shell commands in two places only: the Phase 1 orientation pass, which may include git-history evidence a research question needs (blame, log, diff across commits), and the Phase 3 re-check of existence and negative claims. Shell stays in the parent, per CLAUDE.md's `Subagent Dispatch Discipline` section: the `hve-researcher` subagent has no Bash, so never delegate a shell-dependent question to it; run the command in the parent and pass the result into the subagent prompt as a short excerpt, count, or file list. Anything that needs a write, an install, a build, or a test run is flagged as an open question for a later phase. Every shell command the parent ran is listed on the research document's `Method:` line.
 
-Wait for all subagents to complete.
+Wait for all subagents to complete, per CLAUDE.md's `Subagent Dispatch Discipline` section (the Dispatch is asynchronous rule).
 
 ---
 

@@ -144,13 +144,16 @@ Spawn 4 paired subagents in parallel instead of 8. Each subagent covers two dime
 
 Each compact subagent receives the same inputs as a standard subagent: the diff.patch path (which it Reads itself), changed files, its two output-section prefixes, and the paired dimension instructions above.
 
-Wait for all subagents to complete.
+Wait for all subagents to complete, per CLAUDE.md's `Subagent Dispatch Discipline` section (the Dispatch is asynchronous rule).
 
 **Blocked reviewers.** A reviewer returns either `Status: Complete` or `Blocked: [summary]`, per
-`hve-pr-reviewer.md`'s Response Format. A reviewer that returned `Blocked`, returned nothing, or
-wrote no output file **did not cover its dimension**, and dispatching it is not evidence that it
-ran. Re-dispatch it once. If it blocks again, record the dimension as not covered and carry the
-block reason into Phase 3; never silently count a blocked dimension as reviewed.
+`hve-pr-reviewer.md`'s Response Format. A reviewer that returned nothing may still have written its
+output file: check the output path first. When the file is present and complete (every section of
+`hve-pr-reviewer.md`'s Output File template is there), the reviewer ran; record it as file-verified.
+A reviewer that returned `Blocked`, or whose output file is missing or incomplete, **did not cover
+its dimension**, and dispatching it is not evidence that it ran. Re-dispatch it once. If it blocks
+again, record the dimension as not covered and carry the block reason into Phase 3; never silently
+count a blocked dimension as reviewed.
 
 ---
 
@@ -161,7 +164,7 @@ After all subagent reviews are in:
 1. Consolidate all findings into the review document, organized by severity (Critical first)
 2. De-duplicate findings that multiple subagents identified
 3. Tally: Critical / Major / Minor counts
-4. Fill the `Coverage:` header line from the reviewers that **returned `Complete`**, not from the set dispatched: name every dimension that was actually covered, and every dimension that was not. A dimension whose reviewer blocked is listed under `Not covered:` with its block reason. A `--dimension all` run in which all 8 returned Complete records all 8 as covered and `Not covered: none`.
+4. Fill the `Coverage:` header line from the reviewers that **returned `Complete`** or were file-verified per **Blocked reviewers** above, not from the set dispatched: name every dimension that was actually covered, and every dimension that was not. A dimension whose reviewer blocked is listed under `Not covered:` with its block reason. A `--dimension all` run in which all 8 returned Complete records all 8 as covered and `Not covered: none`.
 5. Determine overall verdict. Every threshold below counts findings from the covered dimensions only:
    - **✅ Approve** — no Critical, ≤ 2 Major findings, **and** the Security and Compliance dimension was covered
    - **⚠️ Request Changes** — any Critical, or > 2 Major findings
