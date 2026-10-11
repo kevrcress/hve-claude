@@ -3,7 +3,7 @@ Date: 2026-08-19
 Task slug: phase-close-clarity
 Research: .claude-hve-tracking/research/2026-08-19/project-communication-phase-close.md (Thread B)
 Sibling plan: .claude-hve-tracking/plans/2026-08-19/project-communication-presence-plan.md (Thread A, runs second)
-Status: Refreshed and re-validated 2026-10-10 - validation result Fail (0 Critical, 1 Major, 15 Minor; the Major is confirmed and is owner decision O5) - valid for BASE 0661d621cb4904bf38d9fff8893c2196899e7c3d - awaiting user approval
+Status: Approved by Kevin 2026-10-10 with owner decisions O1 to O5 answered as recommended (his chat message to the orchestrator session: "approve step 2"); approval record written 2026-10-11 on his instruction "record it" - refreshed and re-validated 2026-10-10 - validation result Fail (0 Critical, 1 Major, 15 Minor; the Major is confirmed and is owner decision O5) - valid for BASE 0661d621cb4904bf38d9fff8893c2196899e7c3d
 Validation: .claude-hve-tracking/reviews/rpi/2026-10-10/phase-close-clarity-plan-validation.md
 Valid for: `origin/fix/platform-drift-quick-fixes` @ 0661d621cb4904bf38d9fff8893c2196899e7c3d (the BASE: head of draft PR #6, not yet merged to `main`; `main` is f96e34f0859387d0ba871bf4163e5b88159f931a)
 Prior status: Validated (2026-08-19) against the tree at e78e21c (superseded, see Correction 2026-10-10 in the planning log)
@@ -11,7 +11,8 @@ Refresh: every line citation, count and baseline below was re-read at the BASE o
 per-citation table, the conflict analysis and the carrier enumeration are in the planning log under
 `## Refresh (2026-10-10)`. Steps and notes marked `(added 2026-10-10)` come from that refresh. Owner decisions
 O1 to O5 in that section are open and are named at the steps they affect. O5 must be answered before Phase 2
-can be implemented consistently.
+can be implemented consistently. (superseded: Kevin answered all five on 2026-10-10, see
+`## Requirements added after plan refresh (2026-10-10)` at the end of this file)
 
 ## Overview
 
@@ -68,7 +69,7 @@ Steps:
   tension (research B5): the completion summary is emitted once per command, at close, and does
   not license verbose mid-phase turns. Name the failure mode explicitly so it binds: the block
   must not grow into a second findings report.
-  - Open, owner decision O5 (added 2026-10-10, validator finding DD-009, confirmed): "once per command"
+  - Open, owner decision O5 (resolved 2026-10-10 as recommended, see "Requirements added after plan refresh (2026-10-10)" at the end of this file) (added 2026-10-10, validator finding DD-009, confirmed): "once per command"
     contradicts Step 2.2, which has hve-plan emit `awaiting-approval` before approval and `done` after,
     while hve-plan.md:153 and hve-implement.md:164 say to wait for approval BEFORE emitting anything.
     Step 2.3 names no status for hve-implement at all. Recommended: the rule becomes "once per turn in
@@ -110,7 +111,7 @@ Steps:
     that are not boxes also carry bare `|` between alternatives: `hve.md:141-142` (inside the `RPI Complete`
     block that Step 4.1 reconciles) and `hve-prompt-analyze.md:85` (the `Overall:` line that ends the report
     template, directly above where Step 4.3 adds the close). Steps 4.1 and 4.3 now name them; whether the
-    second is in scope is owner decision O3 [HIGH that both lines contain bare `|`]
+    second is in scope is owner decision O3 (resolved 2026-10-10 as recommended, see "Requirements added after plan refresh (2026-10-10)" at the end of this file) [HIGH that both lines contain bare `|`]
 - [ ] Step 1.5: Specify the N/A branch for commands with no tracking artifact, per CLAUDE.md's
   `Template Blanks` section: `artifact: none - <reason>` (example:
   `artifact: none - git commands write no tracking artifact`). Without this, hve-git-commit,
@@ -125,7 +126,7 @@ Steps:
 - [ ] Step 1.8: Run `tests/run-drift-tests.sh` and record the pass/fail counts. Baseline before
   any edit was 255 passed, 0 failed (run by the parent during planning, 2026-08-19)
   (superseded, see Correction 2026-10-10: the baseline at the BASE is 253 passed, 0 failed, rc=0).
-- [ ] Step 1.9 (added 2026-10-10, conditional on owner decision O1): state in the `## Completion Summary`
+- [ ] Step 1.9 (added 2026-10-10, conditional on owner decision O1 (resolved 2026-10-10 as recommended, see "Requirements added after plan refresh (2026-10-10)" at the end of this file)): state in the `## Completion Summary`
   section which turns count as a command close. Recommended wording: every terminating path of a command,
   including an early stop, ends with the close, and an early stop uses `status: blocked` with
   `artifact: none - <reason>` when nothing was written. The rule lives once in CLAUDE.md, so no per-path edit
@@ -205,7 +206,7 @@ Steps:
     :212 stays in the presented review and is not folded into the labeled block. (c) Working-tree mode
     (`--working-tree`) changes what was reviewed, not the close, and needs no extra key. (d) The early exits
     at :44-46 emit no close today; Step 1.9 governs them [HIGH for a, b, d as read at the BASE; MEDIUM for c]
-  - Open, owner decision O2: this plan never said what `status:` hve-pr-review emits. Recommended: map the
+  - Open, owner decision O2 (resolved 2026-10-10 as recommended, see "Requirements added after plan refresh (2026-10-10)" at the end of this file): this plan never said what `status:` hve-pr-review emits. Recommended: map the
     three verdicts the way Step 2.4 maps hve-review's (Approve to `done`, Request Changes to `needs-rework`,
     Block to `blocked`) and carry the verdict text with its suffix as an optional `verdict:` line [LOW until
     decided]
@@ -248,7 +249,7 @@ Steps:
   reminder in place.
 - [ ] Step 4.3: hve-prompt-analyze.md:88-90 - add a completion summary after the existing full
   report template. `artifact:` the analyzed file path or the report path.
-  - Added 2026-10-10, owner decision O3: hve-prompt-analyze.md:85 (`Overall: ✅ No issues | ⚠️ N findings ...`)
+  - Added 2026-10-10, owner decision O3 (resolved 2026-10-10 as recommended, see "Requirements added after plan refresh (2026-10-10)" at the end of this file): hve-prompt-analyze.md:85 (`Overall: ✅ No issues | ⚠️ N findings ...`)
     is the last line of the report template and carries bare `|`. Recommended: apply the enum-in-prose rule
     here too, since it sits directly above the new close [MEDIUM that it table-parses in practice; it is in
     a fence like the boxes were]
@@ -338,7 +339,7 @@ Steps:
   command (`/hve-research` on a throwaway topic is cheapest) in a real session and capture the
   raw rendered close. Confirm it does not table-parse. This is the only step that can confirm the
   rendering hypothesis; it cannot be done from disk.
-  - Added 2026-10-10, owner decision O4: this needs an interactive session, so an unattended implementing
+  - Added 2026-10-10, owner decision O4 (resolved 2026-10-10 as recommended, see "Requirements added after plan refresh (2026-10-10)" at the end of this file): this needs an interactive session, so an unattended implementing
     seat cannot do it. Recommended: the implementor records it as NOT RUN and the owner runs it before
     merge [HIGH that it cannot run unattended]
 - [ ] Step 6.4: Do NOT hand-edit `~/.claude`. Propagate globally with `./install.sh --global`
@@ -381,3 +382,26 @@ pointer under `.claude/` (the loop over the `sort -u` match list in `test14_refe
 passed, 0 failed, with the rise landing in whichever of Phases 2 to 4 runs first. Install should stay at 72.
 A different number is to be explained, not assumed benign [MEDIUM: derived by reading the test, not by
 running it against the change].
+
+## Requirements added after plan refresh (2026-10-10)
+
+Kevin approved this plan on 2026-10-10, in chat with the orchestrator session, in the words "approve step 2".
+The orchestrator had put the plan to him with owner decisions O1 to O5 answered as the refresh recommended,
+and the five answers below are plan content. This record was written on 2026-10-11, after the implementation,
+on his instruction "record it": the implementing session could not write an approval it had not received
+first-hand (DR-001 in `.claude-hve-tracking/changes/2026-10-10/phase-close-clarity-changes.md`).
+
+- O5: the close is emitted once per stopping turn, not once per command. `/hve-plan` and `/hve-implement`
+  emit it at their approval gate with `status: awaiting-approval` and again after approval. Sentences that
+  said to wait before emitting the Handoff Block are rewritten to match.
+- O1: early stops emit the close, by one centralized rule in `CLAUDE.md` (Step 1.9): `blocked` when the stop
+  needs something first, `done` for a clean stop.
+- O2: `/hve-pr-review` maps its verdicts as `/hve-review` does (Approve to `done`, Request Changes to
+  `needs-rework`, Block to `blocked`) and keeps the covered-set suffix in an optional `verdict:` line. Every
+  command this plan gave no status defaults to `done` at a normal end.
+- O3: the six bare-pipe lines in the `hve-prompt-analyze` report template are in scope.
+- O4: the owner runs the live render check (Step 6.3) and `./install.sh --global` (Step 6.4). An unattended
+  implementing session records both as NOT RUN.
+
+Not an owner decision: the review fix pass later narrowed what `done` means (IV-001, IV-002 and IV-004 under
+`## Review Fixes` in the changes log). That was a review disposition and is Kevin's to confirm at PR review.

@@ -10,7 +10,7 @@ Delivery ref: `wip/pcc-impl`
 ## Run conditions
 
 - Orchestrated run, non-interactive caller. Every "wait for user acknowledgment" in `/hve-implement` was skipped: the seat's brief says the caller is non-interactive and tells it to continue to delivery. Skipped waits: the Phase 3 acknowledgment gate, and the plan's Risk Log mitigation "Kevin reviews one converted command before Phases 3 and 4 fan out".
-- Owner decisions O1 to O5: the seat's brief states that the owner approved the plan on 2026-10-10 with O1 to O5 answered as recommended, and this implementation follows those five answers. See DR-001 below: the seat could not write that approval into the plan file, so the plan on disk still reads "awaiting user approval".
+- Owner decisions O1 to O5: the seat's brief states that the owner approved the plan on 2026-10-10 with O1 to O5 answered as recommended, and this implementation follows those five answers. See DR-001 below: the seat could not write that approval into the plan file, so the plan on disk still reads "awaiting user approval". (superseded, see Correction 2026-10-11 under DR-001)
 
 ## Test Baseline
 
@@ -23,7 +23,8 @@ Measured after Step 0, before any edit, from the worktree root:
 
 ## Discrepancies & Decisions (run level)
 
-- DR-001: the brief's Step 1 (record the owner's approval in the plan header, append `## Requirements added after plan refresh (2026-10-10)`, annotate each open O-note as resolved) was NOT done. The session's permission system refused the write, because the approval reached this seat through a brief file and not from the owner directly. The plan file is byte-identical to the base. Consequence: CLAUDE.md's `Mid-Flow Scope Changes` section is not yet satisfied for O1 to O5, and a later phase command reading the plan will see them as open. The owner or the orchestrator needs to add that record.
+- DR-001: the brief's Step 1 (record the owner's approval in the plan header, append `## Requirements added after plan refresh (2026-10-10)`, annotate each open O-note as resolved) was NOT done. The session's permission system refused the write, because the approval reached this seat through a brief file and not from the owner directly. The plan file is byte-identical to the base. Consequence: CLAUDE.md's `Mid-Flow Scope Changes` section is not yet satisfied for O1 to O5, and a later phase command reading the plan will see them as open. The owner or the orchestrator needs to add that record. (superseded, see Correction 2026-10-11 below)
+- Correction (2026-10-11): DR-001 is resolved. On 2026-10-11 Kevin told the orchestrator session "record it", and that session wrote the record into the plan file: the header `Status:` line, an in-place note on each of the six owner-decision notes and on the header sentence that called them open, and a new `## Requirements added after plan refresh (2026-10-10)` section holding the five answers. The plan file now differs from the base and no longer reads "awaiting user approval". DR-001 was true when it was written. No command, agent, doc or test file changed with this record.
 - DD-001 (2026-10-10): proceed with the implementation on the brief's statement of O1 to O5, on a `wip/` ref only, and report DR-001 as the first finding. Rationale: the work is reversible and unmerged, and the five answers are all the plan's own recommended options.
 - DD-002 (2026-10-10): no line that already holds an em-dash was edited. Where the plan asked to extend such a line (CLAUDE.md principle 5, `hve.md` Simple direct path), the new text went on a new line next to it. Rationale: the brief's acceptance check A9 rejects any added line with an em-dash, and an edited line counts as added.
 
