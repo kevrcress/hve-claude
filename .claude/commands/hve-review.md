@@ -80,7 +80,7 @@ Record consistency: ✅ Consistent | ⚠️ Contradictions (correction appendix 
 
 Shell stays in the parent for every validator dispatched below, per CLAUDE.md's `Subagent Dispatch Discipline` section.
 
-Before dispatching any validator, run `git diff --name-only <base>` in the parent session against the phase-appropriate base and capture the output as the changed-file list for the dispatch inputs below. When the base is `HEAD` (uncommitted work), `git diff` omits untracked files: also run `git ls-files --others --exclude-standard -- . ':(exclude).claude-hve-tracking'` from the repository root and append its output, leaving out any file you can see predates this task.
+Before dispatching any validator, run `git diff --name-only <base>` in the parent session against the phase-appropriate base and capture the output as the changed-file list for the dispatch inputs below. When the base is `HEAD` (uncommitted work), `git diff` omits untracked files: also run `git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'` (anchored at the top of the working tree, so it prints the same root-relative list from any directory) and append its output, leaving out any file you can see predates this task.
 
 For each plan phase marked Complete in the changes log, spawn one `hve-rpi-validator` subagent via the Agent tool (parallel for independent phases).
 
