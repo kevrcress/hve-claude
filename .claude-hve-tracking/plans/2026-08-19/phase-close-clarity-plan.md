@@ -3,13 +3,15 @@ Date: 2026-08-19
 Task slug: phase-close-clarity
 Research: .claude-hve-tracking/research/2026-08-19/project-communication-phase-close.md (Thread B)
 Sibling plan: .claude-hve-tracking/plans/2026-08-19/project-communication-presence-plan.md (Thread A, runs second)
-Status: Refreshed 2026-10-10, re-validation pending - awaiting user approval
+Status: Refreshed and re-validated 2026-10-10 - validation result Fail (0 Critical, 1 Major, 15 Minor; the Major is confirmed and is owner decision O5) - valid for BASE 0661d621cb4904bf38d9fff8893c2196899e7c3d - awaiting user approval
+Validation: .claude-hve-tracking/reviews/rpi/2026-10-10/phase-close-clarity-plan-validation.md
 Valid for: `origin/fix/platform-drift-quick-fixes` @ 0661d621cb4904bf38d9fff8893c2196899e7c3d (the BASE: head of draft PR #6, not yet merged to `main`; `main` is f96e34f0859387d0ba871bf4163e5b88159f931a)
 Prior status: Validated (2026-08-19) against the tree at e78e21c (superseded, see Correction 2026-10-10 in the planning log)
 Refresh: every line citation, count and baseline below was re-read at the BASE on 2026-10-10. Old values, the
 per-citation table, the conflict analysis and the carrier enumeration are in the planning log under
 `## Refresh (2026-10-10)`. Steps and notes marked `(added 2026-10-10)` come from that refresh. Owner decisions
-O1 to O4 in that section are open and are named at the steps they affect.
+O1 to O5 in that section are open and are named at the steps they affect. O5 must be answered before Phase 2
+can be implemented consistently.
 
 ## Overview
 
@@ -66,6 +68,13 @@ Steps:
   tension (research B5): the completion summary is emitted once per command, at close, and does
   not license verbose mid-phase turns. Name the failure mode explicitly so it binds: the block
   must not grow into a second findings report.
+  - Open, owner decision O5 (added 2026-10-10, validator finding DD-009, confirmed): "once per command"
+    contradicts Step 2.2, which has hve-plan emit `awaiting-approval` before approval and `done` after,
+    while hve-plan.md:153 and hve-implement.md:164 say to wait for approval BEFORE emitting anything.
+    Step 2.3 names no status for hve-implement at all. Recommended: the rule becomes "once per turn in
+    which the command stops and hands control back"; the two gated commands emit the close at the gate with
+    `awaiting-approval` and again after approval with `done`. The alternative is one close, after approval
+    only, which removes `awaiting-approval` from the enum [LOW until decided]
 - [ ] Step 1.3: Append a clarifying clause to CLAUDE.md:19 (principle 5, Lean turns) exempting
   the command-close turn, so principle 5 and the new section do not read as contradictory.
   Smallest viable edit: extend the existing sentence rather than adding a paragraph.
@@ -83,6 +92,11 @@ Steps:
   template. Rename the section heading only if Step 5.1's reference sweep is done in the same
   phase; otherwise keep the heading text `Handoff Block Format` so existing pointers keep
   resolving.
+  - Added 2026-10-10 (validator finding DD-010, confirmed): the plan states a `status:` value for only four
+    commands. Recommended default, to be written into the section: a command that reaches its normal end
+    emits `done`; the exceptions are the mapped verdicts (Step 2.4, and Step 3.1 under O2) and the gates
+    under O5. hve.md's `artifact:` is the review log path, with the other three paths as optional keys
+    [MEDIUM: a recommendation, part of O2]
   - The enum-in-prose rule exists because some current templates embed alternatives with bare
     ASCII `|` characters inside box rows. A template whose sample line contains `|` reintroduces
     exactly the table-parse class of bug this phase removes.
@@ -120,7 +134,14 @@ Steps:
     .claude/commands/*.md | wc -l` at the BASE), and the step-1 change added three more early exits at
     hve-pr-review.md:44-46. A caller that reads `status:` learns nothing from a command that stopped without
     emitting one, which matters now that non-human callers are in scope (cross-repo D2) [MEDIUM: the count is
-    of lines containing the word, not of distinct exit paths]
+    of lines containing the word, not of distinct exit paths; the grep is case-sensitive and misses
+    `Stop after presenting the audit table` at hve-git-setup.md:67]
+  - Added after validation (findings DD-011 and DR-005, both confirmed): not every early stop is a failure.
+    A clean stop (hve-pr-review.md:45 "nothing to review", hve-git-setup.md:67 audit-only) should emit
+    `done`, and `blocked` is for a stop that needs something first, such as hve-review's hard stop at
+    hve-review.md:32 when the plan or changes log is missing. That hard stop is the fourth outcome research
+    open question 6 named; Step 2.4 maps the three verdicts and only this step covers the fourth, so if O1
+    is answered no, hve-review needs its own line for it in Step 2.5 [HIGH that the four outcomes exist]
 
 ### Phase 2: Convert the four true-HANDOFF commands
 Dependencies: Phase 1
@@ -150,7 +171,8 @@ Steps:
 - [ ] Step 2.5: hve-review.md:161 currently gates the block on Complete status only. Change the
   gate: the completion summary and labeled-line block are emitted on every verdict, because a
   machine-readable `status: blocked` is worthless if it is only emitted when the status is done.
-  The `next:` value varies by verdict per the existing routing at hve-review.md:152-155.
+  The `next:` value varies by verdict per the existing routing at hve-review.md:152-155
+  (superseded, see Correction 2026-10-10: the verdicts are at :152-155; the routing list is at :157-160).
 - [ ] Step 2.6: Add the two section pointers to each of the four files, phrased exactly as
   ``per CLAUDE.md's `Completion Summary` section`` and ``per CLAUDE.md's `Handoff Block Format`
   section`` (or the renamed heading if Step 1.4 renamed it, kept consistent).
@@ -212,6 +234,11 @@ Steps:
     `Critical  : N | Major: N | Minor: N`). "Reconcile" includes applying Step 1.4's enum-in-prose rule to
     both lines, exactly as Step 3.1 does for the box rows. The routing sentence at hve.md:145 moves into
     `**Next step**` [HIGH]
+  - Added after validation (finding DD-014, confirmed): hve.md:44, the Simple direct path, is a second way
+    this command ends and already uses the words "completion summary". Point it at the same close. The
+    sentence holds the phrase pinned by the `simple_carveout_guarantee` row at tests/run-drift-tests.sh:584
+    ("still creating and updating the changes log and running the test gate"), so edit around that phrase,
+    not through it [HIGH]
   - CLAUDE.md:232 exempts the orchestrator from the HANDOFF block by design (it handles
     transitions internally). That exemption covers the handoff block only, not the completion
     summary [MEDIUM: the exemption sentence names the block, not the summary; confirm the reading
@@ -225,6 +252,10 @@ Steps:
     is the last line of the report template and carries bare `|`. Recommended: apply the enum-in-prose rule
     here too, since it sits directly above the new close [MEDIUM that it table-parses in practice; it is in
     a fence like the boxes were]
+  - Added after validation (findings DD-012 and DD-013, both confirmed): the same template has five more
+    bare-pipe lines at hve-prompt-analyze.md:79-83, so O3 is a six-line question, not one line. And this
+    command's allowed tools are Read and Glob (hve-prompt-analyze.md:4), so it writes no report file:
+    `artifact:` is the analyzed file path, and "or the report path" above cannot be filled [HIGH]
 - [ ] Step 4.4: hve-git-commit.md:56-60 - currently one prose directive. Add a completion summary.
   `artifact: none - git commands write no tracking artifact`; `next:` the realistic next command
   (`git push` is not a slash command, so the `next:` value here is prose, which Step 1.4's format
@@ -266,10 +297,15 @@ Steps:
     docs/internals.md:40, .claude/instructions/terraform.md:13, and the `echo` banners in
     tests/run-prompt-upgrade.sh and tests/run-prompt-new-install.sh (double-line boxes printed to a terminal
     by the two semi-manual scripts) [HIGH]
+  - Added after validation (finding DD-015, confirmed): the bare-pipe half of the criterion needs its own
+    command, which the Risk Log row "Enum alternatives leak back" relies on. Run
+    `grep -rnE '^(status|artifact|next|[a-z]+) *:.*\|' .claude/commands CLAUDE.md` and read each hit:
+    none may sit inside a close template [MEDIUM: the pattern over-matches prose lines with a colon, so it
+    is a list to read, not a pass or fail count]
 - [ ] Step 5.6 (added 2026-10-10): recorded exclusions for sentences that say "handoff" without describing
   the box. Leave as written: the argument-parsing sentence "Ignore any pasted handoff-block text" at
   hve-plan.md:13, hve-implement.md:19 and hve-review.md:19, and "pasted handoff blocks" at
-  hve-pr-review.md:17; CLAUDE.md:58 ("find the handoff file"), :150 ("handoff artifacts") and :263 ("phase
+  hve-pr-review.md:17; CLAUDE.md:3 ("handoff artifacts"), :76 ("handoff medium"), :58 ("find the handoff file"), :150 ("handoff artifacts") and :263 ("phase
   handoffs"). The section keeps the name `Handoff Block Format` (DD-005), so the phrase still names the
   thing a user would paste. Confirm at implement time that a pasted labeled-line block is still read as
   handoff-block text by a converted command [MEDIUM: wording judgment, not testable from disk]

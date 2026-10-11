@@ -7,7 +7,7 @@ Plan: .claude-hve-tracking/plans/2026-08-19/phase-close-clarity-plan.md
 ### DR-001: Research cited stale test counts
 Source: Research A3 cites the 2026-08-15 review's figures, drift 248/0 and install 66/0.
 Resolution: The parent re-ran both suites during planning on 2026-08-19 and measured drift 255
-passed / 0 failed and install 69 passed / 0 failed. The plan uses the measured figures as its
+passed / 0 failed and install 69 passed / 0 failed (superseded, see Correction 2026-10-10: 253 and 72 at the BASE). The plan uses the measured figures as its
 baseline. The research figures were never wrong, they were a snapshot of a dated artifact.
 Status: Resolved
 
@@ -60,7 +60,7 @@ Source: Research B1 recommends this carrier and marks it [MEDIUM].
 Assumption: One CLAUDE.md section plus a per-command pointer is better than 15 byte-identical
 copies plus a test-10 row.
 Risk: None found. Upgraded from the research's [MEDIUM] to [HIGH] after the parent verified the
-test-14 mechanism directly (tests/run-drift-tests.sh:959, :965): the pointer form
+test-14 mechanism directly (tests/run-drift-tests.sh:959, :965; superseded, see Correction 2026-10-10: :962 and :968 at the BASE): the pointer form
 ``per CLAUDE.md's `Completion Summary` section`` resolves against any `##`-level heading with no
 test edit.
 
@@ -276,7 +276,8 @@ returns 28 files, 156 insertions, 87 deletions. Of those, 17 changed in step 1
 
 Text added by step 1 that carries an old-format close or names the HANDOFF block: none. Command:
 `git diff -U0 f96e34f..0661d62 -- . ':!.claude-hve-tracking' | grep -E '^\+' | grep -iE 'handoff|╭|│|COMPLETE'`
-returns only diff headers and unrelated lines; the four lines that say "handoff-block" (hve-plan.md:13,
+returns six lines, all matching only on the word "complete" in unrelated sentences (the async-dispatch wait
+and the blocked-reviewer rule); the four lines that say "handoff-block" (hve-plan.md:13,
 hve-implement.md:19, hve-review.md:19, hve-pr-review.md:17) are unchanged since e78e21c [HIGH].
 
 Counts re-derived at the BASE:
@@ -309,16 +310,17 @@ Commands:
 | `DOC-OPS COMPLETE` box | hve-doc-ops.md:107-114 | yes, 3.2 | in plan |
 | `MEMORY SAVED` box | hve-memory.md:93-101 | yes, 3.3 | in plan |
 | `PROMPT BUILDER COMPLETE` box | hve-prompt-builder.md:92-100 | yes, 3.4 | in plan |
+| Second close path, Simple direct path | hve.md:44 | no | Finding from validation, Step 4.1 note |
 | Fenced `RPI Complete` block | hve.md:133-143 | yes, 4.1 | in plan; its bare pipes at :141-142 were NOT named. Finding, now in Step 4.1 |
 | Prose that names the block inside a converted file | hve-research.md:40, :135; hve-plan.md:153, :157; hve-implement.md:164; hve-review.md:165 heading qualifier | no | Finding, new Step 2.7 |
 | Emit gate | hve-review.md:161 | yes, 2.5 | in plan |
 | Convention checklists | hve-prompt-updater.md:55; hve-prompt-refactor.md:50 | yes, 5.1, 5.2 | in plan |
 | Resume instruction | .claude/prompts/rpi.md:23 | yes, 5.3 | in plan |
 | Living docs | docs/internals.md:9; docs/workflow.md:134 | yes, 5.4 | in plan |
-| Report template ending in a bare-pipe line | hve-prompt-analyze.md:85 | no | Finding, Step 4.3 note, decision O3 |
-| Early exits that end a command with no close | hve-pr-review.md:44-46 and the other stop lines (12 lines in 8 command files) | no | Finding, new Step 1.9, decision O1 |
+| Report template with bare-pipe lines | hve-prompt-analyze.md:79-83, :85 | no | Finding, Step 4.3 note, decision O3 |
+| Early exits that end a command with no close | hve-pr-review.md:44-46 and the other stop lines (12 lines in 8 command files by a case-sensitive grep, plus hve-git-setup.md:67) | no | Finding, new Step 1.9, decision O1 |
 | Argument-parsing sentence "pasted handoff-block text" | hve-plan.md:13; hve-implement.md:19; hve-review.md:19; hve-pr-review.md:17 | no | Recorded exclusion, Step 5.6 |
-| Generic uses of the word | CLAUDE.md:58, :150, :263 | no | Recorded exclusion, Step 5.6 |
+| Generic uses of the word | CLAUDE.md:3, :58, :76, :150, :263 | no | Recorded exclusion, Step 5.6 |
 | Directory-tree diagrams using box-drawing characters | CLAUDE.md:80-102; docs/reference.md:10-32; docs/workflow.md:17-33; docs/internals.md:40; .claude/instructions/terraform.md:13 | no | Recorded exclusion, Step 5.5 |
 | Terminal banner boxes | tests/run-prompt-upgrade.sh:33-35, :80-82, :91-93; tests/run-prompt-new-install.sh:50-52, :63-66, :75-77 | no | Recorded exclusion, Step 5.5 |
 | README.md, CONTRIBUTING.md, install.sh, tests/run-drift-tests.sh, tests/run-install-tests.sh | none found | n/a | no carrier: no box corner and no "handoff" in any of them |
@@ -344,10 +346,39 @@ groups. No carrier the plan named has disappeared.
 ### Owner decisions open before approval
 
 - O1: Do early stops emit the close? Recommended yes, as one centralized rule in CLAUDE.md (Step 1.9), with
-  `status: blocked`. If no, delete Step 1.9; nothing else depends on it.
+  `blocked` for a stop that needs something first and `done` for a clean stop. If no, delete Step 1.9 and
+  give hve-review's hard stop (hve-review.md:32) its own status line in Step 2.5, since nothing else covers it.
 - O2: What `status:` does hve-pr-review emit? Recommended: map verdicts as hve-review does (Approve `done`,
   Request Changes `needs-rework`, Block `blocked`) plus an optional `verdict:` line that keeps the
-  covered-set suffix.
-- O3: Is the bare-pipe `Overall:` line at hve-prompt-analyze.md:85 in scope? Recommended yes; it is one line.
+  covered-set suffix. The same answer settles the default for the other commands: `done` at a normal end.
+- O3: Are the bare-pipe lines in the hve-prompt-analyze report template in scope (:85, and :79-83 found by
+  the validator, six lines in all)? Recommended yes.
 - O4: Who runs Step 6.3 (live render check) and Step 6.4 (`./install.sh --global`)? Recommended: the owner,
   after implementation and after merge respectively; an unattended implementor records both as NOT RUN.
+- O5 (from validation, blocks Phase 2): is the close emitted once per command, or once per stopping turn?
+  Recommended: once per stopping turn, so hve-plan and hve-implement emit it at their approval gate with
+  `awaiting-approval` and again after approval with `done`. The alternative is a single close after approval,
+  which drops `awaiting-approval` from the enum.
+
+### Validation of the refreshed plan (2026-10-10)
+
+Agent: `hve-plan-validator`, dispatched once. Artifact:
+.claude-hve-tracking/reviews/rpi/2026-10-10/phase-close-clarity-plan-validation.md. Result: Fail, 0 Critical,
+1 Major, 15 Minor. It read 55 citations and 54 resolved. The validator has no shell: the baselines and diff
+figures it relied on are the ones recorded above. Its DR- and DD- entries stay in its own file; the table
+below is the parent's check of each against the files.
+
+| Finding | Severity | Parent check | Outcome |
+|---|---|---|---|
+| DD-009 once-per-command against the approval gates | Major | Confirmed: hve-plan.md:153 and :157, hve-implement.md:164, plan Steps 1.2, 2.2, 2.3 | Not resolvable from the files. Raised as O5, noted at Step 1.2 |
+| DR-005 fourth review outcome, the plan-absent stop | Minor | Confirmed: research open question 6; hve-review.md:32 | Noted at Step 1.9; O1 reworded |
+| DD-010 no status value for most commands | Minor | Confirmed by reading Phases 3 and 4 | Recommended default noted at Step 1.4, folded into O2 |
+| DD-011 every early stop marked blocked | Minor | Confirmed: hve-pr-review.md:45, hve-git-setup.md:67 | Step 1.9 note |
+| DD-012 O3 is six lines | Minor | Confirmed: hve-prompt-analyze.md:79-83, :85 | O3 and Step 4.3 reworded |
+| DD-013 report path cannot exist | Minor | Confirmed: hve-prompt-analyze.md:4 | Step 4.3 note |
+| DD-014 second close path in hve.md | Minor | Confirmed: hve.md:44; tests/run-drift-tests.sh:584 | Step 4.1 note, carrier row added |
+| DD-015 pipe guard has no command | Minor | Confirmed | Command added at Step 5.5 |
+| DD-016 moved line numbers replaced without a marker | Minor | CONTESTED: anchor text is unchanged for all of them, the header says citations were refreshed, and Correction item 1 lists every old and new value | No change |
+| DD-018 two generic lines missing from exclusions | Minor | Confirmed: CLAUDE.md:3, :76 | Added to Step 5.6 |
+| DD-019 small stale statements | Minor | Confirmed for the routing cite and the two log lines | Annotated in place |
+| DR-006, DD-017, DD-020, DD-021, DD-022 | Minor | Not re-opened by the parent | Left open in the validator's file for implement time; none blocks approval |
