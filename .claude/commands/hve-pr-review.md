@@ -216,12 +216,15 @@ Present the review to the user:
 - Overall verdict with reasoning, carrying the covered-set suffix on a filtered run
 - Pointer to the full review doc
 
-```
-╭─────────────────────────────────────────────────────╮
-│  PR REVIEW COMPLETE                                 │
-│  Review   : .claude-hve-tracking/reviews/pr/        │
-│             BRANCH-NAME/YYYY-MM-DD-review.md         │
-│  Verdict  : ✅ Approve | ⚠️ Request Changes | 🚫 Block │
-│  Critical : N | Major: N | Minor: N                 │
-╰─────────────────────────────────────────────────────╯
-```
+End every stopping turn of `/hve-pr-review` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The presentation list above is the content of **What I did**; the `Coverage:` line stays there and is not folded into the block. `status` follows the Phase 3 verdict, one value per run:
+
+- `status: done` when the verdict is ✅ Approve
+- `status: needs-rework` when the verdict is ⚠️ Request Changes
+- `status: blocked` when the verdict is 🚫 Block
+- `artifact: .claude-hve-tracking/reviews/pr/BRANCH-NAME/YYYY-MM-DD-review.md`
+- `next: merge when ready` on Approve
+- `next: /hve-pr-review after the findings are fixed` on Request Changes or Block
+- `verdict: ✅ Approve (security + performance only; 6 dimensions not covered)` (optional key in the format, always emitted here: the one verdict that applies, written out, carrying the covered-set suffix on a filtered run and no suffix on a `--dimension all` run)
+- `findings: N critical, N major, N minor` (optional key)
+
+Never drop the covered-set suffix from `verdict:`. Without it a partial verdict reads as a whole-change verdict, which CLAUDE.md's `Security Hygiene` section forbids.

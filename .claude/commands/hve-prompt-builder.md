@@ -89,12 +89,10 @@ After iterations complete:
    - `.claude/instructions/` for instruction files
    - `.claude/prompts/` for reusable prompts
 
-```
-╭─────────────────────────────────────────────────────╮
-│  PROMPT BUILDER COMPLETE                            │
-│  Sandbox  : .claude-hve-tracking/sandbox/           │
-│             YYYY-MM-DD-topic-run-N/                 │
-│  Output   : [final file path]                       │
-│  Iterations: N                                      │
-╰─────────────────────────────────────────────────────╯
-```
+End every stopping turn of `/hve-prompt-builder` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. Fill the block with actual values:
+
+- `status: done`
+- `artifact: [final file path]` (when the user declines the final write: `artifact: none - final write declined, draft is in the sandbox`)
+- `next: /hve-prompt-analyze [final file path]`
+- `sandbox: .claude-hve-tracking/sandbox/YYYY-MM-DD-topic-run-N/` (optional key)
+- `iterations: N` (optional key)
