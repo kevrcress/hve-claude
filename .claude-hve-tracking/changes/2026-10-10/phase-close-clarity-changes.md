@@ -260,3 +260,162 @@ NOT RUN: `tests/run-prompt-new-install.sh`, `tests/run-prompt-upgrade.sh`
 - `./tests/run-drift-tests.sh`: 255 passed, 0 failed, rc=0
 - `./tests/run-install-tests.sh`: 72 passed, 0 failed, rc=0
 - NOT RUN: `tests/run-prompt-new-install.sh`, `tests/run-prompt-upgrade.sh`, plan Step 6.3 (live render check), plan Step 6.4 (`./install.sh --global`)
+
+## Review Fixes (grader review, 2026-10-10)
+
+Base: `origin/wip/pcc-impl` @ 6e4daeb9cf935e01cde08d3e0e57621a25159e15. One fix pass over the grader review at `.claude-hve-tracking/reviews/rpi/2026-10-10/phase-close-clarity-grader-review.md` (commit 9b1e1e7, a byte-for-byte copy, not edited). Fixed here: IV-001 (Major), IV-002 and IV-004 (Minor). Not fixed, by instruction: IV-003, IV-005, IV-006, IV-007, IV-008. Fix commit: 17227d1. No HVE phase command ran; the seat brief was the plan and this section is hand-written.
+
+Files modified: `CLAUDE.md` (4 lines, all inside `## Completion Summary` and `## Handoff Block Format`), `.claude/commands/hve-pr-review.md` (the Empty-diff guard and the Phase 4 close). No other command file was edited. Line numbers below are at commit 17227d1; `CLAUDE.md` numbering is unchanged from the base, and `hve-pr-review.md` lines after :46 moved down by 2.
+
+### IV-001 (Major): `done` no longer reads as approved
+
+1a. `CLAUDE.md:251`, the early-stop rule.
+- Before: "... and `status: done` for a clean stop (nothing to do, an audit-only run, the user declined or asked to stop). When nothing was written, use the no-artifact branch from the `Handoff Block Format` section. This rule lives here once; ..."
+- After: "... and `status: done` for a clean stop (nothing to do, an audit-only run, the user stopped the command or declined a confirmation outside an approval gate). A decline or a request for changes at an approval gate is not a clean stop and never produces `done`: the gate is still open, so the close keeps `status: awaiting-approval` until the user approves. [IV-002 sentence, below] This rule lives here once; ..."
+
+1b. `CLAUDE.md:269`, the `status` definition.
+- Before: "`done` (normal end or clean stop), ... `needs-rework` (a review verdict sent the work back). A command that reaches its normal end emits `done` unless ..."
+- After: "`done` (the command finished, at its normal end or by a clean stop), ... `needs-rework` (a review verdict sent the work back). `done` says only that the command finished: it does not say the work passed or was approved, and a reader that needs the outcome reads `verdict` where a command emits one. A command that reaches its normal end emits `done` unless ..."
+- The other three values and their meanings are unchanged. `done` is defined in this one place; `CLAUDE.md:251` uses it and does not redefine it.
+
+1c. `.claude/commands/hve-pr-review.md`, empty-diff stops.
+- `:48` added after the guard's three bullets: "Every stop under this guard ends with the close in its no-review form (see **Empty-diff guard stops** in Phase 4): no reviewer ran, no review log was written, and no verdict exists."
+- `:221` before: "`status` follows the Phase 3 verdict, one value per run:". After: "On a run that reached Phase 3, `status` follows the Phase 3 verdict, one value per run (a run stopped by the Empty-diff guard has no verdict and uses **Empty-diff guard stops** below):"
+- `:229` the `verdict:` description, before: "... and no suffix on a `--dimension all` run)". After: "... and no suffix on a `--dimension all` run; on an Empty-diff guard stop no verdict exists and the line is `verdict: none - no review ran`)"
+- `:232` one sentence added after the never-drop-the-suffix rule: "The one value that carries no suffix on a filtered run is `verdict: none - no review ran`: no dimension ran, so there is no covered set to state."
+- `:234-240` new paragraph **Empty-diff guard stops**: each of the three guard outcomes that stops emits `artifact: none - nothing to review, no review log written` (`:236`), `next: none - nothing to review`, or `next: /hve-pr-review --working-tree` when the guard reported work outside the tracking folder (`:237`), and `verdict: none - no review ran` (`:238`). `:240` says `status` comes from the central early-stop rule (a clean stop, so `done`, which says only that the command finished) and that `findings:` is omitted.
+- O2 mapping, before (base `:221-223`) and after (`:223-225`), text identical: `status: done` when the verdict is ✅ Approve; `status: needs-rework` when the verdict is ⚠️ Request Changes; `status: blocked` when the verdict is 🚫 Block. The covered-set suffix rule is intact.
+
+### IV-002 (Minor): listed values are normal-end values
+
+`CLAUDE.md:251`, one sentence, replacing "When nothing was written, use the no-artifact branch from the `Handoff Block Format` section.":
+"The `status`, `artifact` and `next` values a command file lists are its normal-end values: on an early stop this rule sets `status`, the no-artifact branch from the `Handoff Block Format` section applies when nothing was written, `next` names what unblocks or resumes the run (the end-of-chain form when nothing does), and an optional key is emitted only when its value exists."
+None of the 14 per-command close paragraphs was rewritten.
+
+### IV-004 (Minor): two definitions widened
+
+- `CLAUDE.md:270` before: "`artifact` is the path of the primary tracking artifact the command wrote or updated. When there is none, ...". After: "`artifact` is the path of the primary file the command wrote or updated: its tracking artifact, or, when its deliverable is another file in the workspace, that file. A command that writes nothing but evaluates one file names that file. When there is none, ..."
+- `CLAUDE.md:271` before: "`next` is the next slash command when one applies, and short prose when the next action is not a slash command (example: `next: git push when ready`)." After: "`next` is the next slash command when one applies, alone or followed by its argument or a short phrase saying when or why (example: `next: /hve-pr-review after the findings are fixed`), short prose when the next action is not a slash command (example: `next: git push when ready`), and `next: none - <reason>` at the end of a chain, when no next action applies (example: `next: none - task complete`)."
+- The brief asked for one clause per definition. Each got two, because one clause would have left existing commands outside the definition (A5): `/hve-prompt-builder` and `/hve-prompt-refactor` name a file that is not a tracking artifact, and three commands write a slash command followed by a phrase.
+
+### A1 enumeration: approval gates and confirmations, all 15 command files
+
+Approval gates, meaning points the command's own file marks as a close point (`CLAUDE.md:250`). There are two.
+
+| Gate | At the gate | On approval | On a decline | On a request for changes |
+|---|---|---|---|---|
+| `hve-plan.md:153` (Phase 4 checkpoint; values at `:165-166`) | `awaiting-approval` | `done` (`:157`, `:166`) | `awaiting-approval` (`CLAUDE.md:251`) | `awaiting-approval` again once the revised plan is presented (`CLAUDE.md:251`) |
+| `hve-implement.md:164` (Phase 3 summary; values at `:172-173`) | `awaiting-approval` | `done` (`:164`, `:173`) | `awaiting-approval` (`CLAUDE.md:251`) | `awaiting-approval` (`CLAUDE.md:251`) |
+
+Confirmations that are not close points. Each is a working question under `CLAUDE.md:253`, so the asking turn carries no close, and a change request leads to a revised proposal and the same question again, also with no close. The table gives the status when the answer ends the command.
+
+| Confirmation | On yes | On a decline that ends the command |
+|---|---|---|
+| `hve.md:42` proceed directly or run the full loop | continues | not a stop: either answer continues |
+| `hve.md:78`, `:95`, `:114` checkpoints between phases | continues | `done`, a stop outside a gate; `artifact` and `next` per the early-stop sentence, and `findings:` is absent because no review ran |
+| `hve-implement.md:31` implement without a plan | continues, `Plan: none` recorded | `blocked` (missing input) |
+| `hve-pr-review.md:46` review the working tree or stop | re-runs the phase in working-tree mode | `done` with `artifact: none - ...` and `verdict: none - no review ran` (`:234-240`) |
+| `hve-git-commit.md:26` which files to stage | continues | `done` with `artifact: none - ...`; `commit:` is absent |
+| `hve-git-commit.md:45` approve the message | commits, `done` with `commit:` | `done` with `artifact: none - ...`; `commit:` is absent |
+| `hve-git-merge.md:27` stash or commit first | continues after the user does so | `blocked` (failed precondition) |
+| `hve-git-merge.md:58` `--conflict-stop` pause; `:81` abort | continues | `done`, the user stopped the command |
+| `hve-git-setup.md:41`, `:76` confirm each config change | applies it | `done` at the normal end; declined changes are not applied |
+| `hve-prompt-builder.md:85` write to the final location | writes, `done` | `done` with `artifact: none - final write declined, draft is in the sandbox` (`:95`) |
+| `hve-prompt-refactor.md:62` apply the changes | applies, `done` | `done` with the no-artifact branch (nothing was written) |
+| `hve-prompt-analyze.md:17` which file | continues | not a stop: the command has no file to analyze |
+| `hve-challenge.md:89` the user says to stop | n/a | `done`, named in the file (`:104`) |
+
+`hve-research.md`, `hve-review.md`, `hve-doc-ops.md` and `hve-memory.md` hold no approval question.
+
+Result: no decline or change request at an approval gate yields `done`. Declines outside a gate still yield `done`, as the brief's item 1a specifies ("a user who stops a command outside a gate is still a clean stop"); after 1b that value claims only that the command finished, and on each of those paths the block also lacks the artifact or the optional key that an approved run carries. Whether the `/hve` checkpoints should become gates is IV-006, not in this pass.
+
+Command sentences checked against the corrected rule: none states a status the rule contradicts. One count is loose and was left alone by instruction: `hve-plan.md:163` and `hve-implement.md:170` say the command "emits the close twice", which is the approve-first-time path; after a change request there are more than two closes. That is IV-003 (b), which predates this pass (the grader derived the same sequence from the base text).
+
+### A4 enumeration: every early exit, against the corrected rule
+
+Starts from the review's table (item 3). "Rule" is `CLAUDE.md:251`.
+
+| # | Command and exit | Rule gives | Command sentence in conflict |
+|---|---|---|---|
+| 1 | `hve.md:42` proceed-directly question | no close (working question) | none |
+| 2 | `hve.md:78` user says no after research | `done`, stop outside a gate | none; `:147-152` are normal-end values |
+| 3 | `hve.md:95` user says no after the plan | `done` | none |
+| 4 | `hve.md:114` user says no after implementation | `done` | none |
+| 5 | `hve.md:44-48` Simple direct path | `done` (normal end of that path) | none, named in the file |
+| 6 | `hve-research.md:40` Simple path | `done` (normal end) | none, named in the file |
+| 7 | `hve-plan.md:155-157` user declines or asks for changes at the gate | `awaiting-approval` | none; `:166` gives `done` only after approval |
+| 8 | `hve-implement.md:31` no plan | `blocked`, no-artifact branch | none |
+| 9 | `hve-implement.md:31` irrelevant plan | `blocked`, no-artifact branch | none |
+| 10 | `hve-implement.md:117` unresolved discrepancy | `blocked`; `artifact` is the changes log already written | none |
+| 11 | `hve-implement.md:139-142` test failure surfaced | `blocked` | none |
+| 12 | `hve-implement.md:164` user declines or asks for changes at the gate | `awaiting-approval` | none |
+| 13 | `hve-review.md:32` plan or changes log missing | `blocked`, no-artifact branch | none; `:171` maps a verdict, not this stop |
+| 14 | `hve-pr-review.md:44` only tracking artifacts changed | `done`, `artifact: none - ...`, `verdict: none - no review ran` | none after the 1c edit |
+| 15 | `hve-pr-review.md:45` nothing to review, working-tree mode | same as 14 | none |
+| 16 | `hve-pr-review.md:46` clean tree, branch mode | same as 14 | none |
+| 17 | `hve-pr-review.md:46` user chooses stop | same as 14 | none |
+| 18 | `hve-challenge.md:88-91` three end conditions | `done` | none, named in the file |
+| 19 | `hve-git-commit.md:18` no `.gitignore`; `:26` staging question | no close (working questions) | none |
+| 20 | `hve-git-commit.md:45` user does not approve the message | `done`, `commit:` omitted | none; `:64-67` are normal-end values |
+| 21 | `hve-git-commit.md:54` commit fails | `blocked`, `commit:` omitted, `next` names the fix | none; `:64` is a normal-end value |
+| 22 | `hve-git-merge.md:27` uncommitted changes | `blocked` | none; `:73` is a normal-end value |
+| 23 | `hve-git-merge.md:79-83` user aborts | `done`; `next` is not `git push when ready` because nothing was merged | none; `:75` is a normal-end value |
+| 24 | `hve-git-setup.md:67` audit-only | `done` | none, named in the file (`:87`) |
+| 25 | `hve-prompt-builder.md:85-86` user declines the final write | `done` | none, named in the file (`:95`) |
+| 26 | `hve-prompt-refactor.md:62-63` user declines the changes | `done`, no-artifact branch | none; `:77` is a normal-end value |
+| 27 | `hve-prompt-analyze.md:17` no argument | no close (working question) | none |
+
+`hve-memory.md` and `hve-doc-ops.md`: no early exit found. The review's table has 21 rows covering these 27 paths; rows that group several paths are split here, and the two gate rows (7 and 12) now give `awaiting-approval` where the review recorded `done` for row 7.
+
+### A5 enumeration: every `artifact:` and `next:` template line
+
+Command: `grep -n -E '`(artifact|next): ' CLAUDE.md .claude/commands/*.md`, read line by line, including the alternates inside parentheses. Classes for `artifact`: T tracking artifact, W another workspace file the command delivers, E evaluated file, N no-artifact form. Classes for `next`: S slash command alone, SA slash command plus argument or a when-or-why phrase, P prose, X end-of-chain form.
+
+| Line | `artifact` value | Class |
+|---|---|---|
+| `CLAUDE.md:263` | `.claude-hve-tracking/[path/to/file.md]` | T |
+| `CLAUDE.md:270` | `none - <reason>`, `none - git commands write no tracking artifact` | N |
+| `hve-research.md:146`, `hve-plan.md:167`, `hve-implement.md:174`, `hve-review.md:172`, `hve-pr-review.md:226`, `hve-challenge.md:107`, `hve-doc-ops.md:110`, `hve-memory.md:96` | a path under `.claude-hve-tracking/` | T |
+| `hve.md:150` | the review log, or the changes log on the Simple direct path | T |
+| `hve-prompt-builder.md:95` | `[final file path]`; on a declined write `none - final write declined, draft is in the sandbox` | W; N |
+| `hve-prompt-refactor.md:77` | `[refactored file path]` | W |
+| `hve-prompt-analyze.md:95` | `[analyzed file path]` | E |
+| `hve-git-commit.md:65`, `hve-git-merge.md:74`, `hve-git-setup.md:86` | `none - /hve-git-... writes no tracking artifact` | N |
+| `hve-pr-review.md:236` | `none - nothing to review, no review log written` | N |
+
+| Line | `next` value | Class |
+|---|---|---|
+| `CLAUDE.md:264` | `/hve-[next-phase]` | S |
+| `CLAUDE.md:271` | the three examples | SA, P, X |
+| `hve-research.md:147` | `/hve-plan` | S |
+| `hve-plan.md:168` | `/hve-implement` | S |
+| `hve-implement.md:175` | `/hve-review` | S |
+| `hve-review.md:173`, `:174` | `/hve-pr-review`; `/hve-implement` or `/hve-plan` | S |
+| `hve.md:151` | `/hve-pr-review`; Simple path `none - task complete` | S; X |
+| `hve.md:152` | `/hve-implement` or `/hve-plan` | S |
+| `hve-pr-review.md:227` | `merge when ready` | P |
+| `hve-pr-review.md:228` | `/hve-pr-review after the findings are fixed` | SA |
+| `hve-pr-review.md:237` | `none - nothing to review`; `/hve-pr-review --working-tree` | X; SA |
+| `hve-challenge.md:108` | `/hve-plan`; `none - no changes needed` | S; X |
+| `hve-doc-ops.md:111` | `fix the top findings, then re-run /hve-doc-ops`; `none - documentation is clean` | P; X |
+| `hve-memory.md:97` | `in a new session, read the memory file and continue from its Next Steps` | P |
+| `hve-git-commit.md:66`, `hve-git-merge.md:75` | `git push when ready` | P |
+| `hve-git-setup.md:87` | `/hve-git-commit when there is work to commit`; `/hve-git-setup to apply the proposed changes` | SA |
+| `hve-prompt-analyze.md:96` | `/hve-prompt-builder [file]`; `none - no issues found` | SA; X |
+| `hve-prompt-builder.md:96` | `/hve-prompt-analyze [final file path]` | SA |
+| `hve-prompt-refactor.md:78` | `/hve-prompt-analyze [file]` | SA |
+
+Every line falls in a class the widened definitions name. No command file was edited to make it so: the only command file in the diff is `hve-pr-review.md`, and its pre-existing `artifact:` and `next:` lines are unchanged (`:236` and `:237` are new).
+
+### Gates and scope
+
+Run from the worktree root at commit 17227d1, each through the orchestrator's `run-quiet.sh`:
+
+- `./tests/run-drift-tests.sh`: 255 passed, 0 failed, rc=0 (base 255; unchanged, as intended)
+- `./tests/run-install-tests.sh`: 72 passed, 0 failed, rc=0 (base 72; unchanged, as intended)
+
+Scope: the fix commit touches `CLAUDE.md` and `.claude/commands/hve-pr-review.md` only. No added line holds an em-dash or an en-dash (17 added lines scanned). No `tools:` or `allowed-tools:` line changed. `tests/`, `install.sh`, `.claude/agents/`, `docs/`, `README.md`, the plan, the details file and the planning log are untouched.
+
+Side effect to know about: `hve-pr-review.md` now holds two `artifact:` bullets (`:226`, `:236`), where the first review's A3 counted exactly one per command.
+
+NOT RUN: `tests/run-prompt-new-install.sh`, `tests/run-prompt-upgrade.sh`, any live command session (whether a model emits the corrected close as written is untested), `./install.sh --global`.
