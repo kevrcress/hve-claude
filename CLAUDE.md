@@ -17,6 +17,7 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 3. **Evidence-based responses** — Every finding cites `file:line` (e.g. `src/auth/middleware.ts:47`). No unsupported claims.
 4. **Difficulty-adaptive workflow** — Classify tasks before acting. Simple tasks skip subagents. Complex tasks use full parallel dispatch.
 5. **Lean turns** — Parent agents return a one-line summary after subagent work. Full detail lives in the log file.
+   The one exception is a turn in which a command stops and hands control back: that turn carries the close defined in the `Completion Summary` section, and nothing longer.
 
 **Difficulty classifications:**
 
@@ -215,21 +216,67 @@ Every template blank must be genuinely obtainable in-session or carry an explici
 
 ---
 
+## Completion Summary
+
+Every HVE command ends with the same close: this completion summary, then the labeled-line block defined in the `Handoff Block Format` section. The summary is three bold headers, always all three, always in this order:
+
+```
+**What I did**
+
+- Step 1.2: <outcome>, `path/to/file.md`
+- IV-003: <outcome>, `path/to/other.md`
+- Tests: 253 passed / 0 failed before, 255 passed / 0 failed after
+
+**What I need from you**
+
+Nothing blocking.
+
+**Next step**
+
+`/hve-implement` (or `/hve-plan` again if the phase ordering needs rework)
+```
+
+Content rules:
+
+- **What I did**: outcomes, one line each, leading with the step or finding ID and a file path. Test evidence is one line with before and after numbers obtained by execution, never estimated; when no runner applies, use the N/A branch from the `Template Blanks` section. Notable verification work gets one clause, not a paragraph.
+- **What I need from you**: decisions, approvals, deferred items with their consequences, and any uncommitted state. When nothing is needed, write `Nothing blocking.` explicitly.
+- **Next step**: one concrete next command, plus the realistic alternative when there is one.
+
+**Concise is binding.** The whole close fits on one screen. It summarizes an artifact that is already on disk and must not grow into a second findings report: detail stays in the artifact, and the close points at it.
+
+**When the close is emitted: once per stopping turn.** A command emits the close in each turn in which it stops and hands control back, and nowhere else. It does not license verbose mid-phase turns; principle 5 (Lean turns) still governs every turn before it. A stopping turn is one of:
+
+- **The normal end** of the command.
+- **An approval gate** that the command's own file marks as a close point. The command emits the close at the gate with `status: awaiting-approval`, then emits it again in the turn after approval.
+- **An early stop.** Every terminating path ends with the close, including one that ends before the command's last phase. Use `status: blocked` when the stop needs something first (a missing input, a failed precondition, a failure the user must resolve) and `status: done` for a clean stop (nothing to do, an audit-only run, the user declined or asked to stop). When nothing was written, use the no-artifact branch from the `Handoff Block Format` section. This rule lives here once; command files do not repeat it per exit path.
+
+A turn that only asks a working question (a clarification, a confirmation before a change, the next `/hve-challenge` question, a checkpoint between phases inside `/hve`) is not a stopping turn and carries no close.
+
+---
+
 ## Handoff Block Format
 
-Every standalone phase command ends with this copyable block:
+The close ends with this labeled-line block, emitted inside a fenced code block immediately after the completion summary. The `Completion Summary` section says when a close is emitted. The block is the part of the close that a caller, human or not, reads mechanically:
 
 ```
-╭─────────────────────────────────────────────────────╮
-│  HANDOFF                                            │
-│  Artifact : .claude-hve-tracking/[path/to/file.md] │
-│  Next     : /hve-[next-phase]                       │
-│  Tip      : Start a new conversation, then run the  │
-│             next command — it finds this auto.      │
-╰─────────────────────────────────────────────────────╝
+status: done
+artifact: .claude-hve-tracking/[path/to/file.md]
+next: /hve-[next-phase]
 ```
 
-The `/hve` orchestrator omits this block (it handles transitions internally).
+Three required keys, always present, always in this order, spelled exactly as shown (lowercase key, colon, one space, value):
+
+- `status` carries exactly one of four values: `done` (normal end or clean stop), `awaiting-approval` (paused at an approval gate), `blocked` (cannot continue until something is supplied or fixed), `needs-rework` (a review verdict sent the work back). A command that reaches its normal end emits `done` unless its own file maps a verdict or a gate to another value.
+- `artifact` is the path of the primary tracking artifact the command wrote or updated. When there is none, write `artifact: none - <reason>` (example: `artifact: none - git commands write no tracking artifact`).
+- `next` is the next slash command when one applies, and short prose when the next action is not a slash command (example: `next: git push when ready`).
+
+**Optional keys.** After the three required lines a command may add further `key: value` lines in the same spelling, for secondary artifacts and one-line results (for example `details:`, `plan:`, `verdict:`, `findings:`). Each command file names its own.
+
+**One value per line, no pipes.** Every line carries one concrete value. Alternatives are never written inside the block, and the block never contains a pipe character: a line that lists its options that way can render as a broken table in chat. Each command file states its allowed values in prose and emits the one that applies.
+
+A copy of this block pasted into a later command's arguments is handoff-block text: the command ignores it during argument parsing and discovers its artifacts from disk.
+
+The `/hve` orchestrator handles its phase transitions internally, so it emits no close between phases and one close at its end.
 
 ---
 
