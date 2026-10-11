@@ -158,18 +158,18 @@ Apply these verdict-integrity rules when synthesizing findings across validators
    - Critical findings → route back to `/hve-implement` (or `/hve-plan` if the plan itself was wrong)
    - Major findings → route back to `/hve-implement` with specific remediation notes
    - Minor findings only → mark complete; optionally create a follow-up task
-5. If status is ✅ Complete, emit the Handoff Block. Otherwise, tell the user which phase to re-run.
+5. Emit the close on every verdict (see Close below). When the status is not ✅ Complete, **Next step** names the phase to re-run.
 
 ---
 
-## Handoff Block (on Complete status)
+## Close
 
-```
-╭─────────────────────────────────────────────────────╮
-│  HANDOFF                                            │
-│  Review   : .claude-hve-tracking/reviews/rpi/       │
-│             YYYY-MM-DD/task-slug-review.md          │
-│  Status   : ✅ Complete                             │
-│  Next     : /hve-pr-review (optional) or done       │
-╰─────────────────────────────────────────────────────╯
-```
+End every stopping turn of `/hve-review` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The close is emitted on every verdict, not only on Complete: a caller that reads `status` needs it most when the review did not pass. `status` follows the Phase 4 verdict, one value per run:
+
+- `status: done` when the verdict is ✅ Complete
+- `status: needs-rework` when the verdict is ⚠️ Needs Rework
+- `status: blocked` when the verdict is 🚫 Blocked
+- `artifact: .claude-hve-tracking/reviews/rpi/YYYY-MM-DD/task-slug-review.md`
+- `next: /hve-pr-review` on Complete (optional for the user; say so under **Next step**)
+- `next: /hve-implement` on Needs Rework or Blocked, or `next: /hve-plan` when the plan itself was wrong, per the routing in Phase 4 step 4
+- `findings: N critical, N major, N minor` (optional key; the tally from Phase 4 step 1)

@@ -150,25 +150,22 @@ Present a summary of the plan to the user:
 3. Any open questions from the research doc that affect the plan
 4. Any unresolved DR-/DD- items from validation
 
-**Wait for user approval before emitting the Handoff Block.**
+**This checkpoint is a close point: emit the close with `status: awaiting-approval` (see Close below), then wait for user approval.**
 
 Ask: "Does this plan look right? Any changes before I hand off to implementation?"
 
-Once approved (or if the user says to proceed), emit the Handoff Block.
+Once approved (or if the user says to proceed), emit the close again with `status: done`.
 
 ---
 
-## Handoff Block
+## Close
 
-```
-╭─────────────────────────────────────────────────────╮
-│  HANDOFF                                            │
-│  Plan     : .claude-hve-tracking/plans/             │
-│             YYYY-MM-DD/task-slug-plan.md            │
-│  Details  : .claude-hve-tracking/details/           │
-│             YYYY-MM-DD/task-slug-details.md         │
-│  Next     : /hve-implement                          │
-│  Tip      : Start a new conversation, then run      │
-│             /hve-implement — it finds these auto.   │
-╰─────────────────────────────────────────────────────╝
-```
+End every stopping turn of `/hve-plan` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The Phase 4 checkpoint is an approval gate and a close point, so this command emits the close twice. Fill the block with actual values:
+
+- `status: awaiting-approval` at the Phase 4 checkpoint, before the user approves
+- `status: done` in the turn after the user approves or says to proceed
+- `artifact: .claude-hve-tracking/plans/YYYY-MM-DD/task-slug-plan.md`
+- `next: /hve-implement` (at the gate this names what runs once the plan is approved)
+- `details: .claude-hve-tracking/details/YYYY-MM-DD/task-slug-details.md` (optional key; omit it when no details file was written)
+
+Under **Next step** after approval, tell the user to start a new conversation and run `/hve-implement`, which finds the plan and details automatically.
