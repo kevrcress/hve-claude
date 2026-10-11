@@ -64,10 +64,10 @@ HVE's core insight: when an AI cannot implement during research, it stops optimi
 Three layers decide which model runs what:
 
 1. **Commands run on the session model.** Slash commands execute in the main conversation, so they use whatever `/model` is set to (or the `model` key in settings.json if no session override). HVE commands never set a model themselves.
-2. **Subagents default to their frontmatter `model:`.** Mechanical checkers (plan validator, RPI validator) are pinned to `haiku` for cost; judgment-graded reviewers (implementation validator, prompt evaluator, PR reviewer) are pinned to `sonnet`; researchers, implementors, and prompt-builders use `inherit` (the session model).
-3. **`--subagent-model <sonnet|opus|haiku>` overrides frontmatter for one run.** Every subagent-dispatching command accepts this flag and passes it through the Agent tool's `model` parameter, which takes precedence over agent frontmatter. Example: `/hve-plan --subagent-model sonnet`.
+2. **Every subagent uses `model: inherit`.** No HVE subagent pins a fixed tier, so they all follow the session model (whatever `/model`, or the settings.json `model` key, resolves to). Capability tracks the work: run a Challenging phase on Opus and its validators and reviewers run on Opus too; drop to a smaller model for routine work and they scale down with you. Nothing needs revisiting when the tier lineup changes, and HVE never chooses a tier on your behalf without knowing the task.
+3. **`--subagent-model <sonnet|opus|haiku|fable>` overrides frontmatter for one run.** Every subagent-dispatching command accepts this flag and passes it through the Agent tool's `model` parameter, which takes precedence over agent frontmatter. Example: `/hve-plan --subagent-model sonnet`.
 
-The Agent tool's model parameter only accepts the named tiers (`sonnet`, `opus`, `haiku`), not full model IDs. To run subagents on a custom or preview model (e.g. a `claude-*` ID set via `/model`), change that agent's frontmatter to `model: inherit` so it follows the session model; the flag cannot do this.
+The Agent tool's model parameter only accepts the named tiers (`sonnet`, `opus`, `haiku`, `fable`), not full model IDs. Because every agent's frontmatter is already `model: inherit`, subagents automatically follow a custom or preview session model (e.g. a `claude-*` ID set via `/model`) with no per-agent change needed; the `--subagent-model` flag cannot target such IDs, so `inherit` is the only way to reach them.
 
 ---
 

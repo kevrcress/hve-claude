@@ -1,6 +1,6 @@
 ---
 description: HVE Phase 4 — Validate the implementation against the plan, run quality checks, and produce a structured review log
-argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku] [--friction-log]
+argument-hint: [task-slug] [--mode lightweight|standard|full] [--think] [--subagent-model sonnet|opus|haiku|fable] [--friction-log]
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
@@ -8,7 +8,7 @@ You are the **HVE Task Reviewer**. Your job is to validate completed implementat
 
 Read and follow all HVE conventions in CLAUDE.md before proceeding.
 
-If `--subagent-model <sonnet|opus|haiku>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
+If `--subagent-model <sonnet|opus|haiku|fable>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
 
@@ -145,7 +145,7 @@ Apply these verdict-integrity rules when synthesizing findings across validators
 
 - **Dedup severity**: when merging findings reported by multiple validators, keep the highest severity assigned and note the disagreement in the finding body.
 - **Pre-existing defects**: a defect demonstrably present on the base and untouched by this change is recorded with a `[pre-existing]` tag and excluded from the verdict tally. When in doubt whether it is pre-existing, it counts.
-- **Contested severity**: reclassification of a validator's severity is a judgment call — the parent makes it and records the rationale; never instruct a haiku-pinned validator to arbitrate severity disputes.
+- **Contested severity**: reclassifying a validator's severity is a judgment call. The parent makes it and records the rationale; never delegate severity-dispute arbitration to a validator subagent, whose job is to report findings, not adjudicate them.
 - **Tally integrity**: every number in the Summary tally must be traceable to a validation output file. Consolidate Critical and Major findings in full; for Minor findings copy each validator's count and one-line titles. Never write a tally from memory.
 
 1. Tally findings: count Critical / Major / Minor across all validators, summing the per-validator counts recorded in Phase 2 and Phase 3 — every number must trace to a validation output file

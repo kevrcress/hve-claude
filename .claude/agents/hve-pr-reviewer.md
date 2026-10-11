@@ -1,7 +1,7 @@
 ---
 name: hve-pr-reviewer
 description: Use this agent when an hve-pr-review command needs a senior-level review of a diff against one or two assigned quality dimensions, returning severity-graded findings with dimension-prefixed IDs.
-model: sonnet
+model: inherit
 color: red
 tools: Read, Write, Glob, Grep
 ---

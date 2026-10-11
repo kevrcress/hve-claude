@@ -1,7 +1,7 @@
 ---
 name: hve-plan-validator
 description: Use this agent when an hve-plan command needs to validate an implementation plan against research documents for completeness, coverage, and discrepancy detection.
-model: haiku
+model: inherit
 color: yellow
 tools: Read, Write, Edit, Glob, Grep
 ---

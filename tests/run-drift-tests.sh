@@ -9,7 +9,7 @@
 #
 # Test groups:
 #   1. Frontmatter validity  — every .claude/agents/*.md has a model: in
-#      {haiku, sonnet, opus, inherit} and a name: matching its filename stem
+#      {haiku, sonnet, opus, fable, inherit} and a name: matching its filename stem
 #   2. internals.md sync     — docs/internals.md agent-table Model column
 #      matches frontmatter (case-insensitive)
 #   3. CLAUDE.md sync        — Model Selection prose does not claim a
@@ -59,7 +59,7 @@ readonly PROMPTS_DIR="${REPO_ROOT}/.claude/prompts"
 readonly INTERNALS_MD="${REPO_ROOT}/docs/internals.md"
 readonly CLAUDE_MD="${REPO_ROOT}/CLAUDE.md"
 readonly GITIGNORE="${REPO_ROOT}/.gitignore"
-readonly VALID_MODELS="haiku sonnet opus inherit"
+readonly VALID_MODELS="haiku sonnet opus fable inherit"
 
 # Agents that carry the FULL Subagent Response Protocol (6 invariant lines).
 # This is EVERY agent in .claude/agents/. The three prompt-builder sandbox
@@ -231,7 +231,8 @@ test2_internals_table_sync() {
 
 # ---------------------------------------------------------------------------
 # Test 3 — CLAUDE.md Model Selection prose sync (narrow check)
-# For each agent pinned haiku or sonnet in frontmatter, the Model Selection
+# For each agent pinned to a concrete tier (haiku, sonnet, opus, or fable) in
+# frontmatter, the Model Selection
 # section must not claim a different tier for that agent by name. The prose
 # names agents in human form ("plan validator" for hve-plan-validator), so
 # we derive that form, split the section into clauses on ';', and require
@@ -255,7 +256,8 @@ test3_claudemd_prose_sync() {
   for file in "${AGENTS_DIR}"/*.md; do
     stem="$(basename "${file}" .md)"
     fm_model="$(frontmatter_value "${file}" "model" | to_lower)"
-    [[ "${fm_model}" == "haiku" || "${fm_model}" == "sonnet" ]] || continue
+    [[ "${fm_model}" == "haiku" || "${fm_model}" == "sonnet" \
+       || "${fm_model}" == "opus" || "${fm_model}" == "fable" ]] || continue
 
     # hve-plan-validator -> "plan validator"
     human="${stem#hve-}"
@@ -266,7 +268,7 @@ test3_claudemd_prose_sync() {
     while IFS= read -r clause; do
       [[ "${clause}" == *"${human}"* ]] || continue
       mentioned=1
-      for tier in haiku sonnet opus inherit; do
+      for tier in haiku sonnet opus fable inherit; do
         if [[ "${clause}" == *"${tier}"* && "${tier}" != "${fm_model}" ]]; then
           contradiction="clause names '${human}' with tier '${tier}'"
         fi

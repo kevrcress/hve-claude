@@ -7,7 +7,7 @@
 - `task`: The primary task description
 - `--mode lightweight|standard|full`: Override difficulty-adaptive routing
 - `--think`: Activate extended reasoning during planning (auto-enabled for Challenging tasks and `--mode full`)
-- `--subagent-model sonnet|opus|haiku`: Override each subagent's frontmatter model for this run
+- `--subagent-model sonnet|opus|haiku|fable`: Override each subagent's frontmatter model for this run
 
 ## Phases
 
