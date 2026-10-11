@@ -30,15 +30,15 @@ Working-tree mode: if `--working-tree` is present in `$ARGUMENTS`, strip it befo
 
 1. Identify the branch to review per **Branch selection** in the preamble (falls back to `git branch --show-current`). Derive `BRANCH-NAME` by replacing `/` with `-`.
 
-Run every git command in this phase from the repository root (`cd "$(git rev-parse --show-toplevel)"`). Every diff below carries the pathspec `-- . ':(exclude).claude-hve-tracking'`: the tracking folder holds planning records that `/hve-review` checks, and they crowd code out of a reviewer's context.
+Every diff and file list below carries the pathspec `-- ':(top)' ':(top,exclude).claude-hve-tracking'`, and every `git ls-files` call carries `--full-name`. Both are anchored at the top of the working tree, so each command selects the same files and prints the same root-relative paths from any directory. Still run every git command in this phase from the repository root (`cd "$(git rev-parse --show-toplevel)"`), because the `diff.patch` path the diff is redirected to is relative to the current directory. The exclusion is there because the tracking folder holds planning records that `/hve-review` checks, and they crowd code out of a reviewer's context.
 
 Mode:
 - **Branch mode** (default): the diff is `main...HEAD` (or `origin/main...HEAD`).
-- **Working-tree mode** (WORKING_TREE set): `BASE=$(git merge-base main HEAD)` (or the `origin/main` base), the diff is `BASE` against the working tree, and untracked files are added from `git ls-files --others --exclude-standard -- . ':(exclude).claude-hve-tracking'`. A shell variable does not survive from one tool call to the next: wherever a step below shows `"$BASE"`, recompute it in the same command or substitute the SHA.
+- **Working-tree mode** (WORKING_TREE set): `BASE=$(git merge-base main HEAD)` (or the `origin/main` base), the diff is `BASE` against the working tree, and untracked files are added from `git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'`. A shell variable does not survive from one tool call to the next: wherever a step below shows `"$BASE"`, recompute it in the same command or substitute the SHA.
 
-2. Get changed files. Branch mode: `git diff main...HEAD --name-only -- . ':(exclude).claude-hve-tracking'` (or `git diff origin/main...HEAD --name-only -- . ':(exclude).claude-hve-tracking'`). Working-tree mode: `git diff "$BASE" --name-only -- . ':(exclude).claude-hve-tracking'` plus the untracked list.
+2. Get changed files. Branch mode: `git diff main...HEAD --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'` (or `git diff origin/main...HEAD --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'`). Working-tree mode: `git diff "$BASE" --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'` plus the untracked list.
 
-**Tracking-folder scan.** Security coverage is a floor, and the exclusion above removes the tracking folder from every reviewer's diff, so the parent scans it. List its changed files for the active mode: `git diff <same base> --name-only -- .claude-hve-tracking`, plus in working-tree mode `git ls-files --others --exclude-standard -- .claude-hve-tracking`, dropping `diff.patch`. Over that list run the Secret exposure grep from CLAUDE.md's `Security Hygiene` section and check the names against the credential patterns in the same section. Pass any hit to the security reviewer as a pre-digested list with file and line. Record the result on the review log's `Scope:` line.
+**Tracking-folder scan.** Security coverage is a floor, and the exclusion above removes the tracking folder from every reviewer's diff, so the parent scans it. List its changed files for the active mode: `git diff <same base> --name-only -- ':(top).claude-hve-tracking'`, plus in working-tree mode `git ls-files --others --exclude-standard --full-name -- ':(top).claude-hve-tracking'`, dropping `diff.patch`. Over that list run the Secret exposure grep from CLAUDE.md's `Security Hygiene` section and check the names against the credential patterns in the same section. Pass any hit to the security reviewer as a pre-digested list with file and line. Record the result on the review log's `Scope:` line.
 
 **Empty-diff guard**: an empty review is never an Approve. If the changed-file list from step 2 is empty:
 - and the tracking-folder list is not empty: only tracking artifacts changed. Report that, report the tracking-folder scan result, and stop without dispatching reviewers. In branch mode, before stopping, also run `git status --porcelain`, and when uncommitted or untracked work exists outside the tracking folder, say so and offer working-tree mode (re-run this phase in working-tree mode).
@@ -49,19 +49,20 @@ In a branch-mode run that proceeds, list untracked files touching reviewed areas
 
 3. Get the diff stat for the summary: the same diff with `--stat`. In working-tree mode add the count of untracked files.
 4. Get commit messages: `git log main..HEAD --oneline`. In working-tree mode an empty result is written as "none (uncommitted work only)" in the Executive Summary.
-5. **Write the diff ONCE** to `.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch`. Branch mode: `git diff main...HEAD -- . ':(exclude).claude-hve-tracking' > .claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch` (or the `origin/main` base). Working-tree mode:
+5. **Write the diff ONCE** to `.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch`. Branch mode: `git diff main...HEAD -- ':(top)' ':(top,exclude).claude-hve-tracking' > .claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch` (or the `origin/main` base). Working-tree mode:
 
    ```bash
-   EXCL=':(exclude).claude-hve-tracking'
+   TOP=$(git rev-parse --show-toplevel)
+   EXCL=':(top,exclude).claude-hve-tracking'
    OUT=.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
    mkdir -p "$(dirname "$OUT")"
    BASE=$(git merge-base main HEAD)          # or origin/main
-   git diff "$BASE" -- . "$EXCL" > "$OUT"
-   git ls-files --others --exclude-standard -z -- . "$EXCL" \
-     | while IFS= read -r -d '' f; do git diff --no-index -- /dev/null "$f" >> "$OUT"; done
+   git diff "$BASE" -- ':(top)' "$EXCL" > "$OUT"
+   git ls-files --others --exclude-standard --full-name -z -- ':(top)' "$EXCL" ":(exclude)$OUT" \
+     | while IFS= read -r -d '' f; do git -C "$TOP" diff --no-index -- /dev/null "$f" >> "$OUT"; done
    ```
 
-   `git diff` alone omits untracked files, so without the loop a new source file would be approved unread. `git diff --no-index` exits 1 when it finds differences; that is expected. A binary untracked file appears as a `Binary files ... differ` line; list it by name for the reviewers. Every review subagent receives the PATH to this file plus its changed-file list and Reads the diff itself — the diff text is never pasted into multiple prompts. `diff.patch` is regenerable noise and is gitignored (DD-004); the committed review markdown stays.
+   `git diff` alone omits untracked files, so without the loop a new source file would be approved unread. `git diff --no-index` exits 1 when it finds differences; that is expected. `--full-name` makes the untracked names root-relative, so the loop reads each one through `git -C "$TOP"`. `":(exclude)$OUT"` is relative to the current directory on purpose, like `$OUT` itself: it keeps the patch out of its own untracked list wherever the patch lands. A binary untracked file appears as a `Binary files ... differ` line; list it by name for the reviewers. Every review subagent receives the PATH to this file plus its changed-file list and Reads the diff itself — the diff text is never pasted into multiple prompts. `diff.patch` is regenerable noise and is gitignored (DD-004); the committed review markdown stays.
 6. Extract `--compact` from `$ARGUMENTS` if present. When set, review uses 4 paired dimension subagents instead of 8 single-dimension subagents. The compact dimension pairs are:
    * Pair 1: Functional Correctness + Design and Architecture
    * Pair 2: Idiomatic Implementation + Reusability and Leverage
