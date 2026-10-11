@@ -996,7 +996,7 @@ Line numbers are for the delivered tree. Two files changed besides this log.
 | `.claude/commands/hve-pr-review.md:60` (recipe) | `git diff "$BASE" -- . "$EXCL" > "$OUT"` | `git diff "$BASE" -- ':(top)' "$EXCL" > "$OUT"` |
 | `.claude/commands/hve-pr-review.md:61` (recipe) | `git ls-files --others --exclude-standard -z -- . "$EXCL" \` | `git ls-files --others --exclude-standard --full-name -z -- ':(top)' "$EXCL" ":(exclude)$OUT" \` |
 | `.claude/commands/hve-pr-review.md:62` (recipe) | `git diff --no-index -- /dev/null "$f" >> "$OUT"` | `git -C "$TOP" diff --no-index -- /dev/null "$f" >> "$OUT"` |
-| `.claude/commands/hve-pr-review.md:65` (recipe notes) | no mention of `--full-name` or the self-exclusion | two sentences added: why the loop reads through `git -C "$TOP"`, and why `":(exclude)$OUT"` is relative to the current directory |
+| `.claude/commands/hve-pr-review.md:67` (recipe notes) | no such paragraph | new two-sentence paragraph after the existing notes at `:65`, which is byte-identical to the base: why the loop reads through `git -C "$TOP"`, and why `":(exclude)$OUT"` is relative to the current directory |
 | `.claude/commands/hve-review.md:83` | `git ls-files --others --exclude-standard -- . ':(exclude).claude-hve-tracking'` "from the repository root" | `git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'` "(anchored at the top of the working tree, so it prints the same root-relative list from any directory)" |
 
 Three things go beyond a plain `. ` to `:(top)` swap. Each one was forced by what the fixture showed.

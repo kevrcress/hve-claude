@@ -62,7 +62,9 @@ In a branch-mode run that proceeds, list untracked files touching reviewed areas
      | while IFS= read -r -d '' f; do git -C "$TOP" diff --no-index -- /dev/null "$f" >> "$OUT"; done
    ```
 
-   `git diff` alone omits untracked files, so without the loop a new source file would be approved unread. `git diff --no-index` exits 1 when it finds differences; that is expected. `--full-name` makes the untracked names root-relative, so the loop reads each one through `git -C "$TOP"`. `":(exclude)$OUT"` is relative to the current directory on purpose, like `$OUT` itself: it keeps the patch out of its own untracked list wherever the patch lands. A binary untracked file appears as a `Binary files ... differ` line; list it by name for the reviewers. Every review subagent receives the PATH to this file plus its changed-file list and Reads the diff itself — the diff text is never pasted into multiple prompts. `diff.patch` is regenerable noise and is gitignored (DD-004); the committed review markdown stays.
+   `git diff` alone omits untracked files, so without the loop a new source file would be approved unread. `git diff --no-index` exits 1 when it finds differences; that is expected. A binary untracked file appears as a `Binary files ... differ` line; list it by name for the reviewers. Every review subagent receives the PATH to this file plus its changed-file list and Reads the diff itself — the diff text is never pasted into multiple prompts. `diff.patch` is regenerable noise and is gitignored (DD-004); the committed review markdown stays.
+
+   `--full-name` makes the untracked names root-relative, so the loop reads each one through `git -C "$TOP"`. `":(exclude)$OUT"` is relative to the current directory on purpose, like `$OUT` itself: it keeps the patch out of its own untracked list wherever the patch lands.
 6. Extract `--compact` from `$ARGUMENTS` if present. When set, review uses 4 paired dimension subagents instead of 8 single-dimension subagents. The compact dimension pairs are:
    * Pair 1: Functional Correctness + Design and Architecture
    * Pair 2: Idiomatic Implementation + Reusability and Leverage
