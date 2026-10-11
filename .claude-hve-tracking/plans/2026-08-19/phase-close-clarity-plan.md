@@ -302,6 +302,9 @@ Steps:
     `grep -rnE '^(status|artifact|next|[a-z]+) *:.*\|' .claude/commands CLAUDE.md` and read each hit:
     none may sit inside a close template [MEDIUM: the pattern over-matches prose lines with a colon, so it
     is a list to read, not a pass or fail count]
+    (superseded, see Correction 2026-10-10 in the Phase 6 section of
+    `.claude-hve-tracking/changes/2026-10-10/phase-close-clarity-changes.md`: the pattern under-matches. It
+    returns 0 lines at the base as well, because every template key there is capitalized)
 - [ ] Step 5.6 (added 2026-10-10): recorded exclusions for sentences that say "handoff" without describing
   the box. Leave as written: the argument-parsing sentence "Ignore any pasted handoff-block text" at
   hve-plan.md:13, hve-implement.md:19 and hve-review.md:19, and "pasted handoff blocks" at
