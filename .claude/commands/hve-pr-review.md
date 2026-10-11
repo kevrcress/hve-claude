@@ -1,6 +1,6 @@
 ---
 description: HVE PR Review — Senior-level code review across 8 quality dimensions with severity-graded findings
-argument-hint: [branch-name] [--dimension all|functional|design|idiomatic|reuse|performance|reliability|security|docs] [--compact] [--subagent-model sonnet|opus|haiku|fable] [--friction-log]
+argument-hint: [branch-name] [--dimension all|functional|design|idiomatic|reuse|performance|reliability|security|docs] [--working-tree] [--compact] [--subagent-model sonnet|opus|haiku|fable] [--friction-log]
 allowed-tools: Read, Glob, Grep, Bash, Agent
 ---
 
@@ -11,6 +11,8 @@ Read and follow all HVE conventions in CLAUDE.md before proceeding.
 If `--subagent-model <sonnet|opus|haiku|fable>` is present in `$ARGUMENTS`, strip it before other argument parsing and pass its value as the `model` parameter on every Agent tool call; this overrides each subagent's frontmatter model. If absent, omit the parameter so frontmatter applies.
 
 Friction capture: strip `--friction-log` from the arguments before other parsing, then behave per CLAUDE.md's `Friction Capture` section.
+
+Working-tree mode: if `--working-tree` is present in `$ARGUMENTS`, strip it before other parsing and set WORKING_TREE. The review then covers everything not yet on main: commits on the branch, plus uncommitted changes, plus untracked files. Without the flag the review covers the branch's commits only.
 
 **Branch selection.** BRANCH is the first whitespace-delimited token of `$ARGUMENTS` that matches a name in `git branch --list`. Anything else in `$ARGUMENTS` (pasted handoff blocks, flags, prose) is ignored for branch selection. If no token matches, fall back to `git branch --show-current`. Sanitize the resulting name for the output path by replacing every `/` with `-` (e.g. `feature/x` → `feature-x`); this sanitized form is `BRANCH-NAME` throughout.
 
@@ -27,13 +29,42 @@ Friction capture: strip `--friction-log` from the arguments before other parsing
 ## Phase 1 — Initialize
 
 1. Identify the branch to review per **Branch selection** in the preamble (falls back to `git branch --show-current`). Derive `BRANCH-NAME` by replacing `/` with `-`.
-2. Get changed files: `git diff main...HEAD --name-only` (or `git diff origin/main...HEAD --name-only`)
 
-**Empty-diff guard**: if the base diff has zero files, do NOT proceed — an empty review is never an Approve. Run `git status --porcelain`; if uncommitted or untracked work exists, report that the work is not on the diff and ask whether to review the working tree instead or stop. Always list untracked files touching reviewed areas as "not covered by this diff".
+Every diff and file list below carries the pathspec `-- ':(top)' ':(top,exclude).claude-hve-tracking'`, and every `git ls-files` call carries `--full-name`. Both are anchored at the top of the working tree, so each command selects the same files and prints the same root-relative paths from any directory. Still run every git command in this phase from the repository root (`cd "$(git rev-parse --show-toplevel)"`), because the `diff.patch` path the diff is redirected to is relative to the current directory. The exclusion is there because the tracking folder holds planning records that `/hve-review` checks, and they crowd code out of a reviewer's context.
 
-3. Get the diff stat for the summary: `git diff main...HEAD --stat` (or `git diff origin/main...HEAD --stat`)
-4. Get commit messages: `git log main..HEAD --oneline`
-5. **Write the diff ONCE** to `.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch` via `git diff main...HEAD > .claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch` (or the `origin/main` base). Every review subagent receives the PATH to this file plus its changed-file list and Reads the diff itself — the diff text is never pasted into multiple prompts. `diff.patch` is regenerable noise and is gitignored (DD-004); the committed review markdown stays.
+Mode:
+- **Branch mode** (default): the diff is `main...HEAD` (or `origin/main...HEAD`).
+- **Working-tree mode** (WORKING_TREE set): `BASE=$(git merge-base main HEAD)` (or the `origin/main` base), the diff is `BASE` against the working tree, and untracked files are added from `git ls-files --others --exclude-standard --full-name -- ':(top)' ':(top,exclude).claude-hve-tracking'`. A shell variable does not survive from one tool call to the next: wherever a step below shows `"$BASE"`, recompute it in the same command or substitute the SHA.
+
+2. Get changed files. Branch mode: `git diff main...HEAD --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'` (or `git diff origin/main...HEAD --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'`). Working-tree mode: `git diff "$BASE" --name-only -- ':(top)' ':(top,exclude).claude-hve-tracking'` plus the untracked list.
+
+**Tracking-folder scan.** Security coverage is a floor, and the exclusion above removes the tracking folder from every reviewer's diff, so the parent scans it. List its changed files for the active mode: `git diff <same base> --name-only -- ':(top).claude-hve-tracking'`, plus in working-tree mode `git ls-files --others --exclude-standard --full-name -- ':(top).claude-hve-tracking'`, dropping `diff.patch`. Over that list run the Secret exposure grep from CLAUDE.md's `Security Hygiene` section and check the names against the credential patterns in the same section. Pass any hit to the security reviewer as a pre-digested list with file and line. Record the result on the review log's `Scope:` line.
+
+**Empty-diff guard**: an empty review is never an Approve. If the changed-file list from step 2 is empty:
+- and the tracking-folder list is not empty: only tracking artifacts changed. Report that, report the tracking-folder scan result, and stop without dispatching reviewers. In branch mode, before stopping, also run `git status --porcelain`, and when uncommitted or untracked work exists outside the tracking folder, say so and offer working-tree mode (re-run this phase in working-tree mode).
+- in working-tree mode otherwise: there is nothing to review. Say so and stop.
+- in branch mode otherwise: run `git status --porcelain`. If uncommitted or untracked work exists, report that the work is not on the branch diff and ask whether to review the working tree instead (re-run this phase in working-tree mode) or stop. If the tree is clean, there is nothing to review: say so and stop.
+
+In a branch-mode run that proceeds, list untracked files touching reviewed areas as "not covered by this diff".
+
+3. Get the diff stat for the summary: the same diff with `--stat`. In working-tree mode add the count of untracked files.
+4. Get commit messages: `git log main..HEAD --oneline`. In working-tree mode an empty result is written as "none (uncommitted work only)" in the Executive Summary.
+5. **Write the diff ONCE** to `.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch`. Branch mode: `git diff main...HEAD -- ':(top)' ':(top,exclude).claude-hve-tracking' > .claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch` (or the `origin/main` base). Working-tree mode:
+
+   ```bash
+   TOP=$(git rev-parse --show-toplevel)
+   EXCL=':(top,exclude).claude-hve-tracking'
+   OUT=.claude-hve-tracking/reviews/pr/BRANCH-NAME/diff.patch
+   mkdir -p "$(dirname "$OUT")"
+   BASE=$(git merge-base main HEAD)          # or origin/main
+   git diff "$BASE" -- ':(top)' "$EXCL" > "$OUT"
+   git ls-files --others --exclude-standard --full-name -z -- ':(top)' "$EXCL" ":(exclude)$OUT" \
+     | while IFS= read -r -d '' f; do git -C "$TOP" diff --no-index -- /dev/null "$f" >> "$OUT"; done
+   ```
+
+   `git diff` alone omits untracked files, so without the loop a new source file would be approved unread. `git diff --no-index` exits 1 when it finds differences; that is expected. A binary untracked file appears as a `Binary files ... differ` line; list it by name for the reviewers. Every review subagent receives the PATH to this file plus its changed-file list and Reads the diff itself — the diff text is never pasted into multiple prompts. `diff.patch` is regenerable noise and is gitignored (DD-004); the committed review markdown stays.
+
+   `--full-name` makes the untracked names root-relative, so the loop reads each one through `git -C "$TOP"`. `":(exclude)$OUT"` is relative to the current directory on purpose, like `$OUT` itself: it keeps the patch out of its own untracked list wherever the patch lands.
 6. Extract `--compact` from `$ARGUMENTS` if present. When set, review uses 4 paired dimension subagents instead of 8 single-dimension subagents. The compact dimension pairs are:
    * Pair 1: Functional Correctness + Design and Architecture
    * Pair 2: Idiomatic Implementation + Reusability and Leverage
@@ -48,7 +79,8 @@ Review log structure:
 # PR Review: [Branch Name]
 Date: YYYY-MM-DD
 Branch: [branch]
-Base: main
+Base: [main, or the merge-base SHA in working-tree mode]
+Scope: [branch commits | branch commits + working tree]; tracking folder excluded; tracking-folder scan: [clean | N hit(s) passed to security reviewer]
 Files changed: N
 Commits: N
 Coverage: [dimensions reviewed] | Not covered: [dimensions skipped, or `none`]
@@ -123,6 +155,7 @@ Each review subagent receives:
 * The dimension it is reviewing and that dimension's ID prefix (from the table above)
 * Its output path under `.claude-hve-tracking/reviews/pr/BRANCH-NAME/`
 * Instructions to return findings in `<PREFIX>-NNN [SEVERITY]` format (e.g. `FC-001 [MAJOR]`)
+* Security and Compliance reviewer only: the tracking-folder scan result from Phase 1, either the hits as a file-and-line list or the word `clean` when the scan found none. Always pass one of the two, so a missing result is never read as a clean scan. The reviewer reads each cited line and grades each hit as an `SC-` finding. This is the result the review log's `Scope:` line records.
 
 ### Compact mode (`--compact` flag set)
 
@@ -142,15 +175,18 @@ Spawn 4 paired subagents in parallel instead of 8. Each subagent covers two dime
 4. **Pair 4: Security and Compliance + Documentation and Operations**
    Instruction: "Review for security vulnerabilities AND documentation gaps. Report findings in two sections: one headed 'Security and Compliance' (IDs `SC-NNN`) and one headed 'Documentation and Operations' (IDs `DO-NNN`). Use `<PREFIX>-NNN [SEVERITY]` format."
 
-Each compact subagent receives the same inputs as a standard subagent: the diff.patch path (which it Reads itself), changed files, its two output-section prefixes, and the paired dimension instructions above.
+Each compact subagent receives the same inputs as a standard subagent: the diff.patch path (which it Reads itself), changed files, its two output-section prefixes, and the paired dimension instructions above. The Pair 4 subagent, which carries Security and Compliance, also receives the tracking-folder scan result (the file-and-line hit list, or the word `clean`) exactly as the standard Security and Compliance reviewer does, and grades each hit as an `SC-` finding.
 
-Wait for all subagents to complete.
+Wait for all subagents to complete, per CLAUDE.md's `Subagent Dispatch Discipline` section (the Dispatch is asynchronous rule).
 
 **Blocked reviewers.** A reviewer returns either `Status: Complete` or `Blocked: [summary]`, per
-`hve-pr-reviewer.md`'s Response Format. A reviewer that returned `Blocked`, returned nothing, or
-wrote no output file **did not cover its dimension**, and dispatching it is not evidence that it
-ran. Re-dispatch it once. If it blocks again, record the dimension as not covered and carry the
-block reason into Phase 3; never silently count a blocked dimension as reviewed.
+`hve-pr-reviewer.md`'s Response Format. A reviewer that returned nothing may still have written its
+output file: check the output path first. When the file is present and complete (every section of
+`hve-pr-reviewer.md`'s Output File template is there), the reviewer ran; record it as file-verified.
+A reviewer that returned `Blocked`, or whose output file is missing or incomplete, **did not cover
+its dimension**, and dispatching it is not evidence that it ran. Re-dispatch it once. If it blocks
+again, record the dimension as not covered and carry the block reason into Phase 3; never silently
+count a blocked dimension as reviewed.
 
 ---
 
@@ -161,7 +197,7 @@ After all subagent reviews are in:
 1. Consolidate all findings into the review document, organized by severity (Critical first)
 2. De-duplicate findings that multiple subagents identified
 3. Tally: Critical / Major / Minor counts
-4. Fill the `Coverage:` header line from the reviewers that **returned `Complete`**, not from the set dispatched: name every dimension that was actually covered, and every dimension that was not. A dimension whose reviewer blocked is listed under `Not covered:` with its block reason. A `--dimension all` run in which all 8 returned Complete records all 8 as covered and `Not covered: none`.
+4. Fill the `Coverage:` header line from the reviewers that **returned `Complete`** or were file-verified per **Blocked reviewers** above, not from the set dispatched: name every dimension that was actually covered, and every dimension that was not. A dimension whose reviewer blocked is listed under `Not covered:` with its block reason. A `--dimension all` run in which all 8 returned Complete records all 8 as covered and `Not covered: none`.
 5. Determine overall verdict. Every threshold below counts findings from the covered dimensions only:
    - **✅ Approve** — no Critical, ≤ 2 Major findings, **and** the Security and Compliance dimension was covered
    - **⚠️ Request Changes** — any Critical, or > 2 Major findings

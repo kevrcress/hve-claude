@@ -574,6 +574,7 @@ readonly -a CANONICAL_BLOCK_SPECS=(
   'friction_capture|1|identical|accept an optional `--friction-log` flag'
   'security_checklist|1|identical|- **Secret exposure**: grep changed files for'
   'shell_stays_in_parent|1|identical|**Shell stays in the parent.**'
+  'dispatch_async|1|identical|**Dispatch is asynchronous.**'
   'timestamp_started|2|identical|Started: [run `date -u'
   'timestamp_completed|2|identical|Completed: [same command at completion'
   'testcount_passed|2|identical|- `Tests: X passed, Y failed`'

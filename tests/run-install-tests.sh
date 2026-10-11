@@ -182,6 +182,9 @@ test1_new_install() {
   assert_contains "${test_dir}/.gitignore" \
     ".claude-hve-tracking/**/subagents/" \
     "test1: .gitignore contains subagents rule"
+  assert_contains "${test_dir}/.gitignore" \
+    ".claude-hve-tracking/reviews/pr/**/diff.patch" \
+    "test1: .gitignore contains diff.patch rule"
 
   # No root-level instructions/ directory
   assert_not_exists "${test_dir}/instructions" \
@@ -225,6 +228,9 @@ test2_prepend() {
   assert_contains "${test_dir}/.gitignore" \
     ".claude-hve-tracking/**/subagents/" \
     "test2: .gitignore contains subagents rule"
+  assert_contains "${test_dir}/.gitignore" \
+    ".claude-hve-tracking/reviews/pr/**/diff.patch" \
+    "test2: .gitignore contains diff.patch rule"
 
   # HVE:START appears BEFORE SENTINEL_ORIGINAL_CONTENT
   local start_line sentinel_line
@@ -403,6 +409,9 @@ test5_global_install() {
 
   assert_output_contains "${output}" "skipped .gitignore" \
     "test5: output explains the skipped .gitignore step"
+  assert_output_contains "${output}" \
+    ".claude-hve-tracking/reviews/pr/**/diff.patch" \
+    "test5: output lists the diff.patch rule"
 
   # Re-run is idempotent: exactly one managed block
   HOME="${fake_home}" "${INSTALL_SH}" --global > /dev/null 2>&1

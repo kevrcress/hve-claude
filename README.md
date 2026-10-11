@@ -40,9 +40,9 @@ copy its hve-* commands and agents into my .claude/ folder, copy its
 If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, prepend the wrapped block before my existing content.
 Never touch anything outside the markers or below '## Your Project'. Add the
-.claude-hve-tracking subagents and sandbox paths to my .gitignore, along with
-the credential patterns .env, .env.*, *.pem, *.key, *.p12, and *.pfx, then delete
-temp clone and show me what changed.
+.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+rule to my .gitignore, along with the credential patterns .env, .env.*, *.pem,
+*.key, *.p12, and *.pfx, then delete temp clone and show me what changed.
 ```
 2. Paste this to add your project context:
 ```
@@ -131,7 +131,7 @@ Standalone phase commands (`/hve-research`, `/hve-plan`, `/hve-implement`, `/hve
 
 | Command | Purpose |
 |---|---|
-| `/hve-pr-review` | Senior-level code review across 8 quality dimensions (functional, design, idiomatic, reuse, performance, reliability, security, docs). `--dimension all` (default) runs all 8 reviewers; `--dimension security` runs the security reviewer alone; any other single `--dimension <x>` runs that reviewer plus the security reviewer, which never gets filtered out. Pass `--compact` to run 4 paired subagents instead of 8 for a faster, lower-cost review. |
+| `/hve-pr-review` | Senior-level code review across 8 quality dimensions (functional, design, idiomatic, reuse, performance, reliability, security, docs). `--dimension all` (default) runs all 8 reviewers; `--dimension security` runs the security reviewer alone; any other single `--dimension <x>` runs that reviewer plus the security reviewer, which never gets filtered out. Pass `--compact` to run 4 paired subagents instead of 8 for a faster, lower-cost review. Pass `--working-tree` to include uncommitted and untracked work. |
 | `/hve-challenge` | Adversarial questioning of any current plan or implementation, acts as an uninformed skeptic to surface hidden assumptions |
 | `/hve-doc-ops` | Documentation QA: pattern compliance, accuracy verification, gap detection. `--scope all` (default) runs every check; `--scope compliance`, `accuracy`, or `gaps` runs that check alone. A path argument narrows which docs are examined. |
 | `/hve-memory` | Saves current session context, decisions, and open questions to `.claude-hve-tracking/memory/` for future conversations |
@@ -183,6 +183,7 @@ These commands are for extending HVE itself, building new slash commands, agent 
 /hve-pr-review                          # review current branch
 /hve-pr-review --dimension security     # security-only review
 /hve-pr-review --compact                # faster review with 4 paired subagents
+/hve-pr-review --working-tree           # include uncommitted and untracked work
 /hve-challenge                          # challenge the latest plan
 /hve-doc-ops                            # full documentation QA
 /hve-doc-ops docs/                      # limited to one directory
@@ -237,6 +238,7 @@ Only the regenerable noise is gitignored by default:
 ```
 .claude-hve-tracking/**/subagents/
 .claude-hve-tracking/sandbox/
+.claude-hve-tracking/reviews/pr/**/diff.patch
 ```
 
 To keep the entire tracking folder private instead, replace those rules with:

@@ -28,7 +28,7 @@ You will receive from the parent:
 
 1. Read the plan phase in full: steps, success criteria, success conditions
 2. Read the implementation details doc (or relevant section)
-3. Read the relevant `.claude/instructions/` file for the language being implemented. When no file covers that language, apply the fallback per CLAUDE.md's `Instructions Reference` section
+3. Read the relevant `.claude/instructions/` file for the language being implemented (under a global install the same file is in `~/.claude/instructions/`; check both before treating it as missing). When no file covers that language, apply the fallback per CLAUDE.md's `Instructions Reference` section
 4. Use Glob and Grep to find existing implementations of the pattern you're about to build (reuse before inventing)
 5. Read the 2–4 most relevant existing files for context on conventions and patterns
 

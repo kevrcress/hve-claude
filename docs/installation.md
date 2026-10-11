@@ -22,9 +22,9 @@ copy its hve-* commands and agents into my .claude/ folder, copy its
 If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, prepend the wrapped block before my existing content.
 Never touch anything outside the markers or below '## Your Project'. Add the
-.claude-hve-tracking subagents and sandbox paths to my .gitignore, along with
-the credential patterns .env, .env.*, *.pem, *.key, *.p12, and *.pfx, then delete
-temp clone and show me what changed.
+.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+rule to my .gitignore, along with the credential patterns .env, .env.*, *.pem,
+*.key, *.p12, and *.pfx, then delete temp clone and show me what changed.
 ```
 
 Works on any OS. Claude uses its own file tools, no shell execution required.
@@ -84,6 +84,7 @@ Follow these steps on any OS (Mac, Windows, Linux):
    # HVE tracking: commit durable artifacts, ignore regenerable noise
    .claude-hve-tracking/**/subagents/
    .claude-hve-tracking/sandbox/
+   .claude-hve-tracking/reviews/pr/**/diff.patch
 
    # HVE security hygiene: never commit credentials
    .env
@@ -155,8 +156,9 @@ them. If it has no markers, prepend the wrapped block before the existing
 content. If it does not exist, create it with the block followed by a
 '## Your Global Context' heading. Do not modify any .gitignore, but remind
 me to add .claude-hve-tracking/**/subagents/, .claude-hve-tracking/sandbox/,
-.env, .env.*, *.pem, *.key, *.p12, and *.pfx to the .gitignore of each project where
-I use HVE. Delete the temp clone and show me what changed.
+.claude-hve-tracking/reviews/pr/**/diff.patch, .env, .env.*, *.pem, *.key,
+*.p12, and *.pfx to the .gitignore of each project where I use HVE. Delete
+the temp clone and show me what changed.
 ```
 
 Re-paste the same prompt later to update; the markers keep it idempotent.
@@ -186,6 +188,7 @@ What differs from a project install:
   # HVE tracking: commit durable artifacts, ignore regenerable noise
   .claude-hve-tracking/**/subagents/
   .claude-hve-tracking/sandbox/
+  .claude-hve-tracking/reviews/pr/**/diff.patch
 
   # HVE security hygiene: never commit credentials
   .env

@@ -39,7 +39,7 @@ Before starting, read the plan in full. Confirm all plan phases and their depend
 1. Read the plan and details documents
 2. Build a dependency graph of plan phases (which phases must complete before others can start)
 3. Identify which phases can run in parallel (no dependencies between them)
-4. Read the relevant `.claude/instructions/` file for the primary language involved (e.g., `.claude/instructions/python.md`) — instruct subagents to do the same. When no file covers that language, apply the fallback per CLAUDE.md's `Instructions Reference` section
+4. Read the relevant `.claude/instructions/` file for the primary language involved (e.g., `.claude/instructions/python.md`; under a global install the same file is in `~/.claude/instructions/`, so check both before treating it as missing) — instruct subagents to do the same. When no file covers that language, apply the fallback per CLAUDE.md's `Instructions Reference` section
 5. Create the changes log file if it doesn't exist:
    `.claude-hve-tracking/changes/YYYY-MM-DD/TASK-SLUG-changes.md`
 
