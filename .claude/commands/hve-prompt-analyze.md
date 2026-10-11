@@ -62,7 +62,7 @@ Assess the artifact against these quality dimensions:
 
 ## Phase 3 — Report
 
-Produce a structured findings report:
+Produce a structured findings report. Each Quality Summary line carries one value, `✅ Pass` or `❌ Fail`. `Overall` is `✅ No issues` when nothing was found, and the findings count shown in the template otherwise. Write the one value that applies on each line; never write the alternatives side by side.
 
 ```markdown
 ## Analysis: [File Path]
@@ -76,15 +76,21 @@ Evidence: [quoted text from the artifact]
 Fix: [specific rewrite or addition]
 
 ### Quality Summary
-Clarity: ✅ Pass | ❌ Fail
-Completeness: ✅ | ❌
-Actionability: ✅ | ❌
-Format compliance: ✅ | ❌
-No Copilot-isms: ✅ | ❌
+Clarity: ✅ Pass
+Completeness: ✅ Pass
+Actionability: ❌ Fail
+Format compliance: ✅ Pass
+No Copilot-isms: ✅ Pass
 
-Overall: ✅ No issues | ⚠️ N findings (N critical, N major, N minor)
+Overall: ⚠️ N findings (N critical, N major, N minor)
 ```
 
 If no issues: confirm "No issues found — this artifact meets HVE quality standards."
 
 Offer: "Would you like me to fix these issues? Run `/hve-prompt-builder [file]` for an iterative fix cycle."
+
+End every stopping turn of `/hve-prompt-analyze` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The offer above goes under **Next step**. Fill the block with actual values:
+
+- `status: done`
+- `artifact: [analyzed file path]` (this command writes no report file; the report itself is in chat)
+- `next: /hve-prompt-builder [file]` (when there are no findings: `next: none - no issues found`)
