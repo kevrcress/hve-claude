@@ -26,7 +26,7 @@ Discover inputs per CLAUDE.md's `Artifact Discovery & Relevance` section.
 
 1. **Plan** (required): most recent `.claude-hve-tracking/plans/*/TASK-SLUG-plan.md`
 2. **Changes log** (required): most recent `.claude-hve-tracking/changes/*/TASK-SLUG-changes.md`
-3. **Research** (optional): most recent `.claude-hve-tracking/research/*/TASK-SLUG.md`
+3. **Research** (optional): most recent `.claude-hve-tracking/research/*/TASK-SLUG.md`. When the plan's `Research:` header names a path, read that file instead of globbing by slug; one research document can feed several plans.
 4. **Details** (optional): corresponding `.claude-hve-tracking/details/*/TASK-SLUG-details.md`
 
 Hard stop ONLY when the plan or changes log is missing — these are unreconstructible, so tell the user which phase to run first and stop. Research and details are optional inputs: when one is absent by design (a recorded skip in the plan header, e.g. `Research: none — [reason]`), proceed with a reduced-scope review and note the skip in the review log. Never hard-stop on a missing research or details file.
@@ -35,7 +35,7 @@ Hard stop ONLY when the plan or changes log is missing — these are unreconstru
 
 ## Phase 1 — Artifact Discovery
 
-1. Read the plan and changes log (required); read the research and details documents if present. When research or details is absent by design, note the reduced scope in the review log rather than stopping.
+1. Read the plan and changes log (required); read the research and details documents if present. Take the research path from the plan's `Research:` line when it gives one. When research or details is absent by design, note the reduced scope in the review log rather than stopping.
 2. List all plan phases and their completion status from the changes log
 3. Identify which phases are marked Complete vs. In Progress vs. Blocked
 4. **Record consistency scan**: re-read the changes log end-to-end. Flag any claim contradicted by a later claim (e.g. "no build environment available" vs. an executed test count) that is not annotated `superseded — see Correction YYYY-MM-DD` per CLAUDE.md's `Corrections in Tracking Artifacts` section. Record each un-annotated contradiction as a Minor finding for the review log's Record Consistency section.
@@ -96,7 +96,7 @@ Each subagent receives:
 
 Wait for all validators to complete. Read each output file. Consolidate Critical and Major findings in full text into the review log; for Minor findings, copy each validator's Minor count and its one-line finding titles from that validator's output file. Never write a tally number that is not traceable to a validation output file.
 
-**Context discipline**: full-text consolidation wins over skimming, and the rule above is the one that governs. Read every validation output file in full — those artifacts are already condensed, so they are your evidence base, not noise to skim, and a tally or a Critical finding reconstructed from a chat summary would violate the tally-integrity rule in Phase 4. Apply context discipline to the layer BELOW them instead: do not re-open the source files those validations cite; trust their `file:line` citations.
+**Context discipline**: full-text consolidation wins over skimming, and the rule above is the one that governs. Read every validation output file in full — those artifacts are already condensed, so they are your evidence base, not noise to skim, and a tally or a Critical finding reconstructed from a chat summary would violate the tally-integrity rule in Phase 4. Apply context discipline to the layer BELOW them instead: do not re-open the source files those validations cite; trust their `file:line` citations. Exception: a finding that rests on an existence or negative claim ("the file is missing", "no test covers this"), and any finding on which two validators disagree. Re-check those against the working tree before they enter the review log. A finding the re-check falsifies is not deleted: keep it in the log with the evidence, handle it under the **Contested severity** rule in Phase 4, and leave it out of the tally.
 
 ---
 
