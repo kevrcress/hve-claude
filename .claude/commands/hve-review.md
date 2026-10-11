@@ -80,7 +80,7 @@ Record consistency: ✅ Consistent | ⚠️ Contradictions (correction appendix 
 
 Shell stays in the parent for every validator dispatched below, per CLAUDE.md's `Subagent Dispatch Discipline` section.
 
-Before dispatching any validator, run `git diff --name-only <base>` in the parent session against the phase-appropriate base and capture the output as the changed-file list for the dispatch inputs below.
+Before dispatching any validator, run `git diff --name-only <base>` in the parent session against the phase-appropriate base and capture the output as the changed-file list for the dispatch inputs below. When the base is `HEAD` (uncommitted work), `git diff` omits untracked files: also run `git ls-files --others --exclude-standard -- . ':(exclude).claude-hve-tracking'` from the repository root and append its output, leaving out any file you can see predates this task.
 
 For each plan phase marked Complete in the changes log, spawn one `hve-rpi-validator` subagent via the Agent tool (parallel for independent phases).
 
@@ -92,7 +92,7 @@ Each subagent receives:
 - Research document path (if present)
 - Phase number to validate
 - Output path: `.claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-phase-NNN-validation.md`
-- Changed-file list: output of `git diff --name-only <base>` run by the parent (the parent chooses `<base>`: the merge-base with main for branch review, or `HEAD` for uncommitted work)
+- Changed-file list: output of `git diff --name-only <base>` run by the parent (the parent chooses `<base>`: the merge-base with main for branch review, or `HEAD` for uncommitted work, with untracked files appended per the step above)
 
 Wait for all validators to complete. Read each output file. Consolidate Critical and Major findings in full text into the review log; for Minor findings, copy each validator's Minor count and its one-line finding titles from that validator's output file. Never write a tally number that is not traceable to a validation output file.
 

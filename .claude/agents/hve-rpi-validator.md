@@ -20,7 +20,7 @@ You will receive from the parent:
 - Research document path (if present)
 - Phase number to validate
 - Output path: `.claude-hve-tracking/reviews/rpi/YYYY-MM-DD/TASK-SLUG-phase-NNN-validation.md`
-- Changed-file list (if supplied): output of `git diff --name-only` run by the parent
+- Changed-file list (if supplied): output of `git diff --name-only` run by the parent (for uncommitted work it includes untracked files outside the tracking folder)
 
 ---
 

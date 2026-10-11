@@ -30,5 +30,6 @@ Analyzes the diff between the current branch and `main` (or a specified base) ac
   Compliance reviewer (`security` on its own dispatches it once) and labels the
   verdict with the dimensions it covers, per CLAUDE.md's `Security Hygiene` section
 - `--compact` — 4 paired dimension subagents instead of 8 single-dimension ones
+- `--working-tree`: review everything not yet on main, including uncommitted and untracked work
 - `--subagent-model sonnet|opus|haiku|fable` — override each subagent's frontmatter model
 - `--friction-log` — record process friction encountered during the review
