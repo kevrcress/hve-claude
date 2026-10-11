@@ -258,3 +258,106 @@ This brief was produced via a manual interview in chat (the user explicitly aske
 additional clarifying questions before research, and this file's "Requirements locked" section
 is the result). The user was explicit: **do not start research, planning, or any autonomous
 build in this conversation** — this file is the handoff artifact for a separate chat to act on.
+
+## Direction from external sources (added 2026-10-08)
+
+Two inputs arrived after the brief was written. Both should be read by `/hve-research` in the
+new repo as design input, not as locked requirements. Where they conflict with a section above,
+the brief's "Requirements locked" section still wins unless Kevin says otherwise.
+
+### Mastra Factory (prior art, reviewed 2026-10-07)
+
+Mastra Factory (https://factory.mastra.ai, template at github.com/mastra-ai/softwarefactory-template,
+Apache-2.0, alpha) is an existing open-source implementation of roughly the HiVE shape. See
+`.claude-hve-tracking/memory/` in the hve-claude repo and Kevin's assistant memory
+(`reference-mastra-factory`) for the full comparison. Summary against this brief:
+
+| Brief requirement | Factory | Fit |
+|---|---|---|
+| Track in-flight state across projects, branches, chats | Work items, stages, revisions, sessions, decisions in its DB | Strong |
+| Autonomous vs checkpointed per task | Rules engine per work type and stage | Close, as rules not a toggle |
+| Writer/checker separation | Separate review agent in its own session; no plan validator | Partial |
+| Parallel tasks in one repo | Sandbox per session (local dir, E2B, Mastra platform) | Yes, stronger than worktrees |
+| Unattended permission story (open item above) | Solved by sandbox isolation | Yes |
+| Service boundary, thin UI | Server plus SPA plus CLI | Yes |
+| Reuse `.claude/commands` and `.claude/agents` | Runs Mastra's own agent (MastraCode) | No |
+| Claude Code backend behind an adapter | AgentController is Mastra's harness, not an adapter | No |
+| Fresh session per phase (hard requirement) | One session spans investigate, plan, build | No |
+| Artifacts in repo, index as pointer | Plans and threads live in Postgres/libSQL | No |
+| Backfill from existing tracking folders | None | No |
+
+Decision 2026-10-07: build HiVE as planned (the hard requirements above cannot be met without
+forking Factory's lifecycle, not just its agent), but take four things from Factory:
+
+1. **Lifecycle plus rules instead of a per-task autonomy toggle.** Rules per stage ("trusted
+   source goes straight to triage", "plan needs approval unless the validator passed") express
+   both modes and more. See the risk-tiering note from the panel below.
+2. **Sandbox-per-session as the answer to unattended permissions.** HiVE-native version: a git
+   worktree plus a scoped permission profile per phase session, instead of blanket
+   `--dangerously-skip-permissions`. This closes the open item recorded in Next step 0.
+3. **Start as a local server plus web UI.** The brief already wants a service boundary for
+   mobile-readiness; Factory shows the web-SPA shape works for this product. Electron becomes a
+   wrapper added later, not the foundation. (Supersedes the "Electron desktop app" framing in
+   the UI section only as to build order; the visual bar is unchanged.)
+4. **Issue intake is a v2 feature.** gh-tracker already mirrors HVE artifacts out to GitHub
+   Issues; the inbound direction (Issues, Linear, Jira, Slack) can wait.
+
+Step 0.5 for the new repo, before `/hve-research`: self-host Factory locally with
+`FACTORY_SANDBOX_PROVIDER=local` against a scratch repo for an afternoon. Walk its sessions,
+plan-approval, and decisions screens to sharpen HiVE's minimum views, and check whether its
+agent reads a repo's CLAUDE.md (unverified as of 2026-10-07).
+
+### "Software Factory & Agentic Workflows" panel, 2026-10-07 (Otter transcript; ID withheld from this public repo)
+
+Speakers: Hendrik (CodeRabbit), Abby (Mastra CTO, the Factory's author), Abhishek (Judgment
+Labs). Abby's talk is the origin story of Mastra Factory. Takeaways mapped to this brief:
+
+**Confirms:**
+- Human plan gate. Abby: "plan mode is wack, but planning is good." Rich plans from strong
+  models, human approval, then no human until review. Matches checkpointed mode and the
+  strong-model-for-planning tiering above.
+- Spec before work. Mastra auto-closes PRs without an approved issue. The form-plus-interview
+  gate is the same idea one step earlier.
+- Writer/checker separation. Their review stack is CodeRabbit, then a small repo-aware review
+  agent, looped, then human LGTM. HVE's validators already cover this; chaining an off-the-shelf
+  reviewer as a cheap first line is the only addition worth considering.
+- "Each phase is a skill, board columns are phases." The lifecycle-plus-rules model, from its author.
+- Don't build the harness. Abby: pull one off the shelf unless your use case is narrow and you
+  have the time. Hendrik: "you think you just fork Mastra and build your own, and it's not that
+  simple." HiVE is the judgment layer over an off-the-shelf harness (Claude Code), not a harness.
+
+**Changes:**
+1. **Autonomy is risk-tiered, not binary.** Hendrik: models are fine, "we cannot really scale our
+   judgment yet." CodeRabbit's triage classifies PRs by risk and auto-merges only low-risk ones.
+   Abby tried YOLO mode on the factory: "it just does not produce quality"; she once merged ~100
+   agent PRs and customers found the bugs. Rule for HiVE: gating is driven by HVE's existing
+   difficulty classification and risk override (CLAUDE.md). Simple and unflagged tasks run
+   straight through on validators; anything hitting the risk override (auth/security, migrations,
+   code consumed outside the repo, no tests) gets human gates at plan and review regardless of
+   the task's autonomy setting. Autonomous mode is not the v1 default; it is earned per task class
+   after measuring validator reliability.
+2. **UI is optimized for review throughput, not phase watching.** Both builders named review as
+   the human bottleneck. Hendrik's answer is a layered PR view and a blast-radius graph instead of
+   line-by-line diffs. HiVE's artifact viewer leads with the plan, the changes log, and
+   severity-graded findings with citations (all of which HVE already produces); the raw diff is
+   drill-down. Abby's "investigate a bunch, build a bunch, review a bunch" between meetings argues
+   for a board with bulk actions as the primary view.
+3. **The tracking folder is the knowledge base.** Abby's next frontier is a knowledge graph
+   because the factory agent "doesn't know anything about Mastra"; a legacy customer's factory
+   failed because the codebase had no AGENTS.md. Two cheap additions for HiVE: (a) a recall step
+   in research that reads prior tracking artifacts for the same area of the codebase, beyond the
+   current 7-day same-slug discovery window; (b) a readiness check on add-project that warns when
+   the repo has no CLAUDE.md or instructions files.
+4. **Keep raw traces.** Abhishek: the main reason to own your factory is owning the data (traces,
+   postmortems) a hosted product keeps for itself. Save each phase run's headless JSON output next
+   to the tracking artifacts, gitignored like `subagents/`. Friction logs and postmortems become
+   automatic rather than opt-in.
+
+**Argues against (and why HiVE holds its position):**
+- Observational memory (observer/reflector agents) exists to survive very long sessions without
+  lossy compaction. HiVE's fresh-session-per-phase with disk as the only channel sidesteps
+  compaction loss by design; HVE's artifacts are the observations and reflections, written
+  explicitly. The one gap is cross-task recall, covered by change 3.
+- Small models for judgment. Abby ran a month of triage decisions through a small classifier and
+  got ~37% agreement with human judgment. Do not route difficulty classification or gating
+  decisions to a cheap tier. Supports `model: inherit` for validators.
