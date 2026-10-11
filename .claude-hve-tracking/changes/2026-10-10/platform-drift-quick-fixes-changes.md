@@ -888,3 +888,86 @@ For Kevin; none of these was done by this task.
 ## Summary
 
 Six phases complete. 16 shipped files changed (`git diff main --name-only`, tracking folder excluded) across five commits (9c146b1, 70b8d89, 2b44aa4, 9b17f09, and the Phase 5 and 6 commit that carries this section). Parent adjustments after implementor returns are logged as DD-001, DD-004, DD-007, DD-008 in the phase sections.
+
+## Review Fixes (grader review, 2026-10-10)
+
+One fix pass for two findings from `.claude-hve-tracking/reviews/rpi/2026-10-10/platform-drift-quick-fixes-grader-review.md`. Implemented directly from the fix brief, with no HVE phase command and no subagent.
+
+- Base: `origin/wip/pdqf-review` @ 527e815a1c8127bad53ba91ae0341be8a2a6461b
+- Prompt fixes: commit 937b32d on `wip/pdqf-fix-r1`. This section is carried by the commit after it.
+- Files changed: `.claude/commands/hve-pr-review.md`, `.claude/agents/hve-pr-reviewer.md`, and this log.
+- Not fixed here, by instruction: IV-002 and IV-004 to IV-009.
+
+### IV-001 [MAJOR] Scan hits have no path to the security reviewer
+
+Line numbers are in the post-fix files.
+
+- `.claude/commands/hve-pr-review.md:155` (new bullet under "Each review subagent receives:"). Before: five bullets, none for the scan result. After: a sixth bullet, "Security and Compliance reviewer only", carrying the tracking-folder scan result as a file-and-line hit list or the word `clean`, with the rule that one of the two is always passed and that each hit is graded as an `SC-` finding.
+- `.claude/commands/hve-pr-review.md:175` (compact-mode inputs sentence). Before: the sentence ended at "the paired dimension instructions above." After: one sentence added on the same line, saying the Pair 4 subagent (the one that carries Security and Compliance) also receives the scan result, hit list or `clean`, and grades each hit as an `SC-` finding.
+- `.claude/agents/hve-pr-reviewer.md:22` (new bullet under "You will receive from the parent:"). Before: four inputs, no scan result. After: a fifth input, "Security and Compliance only (standard or compact)", telling the reviewer to read each cited line and grade each hit as an `SC-` finding citing the hit's `file:line`, defining `clean`, and telling it to record an `SC-` finding when it was given neither a list nor `clean`.
+
+No-hit value [HIGH]: both files use the word `clean`, which is the value already in the review-log template's `Scope:` line (`.claude/commands/hve-pr-review.md:80`, "tracking-folder scan: [clean | N hit(s) passed to security reviewer]"). The `Scope:` line and the scan paragraph at `:41` were not edited.
+
+Design decision beyond the review's "Smallest fix" text: the agent bullet makes a missing scan result an `SC-` finding. Reason: the brief asks that a missing list be distinguishable from an empty one, and without an instruction on the reviewer's side a parent that forgets the slot still produces a review with no `SC-` finding.
+
+### IV-003 [MINOR] Tracking-only outcome hides uncommitted code
+
+- `.claude/commands/hve-pr-review.md:44` (first outcome of the empty-diff guard). Before: the outcome ended at "stop without dispatching reviewers." After: one sentence appended on the same line: in branch mode, before stopping, also run `git status --porcelain`, and when uncommitted or untracked work exists outside the tracking folder, say so and offer working-tree mode.
+- The guard's other two outcomes (`:45`, `:46`) are unchanged. `git diff -U0 527e815 -- .claude/commands/hve-pr-review.md` shows three hunks only: `-44 +44`, `-154,0 +155`, `-174 +175`.
+
+### Carrier enumeration (A3)
+
+Run from the worktree root after the fix. Output lines are cut at 110 characters for width.
+
+```
+$ grep -rn -E "list of changed files|receives the same inputs|You will receive from the parent" .claude docs README.md CLAUDE.md CONTRIBUTING.md | cut -c1-110
+.claude/agents/hve-implementation-validator.md:17:You will receive from the parent:
+.claude/agents/hve-phase-implementor.md:16:You will receive from the parent:
+.claude/agents/hve-rpi-validator.md:17:You will receive from the parent:
+.claude/agents/hve-prompt-tester.md:17:You will receive from the parent:
+.claude/agents/hve-plan-validator.md:17:You will receive from the parent:
+.claude/agents/hve-pr-reviewer.md:17:You will receive from the parent:
+.claude/agents/hve-pr-reviewer.md:19:- The list of changed files
+.claude/agents/hve-prompt-updater.md:17:You will receive from the parent:
+.claude/agents/hve-researcher.md:17:You will receive from the parent:
+.claude/agents/hve-prompt-evaluator.md:17:You will receive from the parent:
+.claude/commands/hve-pr-review.md:151:* The list of changed files
+.claude/commands/hve-pr-review.md:175:Each compact subagent receives the same inputs as a standard subagent: t
+```
+
+Per hit:
+
+| Hit | Needed the slot? |
+|---|---|
+| `.claude/agents/hve-pr-reviewer.md:17` and `:19` | Yes. Slot added at `:22`, in the same list. |
+| `.claude/commands/hve-pr-review.md:151` | Yes. Slot added at `:155`, in the same list. |
+| `.claude/commands/hve-pr-review.md:175` | Yes. Slot added on this line. |
+| The eight other agent files (`hve-implementation-validator`, `hve-phase-implementor`, `hve-rpi-validator`, `hve-prompt-tester`, `hve-plan-validator`, `hve-prompt-updater`, `hve-researcher`, `hve-prompt-evaluator`) | No. Each is that agent's own input list. None is dispatched by `/hve-pr-review` and none receives the PR reviewer's inputs. |
+| `docs`, `README.md`, `CLAUDE.md`, `CONTRIBUTING.md` | No hits. |
+
+A second, wider search for other restatements, `grep -rn -E "scan hits|tracking-folder scan|changed files" .claude docs README.md CLAUDE.md CONTRIBUTING.md` with `.claude/commands/hve-pr-review.md` filtered out, returned four lines: `.claude/agents/hve-pr-reviewer.md:19` and `:22` (covered above), `docs/internals.md:64` and `CLAUDE.md:300`. The last two describe the implementation validator's Secret exposure grep, not the PR reviewer's inputs, and needed no slot [HIGH].
+
+### Gates
+
+Both run from the worktree root on the edited tree, through the orchestrator's `run-quiet.sh` wrapper.
+
+| Command | Result |
+|---|---|
+| `./tests/run-drift-tests.sh` | 253 passed, 0 failed, rc=0 |
+| `./tests/run-install-tests.sh` | 72 passed, 0 failed, rc=0 |
+
+Both counts equal the base (measured on 527e815 before the edits: 253 passed, 0 failed, rc=0 and 72 passed, 0 failed, rc=0). No test file changed.
+
+Other checks, measured:
+
+- Em-dashes in added lines of the two prompt files: 0 (`git diff -U0 | grep '^+' | grep -c` on the em-dash character).
+- `tools:` and `allowed-tools:` frontmatter lines changed: 0.
+
+### NOT RUN
+
+- `tests/run-prompt-new-install.sh` and `tests/run-prompt-upgrade.sh`: NOT RUN (semi-manual, and they clone from GitHub).
+- A live `/hve-pr-review` session exercising the new slot or the new guard clause: NOT RUN. Both fixes are verified by reading the text and by the two suites only.
+
+### Observation, not fixed
+
+In the tracking-only outcome (`.claude/commands/hve-pr-review.md:44`) no reviewer is dispatched, so a scan hit there is reported by the parent and never graded as an `SC-` finding, while the `Scope:` template value still reads "N hit(s) passed to security reviewer". This predates the fix pass and is outside its two findings [HIGH]. Left for the owner.
