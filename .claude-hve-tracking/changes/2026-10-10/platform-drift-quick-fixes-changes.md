@@ -416,7 +416,274 @@ In this session's shell `grep` is a function that calls `ugrep`. The three count
 ---
 
 ### Phase 4: Global-install correctness (instruction paths, ignore rule)
-Status: Pending
+Status: Complete
+Started: 2026-10-11T01:04:18Z
+Completed: 2026-10-11T01:09:57Z
+
+#### Files Modified
+- `CLAUDE.md:269`: new paragraph above the Instructions Reference table. Paths are project-relative; under a global install the same files are in `~/.claude/instructions/`; project first, then there (details 4.1)
+- `CLAUDE.md:290`: fallback sentence rewritten. "in either location" added, plus a closing sentence that a file is missing only after both locations are checked (details 4.1)
+- `CLAUDE.md:381`: third rule line `.claude-hve-tracking/reviews/pr/**/diff.patch` inside the tracking-policy fence
+- `CLAUDE.md:387`: "Alongside these two rules" changed to "Alongside these rules"
+- `.claude/commands/hve-implement.md:42`: resolution clause inserted after the `(e.g., ...)` parenthetical (details 4.2)
+- `.claude/agents/hve-phase-implementor.md:31`: resolution clause inserted after "for the language being implemented" (details 4.2)
+- `install.sh:241`: `add_ignore '.claude-hve-tracking/reviews/pr/**/diff.patch'`, directly after the sandbox rule
+- `install.sh:268`: matching `echo` line in the `--global` printout, directly after the sandbox line
+- `README.md:43-45`: paste-to-install prompt reworded to ask for the diff.patch rule (prose copy)
+- `README.md:241`: third rule line inside the "Only the regenerable noise" fence
+- `docs/installation.md:25-27`: paste-to-install prompt reworded (prose copy), same text as the README copy
+- `docs/installation.md:87`: third rule line in Option B step 7's fence
+- `docs/installation.md:158-161`: rule added to the comma list in the global paste prompt
+- `docs/installation.md:191`: third rule line in the global-install fence
+- `tests/run-install-tests.sh:185-187`: test1 `assert_contains` for the rule in `.gitignore`
+- `tests/run-install-tests.sh:231-233`: test2 `assert_contains` for the rule in `.gitignore`
+- `tests/run-install-tests.sh:412-414`: test5 `assert_output_contains` for the rule in the `--global` printout
+- `tests/run-prompt-new-install.sh:92-93`: heredoc prompt reworded to ask for the diff.patch rule
+- `tests/run-prompt-new-install.sh:150-153`: `assert_contains` for the rule, after the subagents assertion
+
+`git diff --stat` after the edits, excluding this log: 8 files changed, 37 insertions(+), 14 deletions(-). `.gitignore` is unchanged (`git diff -- .gitignore` is empty). `tests/run-prompt-upgrade.sh` is unchanged: neither guard pattern matches it, and `grep -n "gitignore\|subagents\|sandbox\|diff.patch"` on it prints nothing.
+
+Carriers left unchanged by design (details 4.2, line numbers re-checked today): `.claude/commands/hve-implement.md:111`; `.claude/agents/hve-phase-implementor.md:19`, `:42`, `:132`; `.claude/commands/hve-git-commit.md:9`, `:36`; `.claude/commands/hve-git-merge.md:9`; `.claude/commands/hve-prompt-builder.md:30`; `.claude/commands/hve-prompt-refactor.md:59`; `.claude/commands/hve-doc-ops.md:27`; `.claude/agents/hve-prompt-updater.md:32`. The plan accepts this as a [LOW] risk: they rely on CLAUDE.md being in context.
+
+#### Steps Completed
+- [x] Step 4.1: Install-location sentence added above the table and the fallback sentence rewritten, per details 4.1, at `CLAUDE.md:269` and `CLAUDE.md:290`
+- [x] Step 4.2: Resolution clause added to the two primary carriers per details 4.2, at `.claude/commands/hve-implement.md:42` and `.claude/agents/hve-phase-implementor.md:31`
+- [x] Step 4.3: `add_ignore` line at `install.sh:241` and the matching `echo` line at `install.sh:268`
+- [x] Step 4.4: Rule added to every documented copy: `CLAUDE.md:381`, `README.md:241`, `docs/installation.md:87`, `:159`, `:191`; prose copies reworded at `README.md:43`, `docs/installation.md:25`, `tests/run-prompt-new-install.sh:92`; "these two rules" changed to "these rules" at `CLAUDE.md:387`
+- [x] Step 4.5: Assertions added at `tests/run-install-tests.sh:185` (test1), `:231` (test2), `:412` (test5) and `tests/run-prompt-new-install.sh:150`
+- [x] Step 4.6 (guard): both greps run as written and again with `/usr/bin/grep`; every carrier outside the tracking folder has the rule beside it except two untracked blog drafts, reason stated. Output below. See DR-004.
+- [x] Step 4.7 (guard): scratch install prints 0 for `check-ignore`; install suite rc=0, `Results: 72 passed, 0 failed`; drift suite rc=0, `Results: 253 passed, 0 failed`. Output below.
+
+#### Guard Step 4.6 output
+
+Pattern A, exactly as written in the plan (31 lines, pipeline rc=0):
+
+```text
+$ grep -rn '\*\*/subagents/' . --include='*.md' --include='*.sh' --include='.gitignore' | grep -v '^./.claude-hve-tracking'
+README.md:239:.claude-hve-tracking/**/subagents/
+CLAUDE.md:379:.claude-hve-tracking/**/subagents/
+install.sh:239:  add_ignore '.claude-hve-tracking/**/subagents/'
+install.sh:266:  echo "       .claude-hve-tracking/**/subagents/"
+.gitignore:3:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/research/2026-09-14/usage-report-workflow-optimization.md:109:- A committed `gates/` folder needs no installer or gitignore change (.gitignore:3-4, install.sh:239-240 ignore only `**/subagents/` and `sandbox/`); an ignored one costs one `add_ignore` line at :240, a test1 assertion, and the global printout at :264-266. [HIGH]
+.claude-hve-tracking/memory/2026-08-08/hive-orchestrator-project-brief.md:246:   before committing anything, or `.claude-hve-tracking/**/subagents/` and `sandbox/` output
+.claude-hve-tracking/memory/2026-08-08/hive-orchestrator-project-brief.md:249:   .claude-hve-tracking/**/subagents/
+.claude-hve-tracking/plans/2026-06-02/installer-test-suite-plan.md:63:  - Assert: `.gitignore` contains `.claude-hve-tracking/**/subagents/`
+.claude-hve-tracking/plans/2026-06-02/installer-test-suite-plan.md:72:  - Assert: `.gitignore` contains `.claude-hve-tracking/**/subagents/`
+.claude-hve-tracking/plans/2026-06-02/installer-test-suite-plan.md:123:  - Assert: `.gitignore` contains `.claude-hve-tracking/**/subagents/`
+.claude-hve-tracking/changes/2026-08-15/full-repo-review-remediation-changes.md:63:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/changes/2026-08-15/full-repo-review-remediation-changes.md:87:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/changes/2026-08-15/full-repo-review-remediation-changes.md:755:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/changes/2026-08-15/full-repo-review-remediation-changes.md:780:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/changes/2026-08-15/full-repo-review-remediation-changes.md:799:       .claude-hve-tracking/**/subagents/
+.claude-hve-tracking/details/2026-08-15/full-repo-review-remediation-details.md:17:  add_ignore '.claude-hve-tracking/**/subagents/'
+.claude-hve-tracking/details/2026-08-15/full-repo-review-remediation-details.md:23:  add_ignore '.claude-hve-tracking/**/subagents/'
+.claude-hve-tracking/details/2026-08-15/full-repo-review-remediation-details.md:42:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/details/2026-06-01/cross-platform-install-readme-details.md:75:.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/reviews/rpi/2026-07-06/global-install-support-quality.md:142:  gitignore rule strings (`.claude-hve-tracking/**/subagents/`,
+.claude-hve-tracking/reviews/rpi/2026-06-02/installer-test-suite-phase-3-validation.md:49:**Plan requirement:** Create fresh temp dir with no files; run install.sh; assert `.claude/commands/` ≥1 hve*.md, `.claude/agents/` ≥1 hve*.md, `.claude/instructions/` exactly 12 .md, `prompts/` ≥1 .md, `CLAUDE.md` exists and contains both `<!-- HVE:START` and `<!-- HVE:END`, `.gitignore` contains `.claude-hve-tracking/**/subagents/`, no root `instructions/` directory.
+.claude-hve-tracking/reviews/rpi/2026-06-02/installer-test-suite-phase-3-validation.md:60:- Lines 165–167: `assert_contains .gitignore ".claude-hve-tracking/**/subagents/"` ✓
+.claude-hve-tracking/reviews/rpi/2026-06-02/installer-test-suite-phase-3-validation.md:77:- Lines 204–206: `assert_contains .gitignore ".claude-hve-tracking/**/subagents/"` ✓
+tests/run-install-tests.sh:183:    ".claude-hve-tracking/**/subagents/" \
+tests/run-install-tests.sh:229:    ".claude-hve-tracking/**/subagents/" \
+tests/run-prompt-new-install.sh:147:  ".claude-hve-tracking/**/subagents/" \
+.claude-hve-tracking/reviews/pr/main/2026-08-10-full-repo-review.md:194:CLAUDE.md:293 states `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12` "must be listed" — and this exact text ships into every target project's `CLAUDE.md` via the HVE block. But the actual `.gitignore`-writing code (`add_ignore` calls at lines 239-240) only adds `.claude-hve-tracking/**/subagents/` and `.claude-hve-tracking/sandbox/` — never the credential patterns. This repo's own `.gitignore:20-26` correctly lists them (verified), so only the propagation-to-new-projects path is broken: a freshly-installed project gets a `CLAUDE.md` asserting rules the installer that just ran did nothing to satisfy.
+docs/installation.md:85:   .claude-hve-tracking/**/subagents/
+docs/installation.md:158:me to add .claude-hve-tracking/**/subagents/, .claude-hve-tracking/sandbox/,
+docs/installation.md:189:  .claude-hve-tracking/**/subagents/
+```
+
+Pattern B, exactly as written in the plan (10 lines, pipeline rc=0):
+
+```text
+$ grep -rn 'subagents and sandbox' . --include='*.md' --include='*.sh' | grep -v '^./.claude-hve-tracking'
+blog-porting-hve-to-claude-code-combined.md:139:.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
+blog-porting-hve-to-claude-code.md:139:.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
+README.md:43:.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+.claude-hve-tracking/plans/logs/2026-10-10/platform-drift-quick-fixes-log.md:65:Recommendation: add the three prose copies to Step 4.4, add a second guard pattern to Step 4.6 (for example `subagents and sandbox`), and update the heredoc in the same step as the assertion.
+.claude-hve-tracking/plans/2026-10-10/platform-drift-quick-fixes-plan.md:108:- [ ] Step 4.6 (guard): enumerate carriers with two patterns and paste both outputs into the changes log: `grep -rn '\*\*/subagents/' . --include='*.md' --include='*.sh' --include='.gitignore' | grep -v '^./.claude-hve-tracking'` (planning-time result, 11 hits: `.gitignore:3`, `install.sh:239`, `install.sh:265`, `CLAUDE.md:375`, `README.md:238`, `tests/run-install-tests.sh:183`, `:226`, `tests/run-prompt-new-install.sh:147`, `docs/installation.md:85`, `:157`, `:187`) and `grep -rn 'subagents and sandbox' . --include='*.md' --include='*.sh' | grep -v '^./.claude-hve-tracking'` (planning-time result, 3 hits: `README.md:43`, `docs/installation.md:25`, `tests/run-prompt-new-install.sh:92`). Every hit must have the `diff.patch` rule beside it or a stated reason.
+.claude-hve-tracking/details/2026-06-01/cross-platform-install-readme-details.md:13:own content. Add the .claude-hve-tracking subagents and sandbox paths to
+.claude-hve-tracking/details/2026-10-10/platform-drift-quick-fixes-details.md:292:Prose copies (three paste-to-install prompts): each says `Add the .claude-hve-tracking subagents and sandbox paths to my .gitignore`. Reword to:
+.claude-hve-tracking/details/2026-10-10/platform-drift-quick-fixes-details.md:295:Add the .claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch rule to my .gitignore
+tests/run-prompt-new-install.sh:92:.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+docs/installation.md:25:.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+```
+
+Both outputs were captured before the guard output was pasted into this log; a later re-run also matches this section. (superseded, see Correction 2026-10-10)
+
+The `grep -v '^./.claude-hve-tracking'` filter removed nothing in either run, because `grep` in the agent's shell is a function that prints paths without the leading `./` (DR-004). The same two commands with `/usr/bin/grep` on both sides of the pipe give the enumeration the plan intended:
+
+```text
+$ /usr/bin/grep -rn '\*\*/subagents/' . --include='*.md' --include='*.sh' --include='.gitignore' | /usr/bin/grep -v '^./.claude-hve-tracking'
+./install.sh:239:  add_ignore '.claude-hve-tracking/**/subagents/'
+./install.sh:266:  echo "       .claude-hve-tracking/**/subagents/"
+./tests/run-prompt-new-install.sh:147:  ".claude-hve-tracking/**/subagents/" \
+./tests/run-install-tests.sh:183:    ".claude-hve-tracking/**/subagents/" \
+./tests/run-install-tests.sh:229:    ".claude-hve-tracking/**/subagents/" \
+./docs/installation.md:85:   .claude-hve-tracking/**/subagents/
+./docs/installation.md:158:me to add .claude-hve-tracking/**/subagents/, .claude-hve-tracking/sandbox/,
+./docs/installation.md:189:  .claude-hve-tracking/**/subagents/
+./README.md:239:.claude-hve-tracking/**/subagents/
+./.gitignore:3:.claude-hve-tracking/**/subagents/
+./CLAUDE.md:379:.claude-hve-tracking/**/subagents/
+$ /usr/bin/grep -rn 'subagents and sandbox' . --include='*.md' --include='*.sh' | /usr/bin/grep -v '^./.claude-hve-tracking'
+./blog-porting-hve-to-claude-code.md:139:.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
+./blog-porting-hve-to-claude-code-combined.md:139:.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
+./tests/run-prompt-new-install.sh:92:.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+./docs/installation.md:25:.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+./README.md:43:.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+```
+
+Pattern A: 11 hits, the same 11 carriers as the planning-time result (line numbers shifted by earlier phases and by this one). Pattern B: 5 hits, against 3 at planning time; the 2 extra are the blog drafts.
+
+Disposition of every hit outside the tracking folder:
+
+| Hit | diff.patch rule beside it |
+|---|---|
+| `install.sh:239` | Yes, `install.sh:241` (`add_ignore`, two lines down, after the sandbox rule) |
+| `install.sh:266` | Yes, `install.sh:268` (`echo`, two lines down) |
+| `tests/run-install-tests.sh:183` | Yes, `:185-187` (test1 assertion) |
+| `tests/run-install-tests.sh:229` | Yes, `:231-233` (test2 assertion) |
+| `tests/run-prompt-new-install.sh:147` | Yes, `:150-153` (next assertion) |
+| `docs/installation.md:85` | Yes, `:87` (same fence) |
+| `docs/installation.md:158` | Yes, `:159` (next item in the comma list) |
+| `docs/installation.md:189` | Yes, `:191` (same fence) |
+| `README.md:239` | Yes, `:241` (same fence) |
+| `CLAUDE.md:379` | Yes, `:381` (same fence) |
+| `.gitignore:3` | Yes, `.gitignore:5`. Already present before this phase; file not edited |
+| `README.md:43` | Yes, on the same line |
+| `docs/installation.md:25` | Yes, on the same line |
+| `tests/run-prompt-new-install.sh:92` | Yes, on the same line |
+| `blog-porting-hve-to-claude-code.md:139` | No. Untracked draft at the repo root (`git ls-files --error-unmatch` fails), not shipped by install.sh, not in this phase's file list. Left as is |
+| `blog-porting-hve-to-claude-code-combined.md:139` | No. Same reason |
+
+Hits under `.claude-hve-tracking/` (20 for pattern A, 5 for pattern B in the as-written output): no rule added. They are dated tracking artifacts, which the plan's filter was written to exclude; they record what was true on their date and are not carriers.
+
+#### Guard Step 4.7 output
+
+Scratch install (fresh directory, `$TMPDIR/hve-p4/scratch` did not exist beforehand):
+
+```text
+$ mkdir -p "$TMPDIR/hve-p4/scratch" && git -C "$TMPDIR/hve-p4/scratch" init -q && ./install.sh "$TMPDIR/hve-p4/scratch"
+Installing HVE
+  from: /Users/kevin/GitHub/hve-claude
+  into: /var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T/hve-p4/scratch
+
+  ✓ commands -> .claude/commands/
+  ✓ agents   -> .claude/agents/
+  ✓ .claude/instructions/ and .claude/prompts/
+  ✓ created CLAUDE.md
+  ✓ .gitignore rules
+
+Done. Next:
+  1. Add project context under '## Your Project' in /var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T/hve-p4/scratch/CLAUDE.md
+  2. Run /hve <your first task> in Claude Code
+$ git -C "$TMPDIR/hve-p4/scratch" check-ignore -q .claude-hve-tracking/reviews/pr/x/diff.patch; echo $?
+0
+$ cat "$TMPDIR/hve-p4/scratch/.gitignore"
+# HVE tracking: commit durable artifacts, ignore regenerable noise
+.claude-hve-tracking/**/subagents/
+.claude-hve-tracking/sandbox/
+.claude-hve-tracking/reviews/pr/**/diff.patch
+
+# HVE security hygiene: never commit credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+```
+
+Two extra checks, not in the plan. A second `./install.sh` run on the same directory exits 0 and leaves one `diff.patch` line and 12 lines in total (idempotent). An upgrade case in `$TMPDIR/hve-p4/upgrade`, seeded with a `.gitignore` that already held the two tracking rules and the six credential rules, exits 0 and `check-ignore` prints 0, with the new rule appended as the last line of the file, below the credential block (see Issues Encountered).
+
+Suites:
+
+```text
+$ bash tests/run-install-tests.sh > "$TMPDIR/install-p4.log" 2>&1; echo "rc=$?"
+rc=0
+$ tail -3 "$TMPDIR/install-p4.log"
+[  OK  ] Test 6: .gitignore credential rules
+
+Results: 72 passed, 0 failed
+$ bash tests/run-drift-tests.sh > "$TMPDIR/drift-p4.log" 2>&1; echo "rc=$?"
+rc=0
+$ tail -3 "$TMPDIR/drift-p4.log"
+[  OK  ] Test 16: credential-pattern surfaces agree with CLAUDE.md
+
+Results: 253 passed, 0 failed
+$ grep -n "FAIL" "$TMPDIR/install-p4.log"
+$ grep -n "FAIL" "$TMPDIR/drift-p4.log"
+```
+
+Both `grep -n "FAIL"` commands printed nothing (grep rc=1). Log paths: `/var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T//install-p4.log` and `.../drift-p4.log`.
+
+Install suite: 72 passed against a baseline of 69. The 3 new passes are the three assertions this phase added, each visible in the log:
+
+```text
+15:[pass] test1: .gitignore contains diff.patch rule: found '.claude-hve-tracking/reviews/pr/**/diff.patch' in /var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T/tmp.9go0g3QnER/test1/.gitignore
+25:[pass] test2: .gitignore contains diff.patch rule: found '.claude-hve-tracking/reviews/pr/**/diff.patch' in /var/folders/t2/lgmxzs012z19716my6ky1hdh0000gn/T/tmp.9go0g3QnER/test2/.gitignore
+63:[pass] test5: output lists the diff.patch rule: output contains '.claude-hve-tracking/reviews/pr/**/diff.patch'
+```
+
+Drift suite: 253 passed, unchanged from the pre-phase count. Tests 8, 11 and 16 each end `[  OK  ]` (log lines 147, 215, 301). Test 8 confirms the plan's [MEDIUM] assumption: the directory-only mention of `~/.claude/instructions/` adds no table row. Test 16 filters out `claude-hve-tracking` lines from both `install.sh` extractions, so the new `add_ignore` and `echo` lines do not enter the credential sets.
+
+The fourth assertion, in `tests/run-prompt-new-install.sh`, was not executed: that script drives a live Claude session. It was syntax-checked only.
+
+Script checks: `bash -n` exits 0 for `install.sh`, `tests/run-install-tests.sh` and `tests/run-prompt-new-install.sh`. `shellcheck -x` reports nothing on any line this phase added.
+
+Tests: 72 passed, 0 failed (install suite); 253 passed, 0 failed (drift suite)
+
+#### Success Criteria
+
+```text
+$ git -C "$TMPDIR/hve-p4/scratch" check-ignore -q .claude-hve-tracking/reviews/pr/x/diff.patch; echo $?
+0
+$ grep -c "~/.claude/instructions/" CLAUDE.md
+2
+$ grep -c "~/.claude/instructions/" .claude/commands/hve-implement.md
+1
+$ grep -c "~/.claude/instructions/" .claude/agents/hve-phase-implementor.md
+1
+$ grep -c "these two rules" CLAUDE.md
+0
+```
+
+- Scratch install ignores the diff.patch path: met (prints 0). The directory used is `$TMPDIR/hve-p4/scratch`, as the dispatch instructed, in place of the plan's `$TMPDIR/scratch`.
+- `~/.claude/instructions/` count at least 2 in CLAUDE.md and at least 1 in each primary carrier: met (2, 1, 1). Before the edits all three printed 0.
+- "these two rules" count 0 in CLAUDE.md: met.
+- Install suite exits 0 with more assertions than the baseline: met (rc=0, 72 against 69). Drift suite exits 0: met (rc=0, 253).
+
+The four `grep -c` commands were run with `/usr/bin/grep`; the first and last were repeated with the shell's `grep` function and printed the same values (2 and 0).
+
+#### Issues Encountered
+- No blocker. Every anchor in details 4.1, 4.2 and "4.3 to 4.5" was found exactly once by its quoted text. Line numbers in the plan and details were stale by 2 to 3 lines, as the dispatch warned. (superseded, see Correction 2026-10-10)
+- Guard filter does not work as written in the agent shell: DR-004 below.
+- Two untracked blog drafts at the repo root still carry the old two-rule prompt sentence (pattern B). They are outside this phase's file list and outside version control, so they were left alone. If they are published, the prompt they quote will ask for two rules where the README now asks for three.
+- Upgrade ordering, cosmetic: on a project whose `.gitignore` already has the two tracking rules, `add_ignore` appends the new rule at the end of the file, so it lands under the "HVE security hygiene" header instead of beside its siblings. The rule works there (`check-ignore` prints 0). The plan does not ask for ordered insertion and no suite assertion covers this case; no change made.
+- Wrapping of the prose copies: DD-005 below.
+- `.claude/commands/hve-implement.md:42` now has two parentheticals back to back, `(e.g., ...) (under a global install ...)`. That is the details 4.2 text placed at the details 4.2 anchor, verbatim. It reads a little heavily; merging the two would be a wording change the plan did not license.
+- test5 assertion layout: details "4.3 to 4.5" gives the assertion on one line. It is written across three lines, the form the neighbouring `assert_contains` calls at `tests/run-install-tests.sh:182-184` use, to stay inside 80 columns. Helper, arguments and argument order are the ones details gives.
+- `tests/run-prompt-new-install.sh`: the heredoc still omits the credential patterns that the README and docs prompts carry. That difference predates this phase and is not in the plan; untouched.
+- Em-dashes: `git diff -U0` filtered to added lines shows one, at `.claude/commands/hve-implement.md:42`. It is the existing ` — instruct subagents` on the same line as the inserted clause. The new prose contains none.
+- Not verified here: `~/.claude/` copies of `CLAUDE.md`, `hve-implement.md` and `hve-phase-implementor.md` do not carry these edits until `./install.sh --global` is re-run. This phase edits the repo only, and `--global` was not run.
+- Not verified here: that a model under a global install follows the new sentence and finds `~/.claude/instructions/NAME.md`. The check is textual (the greps above); no session was run from a project without a local `.claude/instructions/`.
+- Process note: Steps 4.1 to 4.5 were applied in one batch of edits and logged together before the guards ran, not one step at a time.
+- Instructions files read before editing: `.claude/instructions/markdown.md`, `.claude/instructions/writing-style.md`, `.claude/instructions/bash.md`. None was missing.
+- Scratch files left in place for the reviewer: `$TMPDIR/hve-p4/scratch/`, `$TMPDIR/hve-p4/upgrade/`, `$TMPDIR/install-p4.log`, `$TMPDIR/drift-p4.log`.
+
+#### Discrepancies & Decisions
+- DR-004: plan Step 4.6 filters with `grep -v '^./.claude-hve-tracking'` and records planning-time results of 11 and 3 hits. In the implementor's shell `grep` is a function (`type grep`: "grep is a shell function from /Users/kevin/.claude/shell-snapshots/snapshot-zsh-1791670029686-nnqlra.sh") that hands the search to a bundled `ugrep`, which prints `README.md:239:` where system grep prints `./README.md:239:`. The anchored filter therefore matches nothing and the as-written commands return 31 and 10 lines, tracking-folder artifacts included. The same applies to the identical filter anywhere else in the plan. No carrier was missed: the unfiltered output is a superset. Phase 3's Success Criteria section already records that `grep` is a `ugrep` function in this shell; what is new here is that it defeats a path-anchored filter, where Phase 3 only needed counts.
+- DD-005 (2026-10-10, implementor; DD-004 is the parent's Phase 3 entry): because of DR-004, both forms are pasted above and the `/usr/bin/grep` form is the one the disposition table is built from. The guard's intent (enumerate carriers outside the tracking folder) is met by it. Smallest plan fix for later phases: make the `./` optional in the filter, `grep -vE '^(\./)?\.claude-hve-tracking'`. Tested on pattern A: it prints 11 lines under the shell's `grep` function and 11 under `/usr/bin/grep`.
+- DD-006 (2026-10-10, implementor): details "4.3 to 4.5" says to keep each file's own line wrapping in the three prose copies. The added phrase does not fit on the existing line at the files' wrap width (about 78 columns), so the tail of each sentence was re-flowed at that width: `README.md:43-45` and `docs/installation.md:25-27` stay 3 lines each, `tests/run-prompt-new-install.sh:92-93` stays 2 lines. Line breaks moved; wording outside the inserted phrase did not change. In every copy "subagents and sandbox" and "diff.patch" sit on the same line, so guard pattern B shows the rule in its own output. The comma list in the global paste prompt (`docs/installation.md:158-161`) was re-flowed the same way and grew from 3 lines to 4.
+
+#### Corrections
+- Correction (2026-10-10): "a later re-run also matches this section" (Guard Step 4.6 output) was written without re-running and is wrong. Once the guard output was pasted here, this log matches pattern A itself, and with the filter inert (DR-004) the as-written command now prints 74 lines, not 31. The pasted blocks are the pre-paste capture and are the ones to rely on. The `/usr/bin/grep` form is unaffected, because its filter does drop this log.
+- Correction (2026-10-10): "stale by 2 to 3 lines" (Issues Encountered) overstates it. Checked against the anchors: `CLAUDE.md` citations were 2 lines low (:286 was :288, :375 was :377, :382 was :384), `README.md:238` was :239, and the citations for `install.sh`, `docs/installation.md`, the two test scripts and the two primary carriers were exact.
+
+#### Parent adjustments after the implementor returned (2026-10-10)
+- DD-007 (parent): merged the two back-to-back parentheticals at `.claude/commands/hve-implement.md:42` into one (punctuation only, same words). Parent re-ran both suites before this edit: install rc=0, `Results: 72 passed, 0 failed`; drift rc=0, `Results: 253 passed, 0 failed` (logs `<scratchpad>/install-p4-parent.log`, `<scratchpad>/drift-p4-parent.log`). No suite reads this line; `grep -c "~/.claude/instructions/" .claude/commands/hve-implement.md` still prints 1.
+- Not acted on: the two untracked blog drafts at the repo root carry the old two-rule prompt wording. They are not tracked and not part of this plan.
 
 ---
 

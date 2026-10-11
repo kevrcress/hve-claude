@@ -266,6 +266,8 @@ Chat instructions do not survive phase handoffs — disk does. When the user add
 
 Before implementing in a specific language or tool, read the relevant conventions file:
 
+The paths below are relative to the project root for a project install. Under a global install the same files are in `~/.claude/instructions/`. Look in the project first, then there.
+
 | Language / Tool | File |
 |---|---|
 | Bash | `.claude/instructions/bash.md` |
@@ -285,7 +287,7 @@ Before implementing in a specific language or tool, read the relevant convention
 
 Phase commands that involve implementation explicitly instruct Claude to read the relevant file before writing code.
 
-If no instructions file exists for the language at hand, do not block: follow the dominant conventions of the existing code in the repo, and note the missing instructions file in the changes log.
+If no instructions file exists for the language at hand in either location, do not block: follow the dominant conventions of the existing code in the repo, and note the missing instructions file in the changes log. A file is missing only after both the project path and `~/.claude/instructions/` have been checked.
 
 ---
 
@@ -376,12 +378,13 @@ history and rationale behind your work. Only the regenerable noise is gitignored
 ```
 .claude-hve-tracking/**/subagents/
 .claude-hve-tracking/sandbox/
+.claude-hve-tracking/reviews/pr/**/diff.patch
 ```
 
 Date+slug naming (`YYYY-MM-DD/topic.md`) keeps parallel work from colliding. To keep the
 whole folder private instead, replace those rules with `.claude-hve-tracking/`.
 
-Alongside these two rules a project-mode install also writes the credential patterns per
+Alongside these rules a project-mode install also writes the credential patterns per
 CLAUDE.md's `Security Hygiene` section. Those are unrelated to the tracking folder and are
 never replaced by the private-folder rule above.
 

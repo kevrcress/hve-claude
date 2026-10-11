@@ -238,6 +238,7 @@ if [ "$GLOBAL" -eq 0 ]; then
   fi
   add_ignore '.claude-hve-tracking/**/subagents/'
   add_ignore '.claude-hve-tracking/sandbox/'
+  add_ignore '.claude-hve-tracking/reviews/pr/**/diff.patch'
   # The header is written outside add_ignore, so it needs its own guard or it
   # duplicates on every re-run.
   if ! grep -qF "# HVE security hygiene" "$GITIGNORE" 2>/dev/null; then
@@ -264,6 +265,7 @@ if [ "$GLOBAL" -eq 1 ]; then
   echo "       # HVE tracking: commit durable artifacts, ignore regenerable noise"
   echo "       .claude-hve-tracking/**/subagents/"
   echo "       .claude-hve-tracking/sandbox/"
+  echo "       .claude-hve-tracking/reviews/pr/**/diff.patch"
   echo
   echo "       # HVE security hygiene: never commit credentials"
   echo "       .env"

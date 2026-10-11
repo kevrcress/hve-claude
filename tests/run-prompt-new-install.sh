@@ -89,8 +89,8 @@ into mine wrapped in these markers:
 If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, prepend the wrapped block before my existing content.
 Never touch anything outside the markers or below '## Your Project'. Add the
-.claude-hve-tracking subagents and sandbox paths to my .gitignore, then
-delete the temp clone and show me what changed.
+.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+rule to my .gitignore, then delete the temp clone and show me what changed.
 PROMPT
 echo ""
 echo "(Note: this test prompt clones the dev branch — run only after merging"
@@ -146,6 +146,11 @@ assert_contains \
   "${WORK_DIR}/.gitignore" \
   ".claude-hve-tracking/**/subagents/" \
   ".gitignore contains subagents exclusion rule"
+
+assert_contains \
+  "${WORK_DIR}/.gitignore" \
+  ".claude-hve-tracking/reviews/pr/**/diff.patch" \
+  ".gitignore contains diff.patch exclusion rule"
 
 # ---------------------------------------------------------------------------
 # Summary

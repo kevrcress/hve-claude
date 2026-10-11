@@ -40,9 +40,9 @@ copy its hve-* commands and agents into my .claude/ folder, copy its
 If my CLAUDE.md already has those markers, replace the content between them.
 If it has no markers, prepend the wrapped block before my existing content.
 Never touch anything outside the markers or below '## Your Project'. Add the
-.claude-hve-tracking subagents and sandbox paths to my .gitignore, along with
-the credential patterns .env, .env.*, *.pem, *.key, *.p12, and *.pfx, then delete
-temp clone and show me what changed.
+.claude-hve-tracking subagents and sandbox paths and the reviews/pr diff.patch
+rule to my .gitignore, along with the credential patterns .env, .env.*, *.pem,
+*.key, *.p12, and *.pfx, then delete temp clone and show me what changed.
 ```
 2. Paste this to add your project context:
 ```
@@ -238,6 +238,7 @@ Only the regenerable noise is gitignored by default:
 ```
 .claude-hve-tracking/**/subagents/
 .claude-hve-tracking/sandbox/
+.claude-hve-tracking/reviews/pr/**/diff.patch
 ```
 
 To keep the entire tracking folder private instead, replace those rules with:
