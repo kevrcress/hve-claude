@@ -6,7 +6,7 @@ machinery.
 
 The conventions that govern every subagent (the response protocol, confidence
 markers, citation format, severity grading, the five operating principles, the
-handoff block format, untrusted-input handling, and the concurrent
+completion summary and handoff block format, untrusted-input handling, and the concurrent
 changes-log-write rule) live in [CLAUDE.md](../CLAUDE.md), which is the single
 source of truth installed into every project. This document covers the pieces that
 aren't in CLAUDE.md: the subagent roster and the quality-validator dimensions.

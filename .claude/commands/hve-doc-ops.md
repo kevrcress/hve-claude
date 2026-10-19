@@ -104,11 +104,9 @@ Present results to the user:
 - Top 5 actionable fixes
 - Files with no issues (to confirm coverage)
 
-```
-╭─────────────────────────────────────────────────────╮
-│  DOC-OPS COMPLETE                                   │
-│  Session  : .claude-hve-tracking/doc-ops/           │
-│             YYYY-MM-DD-session.md                   │
-│  Findings : N critical | N major | N minor          │
-╰─────────────────────────────────────────────────────╯
-```
+End every stopping turn of `/hve-doc-ops` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The results above are the content of **What I did**. Fill the block with actual values:
+
+- `status: done`
+- `artifact: .claude-hve-tracking/doc-ops/YYYY-MM-DD-session.md`
+- `next: fix the top findings, then re-run /hve-doc-ops` (when there are no findings: `next: none - documentation is clean`)
+- `findings: N critical, N major, N minor` (optional key)

@@ -131,8 +131,9 @@ Each command auto-discovers the previous phase's artifact from
 
 Just run the next phase command. It finds the most recent artifact for its phase
 automatically, no file paths, no manual attachment. If you're between phases, the
-handoff block at the end of each phase command tells you exactly which command to
-run next.
+close at the end of each command (a short summary plus a `status` / `artifact` /
+`next` block, defined in CLAUDE.md's "Handoff Block Format" section) tells you
+exactly which command to run next.
 
 **Can I use HVE for small tasks?**
 

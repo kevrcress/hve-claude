@@ -59,6 +59,13 @@ Report what was committed: file count, commit hash, message summary.
 
 Offer: "Would you like to amend the message?" (soft reset + recommit if yes).
 
+End every stopping turn of `/hve-git-commit` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. The amend offer goes under **What I need from you**. Fill the block with actual values:
+
+- `status: done`
+- `artifact: none - /hve-git-commit writes no tracking artifact`
+- `next: git push when ready` (prose: this command never pushes)
+- `commit: [short hash]` (optional key)
+
 ---
 
 ## Allowed git commands

@@ -2,6 +2,8 @@
 Date: 2026-08-19
 Task slug: phase-close-clarity
 Plan: .claude-hve-tracking/plans/2026-08-19/phase-close-clarity-plan.md
+Refresh: line citations re-read on 2026-10-10 at 0661d621cb4904bf38d9fff8893c2196899e7c3d (the BASE). Old
+values are in the planning log under `## Refresh (2026-10-10)`.
 
 ## The two formats, specified
 
@@ -81,11 +83,16 @@ which returns exactly three lines:
 
 ```
 hve-doc-ops.md:112    │  Findings : N critical | N major | N minor          │
-hve-pr-review.md:188  │  Verdict  : ✅ Approve | ⚠️ Request Changes | 🚫 Block │
-hve-pr-review.md:189  │  Critical : N | Major: N | Minor: N                 │
+hve-pr-review.md:221  │  Verdict  : ✅ Approve | ⚠️ Request Changes | 🚫 Block │
+hve-pr-review.md:222  │  Critical : N | Major: N | Minor: N                 │
 ```
 
 All three must move their alternatives into prose.
+
+Line numbers in the listing above are at the BASE (2026-10-10). When the plan was written the two
+hve-pr-review lines were :188 and :189; the text of all three lines is unchanged. The pattern matches box
+rows only: `hve.md:141-142` and `hve-prompt-analyze.md:85` carry bare `|` in fenced templates that are not
+boxes, and plan Steps 4.1 and 4.3 now cover them.
 
 Correction (2026-08-19): an earlier draft of this file listed the two hve-pr-review lines as :189
 and :190, and an earlier draft of the plan cited `hve-review.md:172` as a third offender. Both
@@ -107,14 +114,19 @@ The mapping is 1:1 and total:
 `awaiting-approval` is emitted by commands that pause for user approval before handing off
 (hve-plan at its Phase 4 checkpoint, hve-implement at its acknowledgment gate). The
 orchestrator-side `pending` and `running` states from the HiVE brief are never emitted by a
-command; they belong to the orchestrator.
+command; they belong to the orchestrator (superseded, see Correction 2026-10-10: the enum is defined by this plan and
+stands without the HiVE brief. Any caller, human or not, reads the four emitted values; hve-claude takes no
+dependency on HiVE or hve-orchestrator, cross-repo decision D1).
+
+hve-pr-review's three verdicts (Approve, Request Changes, Block) are not mapped by this plan. That is owner
+decision O2 in the planning log refresh (added 2026-10-10).
 
 ## Drift-test mechanics the carrier depends on
 
 Verified by the parent during planning by reading `tests/run-drift-tests.sh`:
 
-- `claude_md_headings()` at :965 extracts every `^##+ ` heading, heading text only.
-- `REFERENCE_PATTERN` at :959 is ``per CLAUDE\.md's \`[^\`]+\` section``.
+- `claude_md_headings()` at :968 (at the BASE) extracts every `^##+ ` heading, heading text only.
+- `REFERENCE_PATTERN` at :962 (at the BASE) is ``per CLAUDE\.md's \`[^\`]+\` section``.
 - Test 14 fails if any such pointer under `.claude/commands`, `.claude/agents` or `.claude/prompts`
   names a section that is not a CLAUDE.md heading.
 
@@ -137,6 +149,8 @@ hve-git-setup is the only file with no close at all: it ends at `## Critical Con
 
 ## Known cosmetic defect removed by deletion
 
-CLAUDE.md:225 and hve-research.md:152 close their box with `╝` (double-line corner) while opening
+CLAUDE.md:225 and hve-research.md:152 (superseded, see Correction 2026-10-10: at the BASE the lines are CLAUDE.md:229 and
+hve-research.md:153, and the same corner is also at hve-plan.md:173 and hve-implement.md:180, four files in
+all by `grep -rn '╝' .claude CLAUDE.md docs README.md`) close their box with `╝` (double-line corner) while opening
 with `╭` (single-line round corner). Dropping box-drawing entirely removes this without a separate
 fix step.

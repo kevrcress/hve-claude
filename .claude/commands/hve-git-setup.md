@@ -75,3 +75,13 @@ Stop after presenting the audit table. Do not propose any changes.
 - Never expose secrets or private keys
 - Each group of proposed changes includes rationale and requires confirmation before running
 - Run a verification command after each confirmed change to confirm it took effect
+
+---
+
+## Completion
+
+End every stopping turn of `/hve-git-setup` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. Fill the block with actual values:
+
+- `status: done`
+- `artifact: none - /hve-git-setup writes no tracking artifact`
+- `next: /hve-git-commit when there is work to commit` (after `--audit-only`: `next: /hve-git-setup to apply the proposed changes`)

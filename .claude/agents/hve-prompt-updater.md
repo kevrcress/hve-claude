@@ -52,7 +52,7 @@ After applying all fixes, verify the updated artifact:
 **For slash commands** (`.claude/commands/`):
 - Frontmatter has `description`, `argument-hint`, `allowed-tools`
 - Steps are numbered and specific
-- Handoff Block present at the end (for phase commands)
+- Close present at the end of every command: the completion summary per CLAUDE.md's `Completion Summary` section and the labeled-line block per CLAUDE.md's `Handoff Block Format` section
 - No Copilot-isms
 
 **For agent definitions** (`.claude/agents/`):

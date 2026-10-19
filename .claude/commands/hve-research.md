@@ -37,7 +37,7 @@ Tell the user the classification before proceeding. If `--mode` was specified, u
 
 **The upper number in that column is the binding cap on Phase 2 dispatch**, not a suggestion: Medium never spawns more than 2 subagents, Medium-Hard never more than 3, Challenging never more than 5. When `--mode` was passed, its own cap applies instead: `lightweight` 1, `standard` 3, `full` 5. Record the cap you are working under before defining research questions. Exceeding it requires asking the user first.
 
-If **Simple**: answer the research questions directly without subagents, write the findings doc, emit the Handoff Block, and stop.
+If **Simple**: answer the research questions directly without subagents, write the findings doc, emit the close (see Close below), and stop.
 
 ---
 
@@ -132,23 +132,18 @@ Respond to the user with:
 2. Classification level used
 3. Up to 7 key findings (≤ 240 chars each; lead with Critical/Major concerns)
 4. Up to 5 open questions for the Plan phase
-5. The Handoff Block (below)
+5. The close (see Close below). Items 1 to 4 are the content of its **What I did** and **What I need from you** headers, not a separate report before it
 
 **Apply context discipline**: the research doc is the source of truth. Do not repeat its full content in chat.
 
 ---
 
-## Handoff Block
+## Close
 
-End every research session with this exact block (fill in actual values):
+End every stopping turn of `/hve-research` with the close: the completion summary per CLAUDE.md's `Completion Summary` section, then the labeled-line block per CLAUDE.md's `Handoff Block Format` section. Fill the block with actual values:
 
-```
-╭─────────────────────────────────────────────────────╮
-│  HANDOFF                                            │
-│  Artifact : .claude-hve-tracking/research/          │
-│             YYYY-MM-DD/task-slug.md                 │
-│  Next     : /hve-plan                               │
-│  Tip      : Start a new conversation, then run      │
-│             /hve-plan — it finds this file auto.    │
-╰─────────────────────────────────────────────────────╝
-```
+- `status: done`
+- `artifact: .claude-hve-tracking/research/YYYY-MM-DD/task-slug.md`
+- `next: /hve-plan`
+
+Under **Next step**, tell the user to start a new conversation and run `/hve-plan`, which finds the research doc automatically.
