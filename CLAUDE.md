@@ -404,3 +404,5 @@ never replaced by the private-folder rule above.
      - Tests: Jest, run with `npm test`; integration tests require a running DB
      - Key files: src/server.ts (entrypoint), prisma/schema.prisma (data model)
      - Constraints: no breaking changes to the public API without a migration guide -->
+
+This project tracks HVE work in GitHub Issues — use the gh-tracker skill.
